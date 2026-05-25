@@ -13,9 +13,20 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppTenantSlugRouteImport } from './routes/app/$tenantSlug'
 import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
+import { Route as AppTenantSlugIndexRouteImport } from './routes/app/$tenantSlug/index'
 import { Route as AuthenticatedSuperIndexRouteImport } from './routes/_authenticated/super/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AppTenantSlugWithdrawRouteImport } from './routes/app/$tenantSlug/withdraw'
+import { Route as AppTenantSlugWalletsRouteImport } from './routes/app/$tenantSlug/wallets'
+import { Route as AppTenantSlugTasksRouteImport } from './routes/app/$tenantSlug/tasks'
+import { Route as AppTenantSlugReferRouteImport } from './routes/app/$tenantSlug/refer'
+import { Route as AppTenantSlugProfileRouteImport } from './routes/app/$tenantSlug/profile'
+import { Route as AppTenantSlugMineRouteImport } from './routes/app/$tenantSlug/mine'
+import { Route as AppTenantSlugHistoryRouteImport } from './routes/app/$tenantSlug/history'
+import { Route as AppTenantSlugDepositRouteImport } from './routes/app/$tenantSlug/deposit'
+import { Route as AppTenantSlugConvertRouteImport } from './routes/app/$tenantSlug/convert'
 import { Route as AuthenticatedSuperTenantsRouteImport } from './routes/_authenticated/super/tenants'
 import { Route as AuthenticatedSuperAnnouncementsRouteImport } from './routes/_authenticated/super/announcements'
 import { Route as AuthenticatedAdminTenantIdRouteImport } from './routes/_authenticated/admin/$tenantId'
@@ -46,10 +57,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppTenantSlugRoute = AppTenantSlugRouteImport.update({
+  id: '/app/$tenantSlug',
+  path: '/app/$tenantSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSuperRoute = AuthenticatedSuperRouteImport.update({
   id: '/super',
   path: '/super',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AppTenantSlugIndexRoute = AppTenantSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTenantSlugRoute,
 } as any)
 const AuthenticatedSuperIndexRoute = AuthenticatedSuperIndexRouteImport.update({
   id: '/',
@@ -60,6 +81,51 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AppTenantSlugWithdrawRoute = AppTenantSlugWithdrawRouteImport.update({
+  id: '/withdraw',
+  path: '/withdraw',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugWalletsRoute = AppTenantSlugWalletsRouteImport.update({
+  id: '/wallets',
+  path: '/wallets',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugTasksRoute = AppTenantSlugTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugReferRoute = AppTenantSlugReferRouteImport.update({
+  id: '/refer',
+  path: '/refer',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugProfileRoute = AppTenantSlugProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugMineRoute = AppTenantSlugMineRouteImport.update({
+  id: '/mine',
+  path: '/mine',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugHistoryRoute = AppTenantSlugHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugDepositRoute = AppTenantSlugDepositRouteImport.update({
+  id: '/deposit',
+  path: '/deposit',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugConvertRoute = AppTenantSlugConvertRouteImport.update({
+  id: '/convert',
+  path: '/convert',
+  getParentRoute: () => AppTenantSlugRoute,
 } as any)
 const AuthenticatedSuperTenantsRoute =
   AuthenticatedSuperTenantsRouteImport.update({
@@ -127,11 +193,22 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/super': typeof AuthenticatedSuperRouteWithChildren
+  '/app/$tenantSlug': typeof AppTenantSlugRouteWithChildren
   '/admin/$tenantId': typeof AuthenticatedAdminTenantIdRouteWithChildren
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
+  '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
+  '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
+  '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
+  '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
+  '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
+  '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
+  '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
+  '/app/$tenantSlug/wallets': typeof AppTenantSlugWalletsRoute
+  '/app/$tenantSlug/withdraw': typeof AppTenantSlugWithdrawRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/super/': typeof AuthenticatedSuperIndexRoute
+  '/app/$tenantSlug/': typeof AppTenantSlugIndexRoute
   '/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
   '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
@@ -146,8 +223,18 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
+  '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
+  '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
+  '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
+  '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
+  '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
+  '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
+  '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
+  '/app/$tenantSlug/wallets': typeof AppTenantSlugWalletsRoute
+  '/app/$tenantSlug/withdraw': typeof AppTenantSlugWithdrawRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/super': typeof AuthenticatedSuperIndexRoute
+  '/app/$tenantSlug': typeof AppTenantSlugIndexRoute
   '/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
   '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
@@ -163,11 +250,22 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_authenticated/super': typeof AuthenticatedSuperRouteWithChildren
+  '/app/$tenantSlug': typeof AppTenantSlugRouteWithChildren
   '/_authenticated/admin/$tenantId': typeof AuthenticatedAdminTenantIdRouteWithChildren
   '/_authenticated/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/_authenticated/super/tenants': typeof AuthenticatedSuperTenantsRoute
+  '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
+  '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
+  '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
+  '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
+  '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
+  '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
+  '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
+  '/app/$tenantSlug/wallets': typeof AppTenantSlugWalletsRoute
+  '/app/$tenantSlug/withdraw': typeof AppTenantSlugWithdrawRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/super/': typeof AuthenticatedSuperIndexRoute
+  '/app/$tenantSlug/': typeof AppTenantSlugIndexRoute
   '/_authenticated/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
   '/_authenticated/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/_authenticated/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
@@ -183,11 +281,22 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/super'
+    | '/app/$tenantSlug'
     | '/admin/$tenantId'
     | '/super/announcements'
     | '/super/tenants'
+    | '/app/$tenantSlug/convert'
+    | '/app/$tenantSlug/deposit'
+    | '/app/$tenantSlug/history'
+    | '/app/$tenantSlug/mine'
+    | '/app/$tenantSlug/profile'
+    | '/app/$tenantSlug/refer'
+    | '/app/$tenantSlug/tasks'
+    | '/app/$tenantSlug/wallets'
+    | '/app/$tenantSlug/withdraw'
     | '/admin/'
     | '/super/'
+    | '/app/$tenantSlug/'
     | '/admin/$tenantId/ads'
     | '/admin/$tenantId/branding'
     | '/admin/$tenantId/economics'
@@ -202,8 +311,18 @@ export interface FileRouteTypes {
     | '/signup'
     | '/super/announcements'
     | '/super/tenants'
+    | '/app/$tenantSlug/convert'
+    | '/app/$tenantSlug/deposit'
+    | '/app/$tenantSlug/history'
+    | '/app/$tenantSlug/mine'
+    | '/app/$tenantSlug/profile'
+    | '/app/$tenantSlug/refer'
+    | '/app/$tenantSlug/tasks'
+    | '/app/$tenantSlug/wallets'
+    | '/app/$tenantSlug/withdraw'
     | '/admin'
     | '/super'
+    | '/app/$tenantSlug'
     | '/admin/$tenantId/ads'
     | '/admin/$tenantId/branding'
     | '/admin/$tenantId/economics'
@@ -218,11 +337,22 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_authenticated/super'
+    | '/app/$tenantSlug'
     | '/_authenticated/admin/$tenantId'
     | '/_authenticated/super/announcements'
     | '/_authenticated/super/tenants'
+    | '/app/$tenantSlug/convert'
+    | '/app/$tenantSlug/deposit'
+    | '/app/$tenantSlug/history'
+    | '/app/$tenantSlug/mine'
+    | '/app/$tenantSlug/profile'
+    | '/app/$tenantSlug/refer'
+    | '/app/$tenantSlug/tasks'
+    | '/app/$tenantSlug/wallets'
+    | '/app/$tenantSlug/withdraw'
     | '/_authenticated/admin/'
     | '/_authenticated/super/'
+    | '/app/$tenantSlug/'
     | '/_authenticated/admin/$tenantId/ads'
     | '/_authenticated/admin/$tenantId/branding'
     | '/_authenticated/admin/$tenantId/economics'
@@ -237,6 +367,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  AppTenantSlugRoute: typeof AppTenantSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -269,12 +400,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/$tenantSlug': {
+      id: '/app/$tenantSlug'
+      path: '/app/$tenantSlug'
+      fullPath: '/app/$tenantSlug'
+      preLoaderRoute: typeof AppTenantSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/super': {
       id: '/_authenticated/super'
       path: '/super'
       fullPath: '/super'
       preLoaderRoute: typeof AuthenticatedSuperRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/app/$tenantSlug/': {
+      id: '/app/$tenantSlug/'
+      path: '/'
+      fullPath: '/app/$tenantSlug/'
+      preLoaderRoute: typeof AppTenantSlugIndexRouteImport
+      parentRoute: typeof AppTenantSlugRoute
     }
     '/_authenticated/super/': {
       id: '/_authenticated/super/'
@@ -289,6 +434,69 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/app/$tenantSlug/withdraw': {
+      id: '/app/$tenantSlug/withdraw'
+      path: '/withdraw'
+      fullPath: '/app/$tenantSlug/withdraw'
+      preLoaderRoute: typeof AppTenantSlugWithdrawRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/wallets': {
+      id: '/app/$tenantSlug/wallets'
+      path: '/wallets'
+      fullPath: '/app/$tenantSlug/wallets'
+      preLoaderRoute: typeof AppTenantSlugWalletsRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/tasks': {
+      id: '/app/$tenantSlug/tasks'
+      path: '/tasks'
+      fullPath: '/app/$tenantSlug/tasks'
+      preLoaderRoute: typeof AppTenantSlugTasksRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/refer': {
+      id: '/app/$tenantSlug/refer'
+      path: '/refer'
+      fullPath: '/app/$tenantSlug/refer'
+      preLoaderRoute: typeof AppTenantSlugReferRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/profile': {
+      id: '/app/$tenantSlug/profile'
+      path: '/profile'
+      fullPath: '/app/$tenantSlug/profile'
+      preLoaderRoute: typeof AppTenantSlugProfileRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/mine': {
+      id: '/app/$tenantSlug/mine'
+      path: '/mine'
+      fullPath: '/app/$tenantSlug/mine'
+      preLoaderRoute: typeof AppTenantSlugMineRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/history': {
+      id: '/app/$tenantSlug/history'
+      path: '/history'
+      fullPath: '/app/$tenantSlug/history'
+      preLoaderRoute: typeof AppTenantSlugHistoryRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/deposit': {
+      id: '/app/$tenantSlug/deposit'
+      path: '/deposit'
+      fullPath: '/app/$tenantSlug/deposit'
+      preLoaderRoute: typeof AppTenantSlugDepositRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/convert': {
+      id: '/app/$tenantSlug/convert'
+      path: '/convert'
+      fullPath: '/app/$tenantSlug/convert'
+      preLoaderRoute: typeof AppTenantSlugConvertRouteImport
+      parentRoute: typeof AppTenantSlugRoute
     }
     '/_authenticated/super/tenants': {
       id: '/_authenticated/super/tenants'
@@ -424,11 +632,42 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface AppTenantSlugRouteChildren {
+  AppTenantSlugConvertRoute: typeof AppTenantSlugConvertRoute
+  AppTenantSlugDepositRoute: typeof AppTenantSlugDepositRoute
+  AppTenantSlugHistoryRoute: typeof AppTenantSlugHistoryRoute
+  AppTenantSlugMineRoute: typeof AppTenantSlugMineRoute
+  AppTenantSlugProfileRoute: typeof AppTenantSlugProfileRoute
+  AppTenantSlugReferRoute: typeof AppTenantSlugReferRoute
+  AppTenantSlugTasksRoute: typeof AppTenantSlugTasksRoute
+  AppTenantSlugWalletsRoute: typeof AppTenantSlugWalletsRoute
+  AppTenantSlugWithdrawRoute: typeof AppTenantSlugWithdrawRoute
+  AppTenantSlugIndexRoute: typeof AppTenantSlugIndexRoute
+}
+
+const AppTenantSlugRouteChildren: AppTenantSlugRouteChildren = {
+  AppTenantSlugConvertRoute: AppTenantSlugConvertRoute,
+  AppTenantSlugDepositRoute: AppTenantSlugDepositRoute,
+  AppTenantSlugHistoryRoute: AppTenantSlugHistoryRoute,
+  AppTenantSlugMineRoute: AppTenantSlugMineRoute,
+  AppTenantSlugProfileRoute: AppTenantSlugProfileRoute,
+  AppTenantSlugReferRoute: AppTenantSlugReferRoute,
+  AppTenantSlugTasksRoute: AppTenantSlugTasksRoute,
+  AppTenantSlugWalletsRoute: AppTenantSlugWalletsRoute,
+  AppTenantSlugWithdrawRoute: AppTenantSlugWithdrawRoute,
+  AppTenantSlugIndexRoute: AppTenantSlugIndexRoute,
+}
+
+const AppTenantSlugRouteWithChildren = AppTenantSlugRoute._addFileChildren(
+  AppTenantSlugRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  AppTenantSlugRoute: AppTenantSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
