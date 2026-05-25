@@ -66,11 +66,8 @@ export const initMiniAppUser = createServerFn({ method: "POST" })
       }).select().single();
       user = ins.data;
       if (referrerId) {
-        await supabaseAdmin.rpc("increment_referral", { _user_id: referrerId }).then(() => {}, () => {
-          // fallback: update directly
-          return supabaseAdmin.from("app_users").select("referral_count").eq("id", referrerId).single()
-            .then(({ data: r }) => supabaseAdmin.from("app_users").update({ referral_count: (r?.referral_count ?? 0) + 1 }).eq("id", referrerId));
-        });
+        const { data: r } = await supabaseAdmin.from("app_users").select("referral_count").eq("id", referrerId).single();
+        await supabaseAdmin.from("app_users").update({ referral_count: (r?.referral_count ?? 0) + 1 }).eq("id", referrerId);
       }
     }
     return user;

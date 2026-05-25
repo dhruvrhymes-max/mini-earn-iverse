@@ -54,7 +54,7 @@ export const updateTenant = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
-      .from("tenants").update(data.patch).eq("id", data.id);
+      .from("tenants").update(data.patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
