@@ -9,38 +9,259 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
+import { Route as AuthenticatedSuperIndexRouteImport } from './routes/_authenticated/super/index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedSuperTenantsRouteImport } from './routes/_authenticated/super/tenants'
+import { Route as AuthenticatedSuperAnnouncementsRouteImport } from './routes/_authenticated/super/announcements'
+import { Route as AuthenticatedAdminTenantIdRouteImport } from './routes/_authenticated/admin/$tenantId'
+import { Route as AuthenticatedAdminTenantIdIndexRouteImport } from './routes/_authenticated/admin/$tenantId/index'
+import { Route as AuthenticatedAdminTenantIdWithdrawalsRouteImport } from './routes/_authenticated/admin/$tenantId/withdrawals'
+import { Route as AuthenticatedAdminTenantIdTasksRouteImport } from './routes/_authenticated/admin/$tenantId/tasks'
+import { Route as AuthenticatedAdminTenantIdMilestonesRouteImport } from './routes/_authenticated/admin/$tenantId/milestones'
+import { Route as AuthenticatedAdminTenantIdEconomicsRouteImport } from './routes/_authenticated/admin/$tenantId/economics'
+import { Route as AuthenticatedAdminTenantIdBrandingRouteImport } from './routes/_authenticated/admin/$tenantId/branding'
+import { Route as AuthenticatedAdminTenantIdAdsRouteImport } from './routes/_authenticated/admin/$tenantId/ads'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSuperRoute = AuthenticatedSuperRouteImport.update({
+  id: '/super',
+  path: '/super',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSuperIndexRoute = AuthenticatedSuperIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedSuperRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSuperTenantsRoute =
+  AuthenticatedSuperTenantsRouteImport.update({
+    id: '/tenants',
+    path: '/tenants',
+    getParentRoute: () => AuthenticatedSuperRoute,
+  } as any)
+const AuthenticatedSuperAnnouncementsRoute =
+  AuthenticatedSuperAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthenticatedSuperRoute,
+  } as any)
+const AuthenticatedAdminTenantIdRoute =
+  AuthenticatedAdminTenantIdRouteImport.update({
+    id: '/admin/$tenantId',
+    path: '/admin/$tenantId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminTenantIdIndexRoute =
+  AuthenticatedAdminTenantIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
+const AuthenticatedAdminTenantIdWithdrawalsRoute =
+  AuthenticatedAdminTenantIdWithdrawalsRouteImport.update({
+    id: '/withdrawals',
+    path: '/withdrawals',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
+const AuthenticatedAdminTenantIdTasksRoute =
+  AuthenticatedAdminTenantIdTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
+const AuthenticatedAdminTenantIdMilestonesRoute =
+  AuthenticatedAdminTenantIdMilestonesRouteImport.update({
+    id: '/milestones',
+    path: '/milestones',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
+const AuthenticatedAdminTenantIdEconomicsRoute =
+  AuthenticatedAdminTenantIdEconomicsRouteImport.update({
+    id: '/economics',
+    path: '/economics',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
+const AuthenticatedAdminTenantIdBrandingRoute =
+  AuthenticatedAdminTenantIdBrandingRouteImport.update({
+    id: '/branding',
+    path: '/branding',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
+const AuthenticatedAdminTenantIdAdsRoute =
+  AuthenticatedAdminTenantIdAdsRouteImport.update({
+    id: '/ads',
+    path: '/ads',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/super': typeof AuthenticatedSuperRouteWithChildren
+  '/admin/$tenantId': typeof AuthenticatedAdminTenantIdRouteWithChildren
+  '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
+  '/super/tenants': typeof AuthenticatedSuperTenantsRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/super/': typeof AuthenticatedSuperIndexRoute
+  '/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
+  '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
+  '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
+  '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
+  '/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
+  '/admin/$tenantId/': typeof AuthenticatedAdminTenantIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
+  '/super/tenants': typeof AuthenticatedSuperTenantsRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
+  '/super': typeof AuthenticatedSuperIndexRoute
+  '/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
+  '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
+  '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
+  '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
+  '/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
+  '/admin/$tenantId': typeof AuthenticatedAdminTenantIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/_authenticated/super': typeof AuthenticatedSuperRouteWithChildren
+  '/_authenticated/admin/$tenantId': typeof AuthenticatedAdminTenantIdRouteWithChildren
+  '/_authenticated/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
+  '/_authenticated/super/tenants': typeof AuthenticatedSuperTenantsRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/super/': typeof AuthenticatedSuperIndexRoute
+  '/_authenticated/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
+  '/_authenticated/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
+  '/_authenticated/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
+  '/_authenticated/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/_authenticated/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
+  '/_authenticated/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
+  '/_authenticated/admin/$tenantId/': typeof AuthenticatedAdminTenantIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/super'
+    | '/admin/$tenantId'
+    | '/super/announcements'
+    | '/super/tenants'
+    | '/admin/'
+    | '/super/'
+    | '/admin/$tenantId/ads'
+    | '/admin/$tenantId/branding'
+    | '/admin/$tenantId/economics'
+    | '/admin/$tenantId/milestones'
+    | '/admin/$tenantId/tasks'
+    | '/admin/$tenantId/withdrawals'
+    | '/admin/$tenantId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/super/announcements'
+    | '/super/tenants'
+    | '/admin'
+    | '/super'
+    | '/admin/$tenantId/ads'
+    | '/admin/$tenantId/branding'
+    | '/admin/$tenantId/economics'
+    | '/admin/$tenantId/milestones'
+    | '/admin/$tenantId/tasks'
+    | '/admin/$tenantId/withdrawals'
+    | '/admin/$tenantId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login'
+    | '/signup'
+    | '/_authenticated/super'
+    | '/_authenticated/admin/$tenantId'
+    | '/_authenticated/super/announcements'
+    | '/_authenticated/super/tenants'
+    | '/_authenticated/admin/'
+    | '/_authenticated/super/'
+    | '/_authenticated/admin/$tenantId/ads'
+    | '/_authenticated/admin/$tenantId/branding'
+    | '/_authenticated/admin/$tenantId/economics'
+    | '/_authenticated/admin/$tenantId/milestones'
+    | '/_authenticated/admin/$tenantId/tasks'
+    | '/_authenticated/admin/$tenantId/withdrawals'
+    | '/_authenticated/admin/$tenantId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +269,166 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/super': {
+      id: '/_authenticated/super'
+      path: '/super'
+      fullPath: '/super'
+      preLoaderRoute: typeof AuthenticatedSuperRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/super/': {
+      id: '/_authenticated/super/'
+      path: '/'
+      fullPath: '/super/'
+      preLoaderRoute: typeof AuthenticatedSuperIndexRouteImport
+      parentRoute: typeof AuthenticatedSuperRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/super/tenants': {
+      id: '/_authenticated/super/tenants'
+      path: '/tenants'
+      fullPath: '/super/tenants'
+      preLoaderRoute: typeof AuthenticatedSuperTenantsRouteImport
+      parentRoute: typeof AuthenticatedSuperRoute
+    }
+    '/_authenticated/super/announcements': {
+      id: '/_authenticated/super/announcements'
+      path: '/announcements'
+      fullPath: '/super/announcements'
+      preLoaderRoute: typeof AuthenticatedSuperAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedSuperRoute
+    }
+    '/_authenticated/admin/$tenantId': {
+      id: '/_authenticated/admin/$tenantId'
+      path: '/admin/$tenantId'
+      fullPath: '/admin/$tenantId'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/$tenantId/': {
+      id: '/_authenticated/admin/$tenantId/'
+      path: '/'
+      fullPath: '/admin/$tenantId/'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
+    '/_authenticated/admin/$tenantId/withdrawals': {
+      id: '/_authenticated/admin/$tenantId/withdrawals'
+      path: '/withdrawals'
+      fullPath: '/admin/$tenantId/withdrawals'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdWithdrawalsRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
+    '/_authenticated/admin/$tenantId/tasks': {
+      id: '/_authenticated/admin/$tenantId/tasks'
+      path: '/tasks'
+      fullPath: '/admin/$tenantId/tasks'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdTasksRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
+    '/_authenticated/admin/$tenantId/milestones': {
+      id: '/_authenticated/admin/$tenantId/milestones'
+      path: '/milestones'
+      fullPath: '/admin/$tenantId/milestones'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdMilestonesRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
+    '/_authenticated/admin/$tenantId/economics': {
+      id: '/_authenticated/admin/$tenantId/economics'
+      path: '/economics'
+      fullPath: '/admin/$tenantId/economics'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdEconomicsRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
+    '/_authenticated/admin/$tenantId/branding': {
+      id: '/_authenticated/admin/$tenantId/branding'
+      path: '/branding'
+      fullPath: '/admin/$tenantId/branding'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdBrandingRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
+    '/_authenticated/admin/$tenantId/ads': {
+      id: '/_authenticated/admin/$tenantId/ads'
+      path: '/ads'
+      fullPath: '/admin/$tenantId/ads'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdAdsRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
   }
 }
 
+interface AuthenticatedSuperRouteChildren {
+  AuthenticatedSuperAnnouncementsRoute: typeof AuthenticatedSuperAnnouncementsRoute
+  AuthenticatedSuperTenantsRoute: typeof AuthenticatedSuperTenantsRoute
+  AuthenticatedSuperIndexRoute: typeof AuthenticatedSuperIndexRoute
+}
+
+const AuthenticatedSuperRouteChildren: AuthenticatedSuperRouteChildren = {
+  AuthenticatedSuperAnnouncementsRoute: AuthenticatedSuperAnnouncementsRoute,
+  AuthenticatedSuperTenantsRoute: AuthenticatedSuperTenantsRoute,
+  AuthenticatedSuperIndexRoute: AuthenticatedSuperIndexRoute,
+}
+
+const AuthenticatedSuperRouteWithChildren =
+  AuthenticatedSuperRoute._addFileChildren(AuthenticatedSuperRouteChildren)
+
+interface AuthenticatedAdminTenantIdRouteChildren {
+  AuthenticatedAdminTenantIdAdsRoute: typeof AuthenticatedAdminTenantIdAdsRoute
+  AuthenticatedAdminTenantIdBrandingRoute: typeof AuthenticatedAdminTenantIdBrandingRoute
+  AuthenticatedAdminTenantIdEconomicsRoute: typeof AuthenticatedAdminTenantIdEconomicsRoute
+  AuthenticatedAdminTenantIdMilestonesRoute: typeof AuthenticatedAdminTenantIdMilestonesRoute
+  AuthenticatedAdminTenantIdTasksRoute: typeof AuthenticatedAdminTenantIdTasksRoute
+  AuthenticatedAdminTenantIdWithdrawalsRoute: typeof AuthenticatedAdminTenantIdWithdrawalsRoute
+  AuthenticatedAdminTenantIdIndexRoute: typeof AuthenticatedAdminTenantIdIndexRoute
+}
+
+const AuthenticatedAdminTenantIdRouteChildren: AuthenticatedAdminTenantIdRouteChildren =
+  {
+    AuthenticatedAdminTenantIdAdsRoute: AuthenticatedAdminTenantIdAdsRoute,
+    AuthenticatedAdminTenantIdBrandingRoute:
+      AuthenticatedAdminTenantIdBrandingRoute,
+    AuthenticatedAdminTenantIdEconomicsRoute:
+      AuthenticatedAdminTenantIdEconomicsRoute,
+    AuthenticatedAdminTenantIdMilestonesRoute:
+      AuthenticatedAdminTenantIdMilestonesRoute,
+    AuthenticatedAdminTenantIdTasksRoute: AuthenticatedAdminTenantIdTasksRoute,
+    AuthenticatedAdminTenantIdWithdrawalsRoute:
+      AuthenticatedAdminTenantIdWithdrawalsRoute,
+    AuthenticatedAdminTenantIdIndexRoute: AuthenticatedAdminTenantIdIndexRoute,
+  }
+
+const AuthenticatedAdminTenantIdRouteWithChildren =
+  AuthenticatedAdminTenantIdRoute._addFileChildren(
+    AuthenticatedAdminTenantIdRouteChildren,
+  )
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedSuperRoute: typeof AuthenticatedSuperRouteWithChildren
+  AuthenticatedAdminTenantIdRoute: typeof AuthenticatedAdminTenantIdRouteWithChildren
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedSuperRoute: AuthenticatedSuperRouteWithChildren,
+  AuthenticatedAdminTenantIdRoute: AuthenticatedAdminTenantIdRouteWithChildren,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
