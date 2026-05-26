@@ -22,15 +22,22 @@ function Branding() {
   useEffect(() => { if (t) setForm({
     token_name: t.token_name, token_symbol: t.token_symbol, action_verb: t.action_verb,
     token_icon_url: t.token_icon_url ?? "",
+    bot_username: (t as any).bot_username ?? "",
+    bot_token: "", // never prefill secret
     primary: (t.theme as any).primary, background: (t.theme as any).background, accent: (t.theme as any).accent,
   }); }, [t]);
   const m = useMutation({
-    mutationFn: () => upd({ data: { id: tenantId, patch: {
-      token_name: form.token_name, token_symbol: form.token_symbol, action_verb: form.action_verb,
-      token_icon_url: form.token_icon_url || null,
-      theme: { primary: form.primary, background: form.background, accent: form.accent },
-    }}}),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenant", tenantId] }); toast.success("Saved"); },
+    mutationFn: () => {
+      const patch: any = {
+        token_name: form.token_name, token_symbol: form.token_symbol, action_verb: form.action_verb,
+        token_icon_url: form.token_icon_url || null,
+        bot_username: form.bot_username || null,
+        theme: { primary: form.primary, background: form.background, accent: form.accent },
+      };
+      if (form.bot_token && form.bot_token.trim()) patch.bot_token = form.bot_token.trim();
+      return upd({ data: { id: tenantId, patch } });
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenant", tenantId] }); toast.success("Saved"); setForm((f: any) => ({ ...f, bot_token: "" })); },
     onError: (e: any) => toast.error(e.message),
   });
   if (!t) return null;
@@ -47,6 +54,16 @@ function Branding() {
           <Field label="Background"><Input type="color" value={form.background ?? "#0a0a0a"} onChange={(e) => setForm({ ...form, background: e.target.value })} /></Field>
           <Field label="Accent"><Input type="color" value={form.accent ?? "#fbbf24"} onChange={(e) => setForm({ ...form, accent: e.target.value })} /></Field>
         </div>
+
+        <div className="pt-6 mt-6 border-t space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Telegram Bot</h2>
+            <p className="text-sm text-muted-foreground">Create a bot with <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="underline">@BotFather</a> and paste the token below. The token is stored server-side and used only to validate Telegram sign-ins for your mini app.</p>
+          </div>
+          <Field label="Bot username (without @)"><Input value={form.bot_username ?? ""} onChange={(e) => setForm({ ...form, bot_username: e.target.value.replace(/^@/, "") })} placeholder="my_cool_bot" /></Field>
+          <Field label="Bot token"><Input type="password" value={form.bot_token ?? ""} onChange={(e) => setForm({ ...form, bot_token: e.target.value })} placeholder={(t as any).bot_username ? "•••••• (saved — paste to replace)" : "123456:ABC-DEF..."} autoComplete="off" /></Field>
+        </div>
+
         <Button onClick={() => m.mutate()} disabled={m.isPending}>Save</Button>
       </div>
     </div>
