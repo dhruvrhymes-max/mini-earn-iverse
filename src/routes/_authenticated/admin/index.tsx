@@ -57,11 +57,27 @@ function AdminIndex() {
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />New bot</Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Create a bot</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); m.mutate({ slug, name }); }} className="space-y-3">
-                <div><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
-                <div><Label>Slug (URL)</Label><Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} pattern="[a-z0-9-]+" required /></div>
-                <Button type="submit" disabled={m.isPending} className="w-full">{m.isPending ? "Creating…" : "Create"}</Button>
+              <DialogHeader>
+                <DialogTitle>Create a bot</DialogTitle>
+                <p className="text-sm text-muted-foreground">Paste your Telegram bot token from @BotFather. It's stored securely and used to verify Telegram users.</p>
+              </DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); m.mutate({ slug, name, bot_token: botToken || undefined, bot_username: botUsername || undefined }); }} className="space-y-3">
+                <div><Label>Bot name</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="My Mining Bot" required /></div>
+                <div>
+                  <Label>Slug (used in URL)</Label>
+                  <Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} pattern="[a-z0-9-]+" placeholder="my-mining-bot" required />
+                  <p className="text-xs text-muted-foreground mt-1">Mini app URL: /app/{slug || "your-slug"}</p>
+                </div>
+                <div>
+                  <Label>Bot username</Label>
+                  <Input value={botUsername} onChange={(e) => setBotUsername(e.target.value.replace(/^@/, ""))} placeholder="MyMiningBot (without @)" />
+                </div>
+                <div>
+                  <Label>Bot token</Label>
+                  <Input type="password" value={botToken} onChange={(e) => setBotToken(e.target.value)} placeholder="123456789:ABCdef..." autoComplete="off" />
+                  <p className="text-xs text-muted-foreground mt-1">Optional now — you can add it later in Branding.</p>
+                </div>
+                <Button type="submit" disabled={m.isPending} className="w-full">{m.isPending ? "Creating…" : "Create bot"}</Button>
               </form>
             </DialogContent>
           </Dialog>
