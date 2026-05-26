@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { createHmac, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Public — no auth required (mini-app boot)
@@ -8,7 +9,7 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: row, error } = await supabaseAdmin
       .from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,bot_username")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -16,19 +17,34 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
     return row;
   });
 
-// Telegram initData validation (simplified — TODO: full HMAC verify with bot token).
-// For demo we accept either real initData or a `tg_id` fallback for browser preview.
-async function resolveTelegramUser(initData: string | null, fallbackTgId: number | null) {
-  if (initData) {
-    // TODO: implement HMAC validation per Telegram docs using bot token.
-    try {
-      const params = new URLSearchParams(initData);
-      const userJson = params.get("user");
-      if (userJson) return JSON.parse(userJson) as { id: number; username?: string; first_name?: string };
-    } catch {}
+/**
+ * Validate Telegram WebApp initData per Telegram docs.
+ * secret_key = HMAC_SHA256(bot_token, "WebAppData")
+ * expected_hash = HMAC_SHA256(data_check_string, secret_key)
+ */
+function validateTelegramInitData(initData: string, botToken: string): { id: number; username?: string; first_name?: string } | null {
+  try {
+    const params = new URLSearchParams(initData);
+    const receivedHash = params.get("hash");
+    if (!receivedHash) return null;
+    params.delete("hash");
+    const dataCheckString = [...params.entries()]
+      .map(([k, v]) => `${k}=${v}`)
+      .sort()
+      .join("\n");
+    const secretKey = createHmac("sha256", "WebAppData").update(botToken).digest();
+    const expectedHash = createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
+    const a = Buffer.from(receivedHash, "hex");
+    const b = Buffer.from(expectedHash, "hex");
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+    const authDate = Number(params.get("auth_date") || 0);
+    if (authDate && Date.now() / 1000 - authDate > 86400) return null;
+    const userJson = params.get("user");
+    if (!userJson) return null;
+    return JSON.parse(userJson);
+  } catch {
+    return null;
   }
-  if (fallbackTgId) return { id: fallbackTgId, username: `preview_${fallbackTgId}`, first_name: "Preview" };
-  return null;
 }
 
 export const initMiniAppUser = createServerFn({ method: "POST" })
@@ -42,9 +58,17 @@ export const initMiniAppUser = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { data: tenant } = await supabaseAdmin.from("tenants")
-      .select("id,status").eq("slug", data.tenantSlug).maybeSingle();
+      .select("id,status,bot_token").eq("slug", data.tenantSlug).maybeSingle();
     if (!tenant || tenant.status !== "active") throw new Error("Bot not found");
-    const tg = await resolveTelegramUser(data.initData ?? null, data.previewTgId ?? null);
+
+    let tg: { id: number; username?: string; first_name?: string } | null = null;
+    if (data.initData && tenant.bot_token) {
+      tg = validateTelegramInitData(data.initData, tenant.bot_token);
+      if (!tg) throw new Error("Invalid Telegram signature");
+    } else if (data.previewTgId) {
+      // Browser-preview fallback for development before bot token is set.
+      tg = { id: data.previewTgId, username: `preview_${data.previewTgId}`, first_name: "Preview" };
+    }
     if (!tg) throw new Error("Telegram auth required");
 
     let { data: user } = await supabaseAdmin.from("app_users")
