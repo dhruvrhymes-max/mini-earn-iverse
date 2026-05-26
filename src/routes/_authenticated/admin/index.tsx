@@ -25,13 +25,15 @@ function AdminIndex() {
   const qc = useQueryClient();
   const { data: tenants = [], isLoading } = useQuery({ queryKey: ["myTenants"], queryFn: () => list() });
   const m = useMutation({
-    mutationFn: (vars: { slug: string; name: string }) => create({ data: vars }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myTenants"] }); toast.success("Bot created"); setOpen(false); },
+    mutationFn: (vars: { slug: string; name: string; bot_token?: string; bot_username?: string }) => create({ data: vars }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myTenants"] }); toast.success("Bot created"); setOpen(false); setSlug(""); setName(""); setBotToken(""); setBotUsername(""); },
     onError: (e: any) => toast.error(e.message),
   });
   const [open, setOpen] = useState(false);
   const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
+  const [botToken, setBotToken] = useState("");
+  const [botUsername, setBotUsername] = useState("");
 
   return (
     <div className="min-h-screen bg-background">
