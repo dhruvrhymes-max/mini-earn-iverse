@@ -272,6 +272,8 @@ export type Database = {
         Row: {
           action_verb: string
           ad_config: Json
+          bot_token: string | null
+          bot_username: string | null
           community: Json
           created_at: string
           economics: Json
@@ -288,6 +290,8 @@ export type Database = {
         Insert: {
           action_verb?: string
           ad_config?: Json
+          bot_token?: string | null
+          bot_username?: string | null
           community?: Json
           created_at?: string
           economics?: Json
@@ -304,6 +308,8 @@ export type Database = {
         Update: {
           action_verb?: string
           ad_config?: Json
+          bot_token?: string | null
+          bot_username?: string | null
           community?: Json
           created_at?: string
           economics?: Json
