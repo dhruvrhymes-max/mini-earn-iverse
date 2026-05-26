@@ -21,13 +21,18 @@ export const createTenant = createServerFn({ method: "POST" })
     z.object({
       slug: z.string().trim().min(2).max(40).regex(/^[a-z0-9-]+$/, "lowercase letters, numbers, hyphens"),
       name: z.string().trim().min(1).max(80),
+      bot_token: z.string().trim().regex(/^\d+:[A-Za-z0-9_-]{20,}$/, "Invalid Telegram bot token format").optional().or(z.literal("")),
+      bot_username: z.string().trim().min(1).max(64).regex(/^@?[A-Za-z0-9_]+$/).optional().or(z.literal("")),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const insert: Record<string, any> = { slug: data.slug, name: data.name, owner_user_id: userId };
+    if (data.bot_token) insert.bot_token = data.bot_token;
+    if (data.bot_username) insert.bot_username = data.bot_username.replace(/^@/, "");
     const { data: row, error } = await supabase
       .from("tenants")
-      .insert({ slug: data.slug, name: data.name, owner_user_id: userId })
+      .insert(insert)
       .select()
       .single();
     if (error) throw new Error(error.message);
