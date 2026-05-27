@@ -278,6 +278,7 @@ export type Database = {
           created_at: string
           economics: Json
           id: string
+          mini_app_short_name: string | null
           name: string
           owner_user_id: string
           slug: string
@@ -286,6 +287,9 @@ export type Database = {
           token_icon_url: string | null
           token_name: string
           token_symbol: string
+          welcome_cta_text: string | null
+          welcome_image_url: string | null
+          welcome_text: string | null
         }
         Insert: {
           action_verb?: string
@@ -296,6 +300,7 @@ export type Database = {
           created_at?: string
           economics?: Json
           id?: string
+          mini_app_short_name?: string | null
           name: string
           owner_user_id: string
           slug: string
@@ -304,6 +309,9 @@ export type Database = {
           token_icon_url?: string | null
           token_name?: string
           token_symbol?: string
+          welcome_cta_text?: string | null
+          welcome_image_url?: string | null
+          welcome_text?: string | null
         }
         Update: {
           action_verb?: string
@@ -314,6 +322,7 @@ export type Database = {
           created_at?: string
           economics?: Json
           id?: string
+          mini_app_short_name?: string | null
           name?: string
           owner_user_id?: string
           slug?: string
@@ -322,6 +331,9 @@ export type Database = {
           token_icon_url?: string | null
           token_name?: string
           token_symbol?: string
+          welcome_cta_text?: string | null
+          welcome_image_url?: string | null
+          welcome_text?: string | null
         }
         Relationships: []
       }
