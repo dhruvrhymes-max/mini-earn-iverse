@@ -19,17 +19,30 @@ export const createTenant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z.object({
-      slug: z.string().trim().min(2).max(40).regex(/^[a-z0-9-]+$/, "lowercase letters, numbers, hyphens"),
       name: z.string().trim().min(1).max(80),
-      bot_token: z.string().trim().regex(/^\d+:[A-Za-z0-9_-]{20,}$/, "Invalid Telegram bot token format").optional().or(z.literal("")),
-      bot_username: z.string().trim().min(1).max(64).regex(/^@?[A-Za-z0-9_]+$/).optional().or(z.literal("")),
+      bot_token: z.string().trim().regex(/^\d+:[A-Za-z0-9_-]{20,}$/, "Invalid Telegram bot token format"),
+      bot_username: z.string().trim().min(1).max(64).regex(/^@?[A-Za-z0-9_]+$/),
+      mini_app_short_name: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_]+$/).optional().or(z.literal("")),
+      welcome_image_url: z.string().url().optional().or(z.literal("")),
+      welcome_text: z.string().max(1000).optional().or(z.literal("")),
+      welcome_cta_text: z.string().max(64).optional().or(z.literal("")),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const insert: Record<string, any> = { slug: data.slug, name: data.name, owner_user_id: userId };
-    if (data.bot_token) insert.bot_token = data.bot_token;
-    if (data.bot_username) insert.bot_username = data.bot_username.replace(/^@/, "");
+    const username = data.bot_username.replace(/^@/, "");
+    const slug = username.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || `bot-${Date.now()}`;
+    const insert: Record<string, any> = {
+      slug,
+      name: data.name,
+      owner_user_id: userId,
+      bot_token: data.bot_token,
+      bot_username: username,
+      mini_app_short_name: data.mini_app_short_name || null,
+      welcome_image_url: data.welcome_image_url || null,
+      welcome_text: data.welcome_text || null,
+      welcome_cta_text: data.welcome_cta_text || null,
+    };
     const { data: row, error } = await supabase
       .from("tenants")
       .insert(insert)
@@ -38,6 +51,7 @@ export const createTenant = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return row;
   });
+
 
 export const getTenant = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
