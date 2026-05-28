@@ -21,8 +21,13 @@ function MiniLayout() {
   const initU = useServerFn(initMiniAppUser);
   const getU = useServerFn(getUser);
 
-  const { data: tenant } = useQuery({ queryKey: ["mini-tenant", tenantSlug], queryFn: () => getT({ data: { slug: tenantSlug } }) });
+  const { data: tenant, isLoading: tenantLoading, isError: tenantErr, error: tErr } = useQuery({
+    queryKey: ["mini-tenant", tenantSlug],
+    queryFn: () => getT({ data: { slug: tenantSlug } }),
+    retry: 1,
+  });
   const [userId, setUserId] = useState<string | null>(() => typeof window !== "undefined" ? localStorage.getItem(`uid_${tenantSlug}`) : null);
+  const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!tenant || userId) return;
@@ -31,14 +36,15 @@ function MiniLayout() {
     const tg = (window as any).Telegram?.WebApp;
     if (tg?.initData) initData = tg.initData;
     else {
-      // browser preview fallback — random tg_id per device
       const stored = localStorage.getItem(`tgid_${tenantSlug}`);
       tgId = stored ? Number(stored) : Math.floor(100000 + Math.random() * 900000);
       localStorage.setItem(`tgid_${tenantSlug}`, String(tgId));
     }
     const refTg = new URLSearchParams(loc.search as any).get?.("ref") ?? null;
+    setInitError(null);
     initU({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null } })
-      .then((u: any) => { setUserId(u.id); localStorage.setItem(`uid_${tenantSlug}`, u.id); });
+      .then((u: any) => { setUserId(u.id); localStorage.setItem(`uid_${tenantSlug}`, u.id); })
+      .catch((e: any) => setInitError(e?.message ?? "Failed to start"));
   }, [tenant, userId, tenantSlug, initU, loc.search]);
 
   const { data: user, refetch } = useQuery({
@@ -47,13 +53,24 @@ function MiniLayout() {
     enabled: !!userId,
   });
 
-  const theme = tenant?.theme as any;
-  const themeStyle: React.CSSProperties = theme
-    ? { "--primary": theme.primary, "--background": theme.background, "--accent": theme.accent } as any
-    : {};
+  if (tenantLoading) return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white">Loading bot…</div>;
+  if (tenantErr || !tenant) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">
+      <h1 className="text-xl font-bold mb-2">Bot not available</h1>
+      <p className="text-sm text-white/60">{tenantErr ? (tErr as any)?.message : "This mini app isn't active. Ask the bot owner to check setup."}</p>
+    </div>
+  );
+  if (initError) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">
+      <h1 className="text-xl font-bold mb-2">Couldn't start</h1>
+      <p className="text-sm text-white/60 mb-4">{initError}</p>
+      <Button onClick={() => { setInitError(null); localStorage.removeItem(`uid_${tenantSlug}`); setUserId(null); }}>Try again</Button>
+    </div>
+  );
+  if (!user) return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white">Loading user…</div>;
 
-  if (!tenant) return <div className="min-h-screen flex items-center justify-center bg-background">Loading bot…</div>;
-  if (!user) return <div className="min-h-screen flex items-center justify-center bg-background">Loading user…</div>;
+  const theme = tenant.theme as any;
+  const themeStyle: React.CSSProperties = { "--primary": theme.primary, "--background": theme.background, "--accent": theme.accent } as any;
 
   return (
     <MiniCtx.Provider value={{ tenant, user, refetchUser: refetch }}>
