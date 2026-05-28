@@ -12,4 +12,7 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  define: {
+    __LOVABLE_ENABLED__: false,
+  },
 });
