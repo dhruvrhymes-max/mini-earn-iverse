@@ -90,6 +90,27 @@ export const updateTenant = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deleteTenant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    // Verify ownership before destructive op
+    const { data: t, error: e1 } = await supabase.from("tenants").select("id,owner_user_id,bot_token").eq("id", data.id).maybeSingle();
+    if (e1) throw new Error(e1.message);
+    if (!t) throw new Error("Bot not found");
+    if (t.owner_user_id !== userId) throw new Error("Not your bot");
+    // Best-effort: drop Telegram webhook so the bot stops responding
+    if (t.bot_token) {
+      try {
+        await fetch(`https://api.telegram.org/bot${t.bot_token}/deleteWebhook`, { method: "POST" });
+      } catch { /* ignore */ }
+    }
+    const { error } = await supabase.from("tenants").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const getTenantStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))

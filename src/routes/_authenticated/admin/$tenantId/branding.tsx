@@ -1,15 +1,16 @@
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { createFileRoute, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getTenant, updateTenant } from "@/lib/admin.functions";
+import { getTenant, updateTenant, deleteTenant } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 
 const WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/telegram-webhook`;
 
@@ -19,8 +20,10 @@ export const Route = createFileRoute("/_authenticated/admin/$tenantId/branding")
 
 function Branding() {
   const { tenantId } = useParams({ from: "/_authenticated/admin/$tenantId/branding" });
+  const nav = useNavigate();
   const get = useServerFn(getTenant);
   const upd = useServerFn(updateTenant);
+  const del = useServerFn(deleteTenant);
   const qc = useQueryClient();
   const { data: t } = useQuery({ queryKey: ["tenant", tenantId], queryFn: () => get({ data: { id: tenantId } }) });
   const [form, setForm] = useState<any>({});
@@ -89,8 +92,8 @@ function Branding() {
 
   if (!t) return null;
   return (
-    <div className="max-w-xl">
-      <h1 className="text-2xl font-bold mb-6">Branding & Bot</h1>
+    <div className="max-w-xl pb-12">
+      <h1 className="text-2xl font-bold mb-6">Manage Bot</h1>
       <div className="space-y-4">
         <Field label="Token name"><Input value={form.token_name ?? ""} onChange={(e) => setForm({ ...form, token_name: e.target.value })} /></Field>
         <Field label="Token symbol"><Input value={form.token_symbol ?? ""} onChange={(e) => setForm({ ...form, token_symbol: e.target.value })} /></Field>
@@ -125,7 +128,39 @@ function Branding() {
           <Field label="CTA button text"><Input value={form.welcome_cta_text ?? ""} onChange={(e) => setForm({ ...form, welcome_cta_text: e.target.value })} placeholder="Open My Bot" /></Field>
         </div>
 
-        <Button onClick={() => m.mutate()} disabled={m.isPending}>Save</Button>
+        <Button onClick={() => m.mutate()} disabled={m.isPending}>Save changes</Button>
+
+        <div className="pt-6 mt-6 border-t">
+          <h2 className="text-lg font-semibold text-destructive">Danger zone</h2>
+          <p className="text-sm text-muted-foreground mb-3">Deleting permanently removes this bot, its users, balances, tasks, and history.</p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4 mr-2" />Delete bot</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete "{t.name}"?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This cannot be undone. The Telegram webhook will be removed and all data for this bot will be deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async () => {
+                    try {
+                      await del({ data: { id: tenantId } });
+                      toast.success("Bot deleted");
+                      qc.invalidateQueries({ queryKey: ["my-tenants"] });
+                      nav({ to: "/admin" });
+                    } catch (e: any) { toast.error(e.message); }
+                  }}
+                >Yes, delete forever</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </div>
   );

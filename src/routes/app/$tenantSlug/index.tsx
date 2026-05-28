@@ -46,7 +46,8 @@ function Home() {
   return (
     <div className="p-6 pt-12 text-center">
       <h1 className="text-sm uppercase text-white/60 tracking-wider">{tenant.name}</h1>
-      <div className="mt-8">
+      <div className="mt-8 flex flex-col items-center">
+        {tenant.token_icon_url && <img src={tenant.token_icon_url} alt={tenant.token_symbol} className="h-12 w-12 mb-2 rounded-full object-cover" />}
         <p className="text-5xl font-bold">{Number(user.balance).toFixed(2)}</p>
         <p className="text-white/60 mt-1">{tenant.token_symbol} · ${usd}</p>
       </div>
