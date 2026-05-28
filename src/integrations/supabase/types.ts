@@ -284,6 +284,7 @@ export type Database = {
           slug: string
           status: Database["public"]["Enums"]["tenant_status"]
           theme: Json
+          theme_preset: string | null
           token_icon_url: string | null
           token_name: string
           token_symbol: string
@@ -306,6 +307,7 @@ export type Database = {
           slug: string
           status?: Database["public"]["Enums"]["tenant_status"]
           theme?: Json
+          theme_preset?: string | null
           token_icon_url?: string | null
           token_name?: string
           token_symbol?: string
@@ -328,6 +330,7 @@ export type Database = {
           slug?: string
           status?: Database["public"]["Enums"]["tenant_status"]
           theme?: Json
+          theme_preset?: string | null
           token_icon_url?: string | null
           token_name?: string
           token_symbol?: string

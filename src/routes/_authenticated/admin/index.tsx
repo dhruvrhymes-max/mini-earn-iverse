@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listMyTenants, createTenant } from "@/lib/admin.functions";
+import { THEME_PRESETS, type ThemePreset } from "@/lib/theme-presets";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, LogOut, Shield, ExternalLink, Loader2 } from "lucide-react";
+import { Plus, LogOut, Shield, ExternalLink, Loader2, Check } from "lucide-react";
 
 const WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/telegram-webhook`;
 
@@ -28,8 +29,14 @@ function AdminIndex() {
   const { data: tenants = [], isLoading } = useQuery({ queryKey: ["myTenants"], queryFn: () => list() });
 
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
+  const [preset, setPreset] = useState<ThemePreset>(THEME_PRESETS[0]);
   const [botToken, setBotToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  function reset() {
+    setStep(1); setBotToken(""); setPreset(THEME_PRESETS[0]); setSubmitting(false);
+  }
 
   async function registerWebhook(token: string, tenantId: string) {
     const url = `${WEBHOOK_URL}?t=${tenantId}`;
@@ -48,7 +55,6 @@ function AdminIndex() {
     if (!token) return;
     setSubmitting(true);
     try {
-      // Fetch bot identity from Telegram
       const meRes = await fetch(`https://api.telegram.org/bot${token}/getMe`);
       const meJson = await meRes.json();
       if (!meJson.ok) throw new Error(meJson.description || "Invalid bot token");
@@ -58,15 +64,25 @@ function AdminIndex() {
         name: me.first_name || me.username,
         bot_token: token,
         bot_username: me.username,
+        preset_id: preset.id,
+        preset: {
+          theme: preset.theme,
+          token_name: preset.token_name,
+          token_symbol: preset.token_symbol,
+          token_icon_url: preset.token_icon_url,
+          action_verb: preset.action_verb,
+          welcome_text: preset.welcome_text,
+          welcome_cta_text: preset.welcome_cta_text,
+        },
       }});
       try {
         await registerWebhook(token, tenant.id);
-        toast.success("Bot created and webhook registered. Open Manage Bot to customize.");
+        toast.success("Bot created & webhook registered. Send /start to your bot to test.");
       } catch (we: any) {
         toast.warning(`Bot created, but webhook registration failed: ${we.message}.`);
       }
       qc.invalidateQueries({ queryKey: ["myTenants"] });
-      setBotToken("");
+      reset();
       setOpen(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to create bot");
@@ -94,31 +110,68 @@ function AdminIndex() {
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">My Bots</h1>
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setBotToken(""); }}>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />New bot</Button></DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Create a new bot</DialogTitle>
-                <p className="text-sm text-muted-foreground">Paste your Telegram bot token from @BotFather. We'll fetch the bot info and register the webhook automatically. You can configure welcome message, theme, mini app and more from <strong>Manage Bot</strong> afterwards.</p>
+                <DialogTitle>{step === 1 ? "Choose a theme & token" : "Connect your Telegram bot"}</DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  {step === 1
+                    ? "Pick a preset — colors, token name, and welcome message. You can fine-tune everything later in Manage Bot."
+                    : `Preset: ${preset.emoji} ${preset.label}. Paste your bot token from @BotFather.`}
+                </p>
               </DialogHeader>
-              <form onSubmit={onSubmit} className="space-y-4">
-                <div>
-                  <Label>Bot token</Label>
-                  <Input
-                    type="password"
-                    value={botToken}
-                    onChange={(e) => setBotToken(e.target.value)}
-                    placeholder="123456789:ABCdef..."
-                    autoComplete="off"
-                    required
-                    autoFocus
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Get it from @BotFather → /newbot or /mybots → API token</p>
+              {step === 1 ? (
+                <div className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {THEME_PRESETS.map((p) => {
+                      const selected = preset.id === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setPreset(p)}
+                          className={`relative text-left rounded-lg border-2 p-4 transition-all ${selected ? "border-primary" : "border-border hover:border-muted-foreground/40"}`}
+                          style={{ background: p.theme.background, color: "white" }}
+                        >
+                          {selected && <Check className="absolute top-2 right-2 h-5 w-5" style={{ color: p.theme.primary }} />}
+                          <div className="text-2xl">{p.emoji}</div>
+                          <div className="font-semibold mt-1">{p.label}</div>
+                          <div className="text-xs opacity-70 mt-0.5">{p.description}</div>
+                          <div className="flex gap-1 mt-3">
+                            <span className="w-5 h-5 rounded-full border border-white/20" style={{ background: p.theme.primary }} />
+                            <span className="w-5 h-5 rounded-full border border-white/20" style={{ background: p.theme.accent }} />
+                            <span className="text-xs opacity-70 ml-2 self-center">{p.token_symbol} · {p.action_verb}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <Button className="w-full" onClick={() => setStep(2)}>Next</Button>
                 </div>
-                <Button type="submit" disabled={submitting || !botToken.trim()} className="w-full">
-                  {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating…</> : "Create bot"}
-                </Button>
-              </form>
+              ) : (
+                <form onSubmit={onSubmit} className="space-y-4">
+                  <div>
+                    <Label>Bot token</Label>
+                    <Input
+                      type="password"
+                      value={botToken}
+                      onChange={(e) => setBotToken(e.target.value)}
+                      placeholder="123456789:ABCdef..."
+                      autoComplete="off"
+                      required
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">From @BotFather → /newbot or /mybots → API token</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => setStep(1)} disabled={submitting}>Back</Button>
+                    <Button type="submit" disabled={submitting || !botToken.trim()} className="flex-1">
+                      {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating…</> : "Create bot"}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </DialogContent>
           </Dialog>
         </div>
