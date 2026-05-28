@@ -1,64 +1,53 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Coins, Zap, Users, Shield } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "MineCraft SaaS — Build your gamified Telegram Mini App" },
-      { name: "description", content: "Multi-tenant platform to launch token-economy Telegram Mini Apps. Custom branding, ad monetization, withdrawals." },
-    ],
-  }),
-  component: Landing,
-});
+export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Home — MineCraft SaaS" }] }), component: IndexPage, });
 
-function Landing() {
+function IndexPage() {
+  const { session, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading) {
+      if (session) {
+        navigate({ to: "/admin" });
+      }
+    }
+  }, [loading, session, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading…</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2 font-bold text-lg">
-            <Coins className="text-primary" /> MineCraft SaaS
-          </div>
-          <nav className="flex gap-3">
-            <Button asChild variant="ghost"><Link to="/login">Sign in</Link></Button>
-            <Button asChild><Link to="/signup">Create a bot</Link></Button>
-          </nav>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="max-w-2xl text-center">
+        <h1 className="text-5xl font-bold text-foreground mb-4">
+          Welcome to Mini Earn-iverse
+        </h1>
+        <p className="text-xl text-muted-foreground mb-8">
+          Gamified Telegram Mini Apps with multi-tenant economy, ad monetization and withdrawals
+        </p>
+        <div className="flex gap-4 justify-center">
+          <a
+            href="/login"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 transition"
+          >
+            Sign In
+          </a>
+          <a
+            href="/signup"
+            className="inline-flex items-center justify-center rounded-md border border-primary px-6 py-3 text-base font-medium text-primary hover:bg-primary/10 transition"
+          >
+            Sign Up
+          </a>
         </div>
-      </header>
-      <main>
-        <section className="container mx-auto px-4 py-20 text-center">
-          <h1 className="text-5xl font-bold tracking-tight">Launch your gamified Telegram Mini App</h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Multi-tenant Mine-to-Earn platform with custom tokens, ad monetization,
-            referral milestones, and crypto withdrawals — all configured from one dashboard.
-          </p>
-          <div className="mt-8 flex gap-3 justify-center">
-            <Button asChild size="lg"><Link to="/signup">Get started free</Link></Button>
-            <Button asChild size="lg" variant="outline"><Link to="/login">Sign in</Link></Button>
-          </div>
-        </section>
-        <section className="container mx-auto px-4 py-16 grid md:grid-cols-3 gap-8">
-          <Feature icon={<Zap />} title="Custom Economics" desc="Set your token name, conversion rate, mining speed and minimum withdrawals." />
-          <Feature icon={<Users />} title="Built-in Referrals" desc="Configure milestone rewards. Users earn for inviting friends." />
-          <Feature icon={<Shield />} title="Withdrawal Pipeline" desc="Approve user withdrawals with one click. Web3 hooks ready." />
-        </section>
-      </main>
-      <footer className="border-t mt-20">
-        <div className="container mx-auto px-4 py-8 text-sm text-muted-foreground text-center">
-          © MineCraft SaaS
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
-  return (
-    <div className="rounded-lg border p-6">
-      <div className="text-primary mb-3">{icon}</div>
-      <h3 className="font-semibold text-lg">{title}</h3>
-      <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
+      </div>
     </div>
   );
 }
