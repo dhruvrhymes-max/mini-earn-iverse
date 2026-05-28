@@ -62,8 +62,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "MineCraft SaaS — Gamified Telegram Mini Apps" },
       { property: "og:description", content: "Launch your own gamified Telegram Mini App with multi-tenant economy, ad monetization and withdrawals." },
       { name: "twitter:description", content: "Launch your own gamified Telegram Mini App with multi-tenant economy, ad monetization and withdrawals." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/605c31f5-bbbe-4ec6-b1a6-cb8d64072fcb/id-preview-fc321a98--7f0be3be-1da1-4723-b96b-92ef0c36af2b.lovable.a[...]
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/605c31f5-bbbe-4ec6-b1a6-cb8d64072fcb/id-preview-fc321a98--7f0be3be-1da1-4723-b96b-92ef0c36af2b.lovable.[...]
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/605c31f5-bbbe-4ec6-b1a6-cb8d64072fcb/id-preview.jpg" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/605c31f5-bbbe-4ec6-b1a6-cb8d64072fcb/id-preview.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
