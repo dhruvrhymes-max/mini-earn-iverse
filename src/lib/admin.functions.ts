@@ -22,10 +22,16 @@ export const createTenant = createServerFn({ method: "POST" })
       name: z.string().trim().min(1).max(80),
       bot_token: z.string().trim().regex(/^\d+:[A-Za-z0-9_-]{20,}$/, "Invalid Telegram bot token format"),
       bot_username: z.string().trim().min(1).max(64).regex(/^@?[A-Za-z0-9_]+$/),
-      mini_app_short_name: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_]+$/).optional().or(z.literal("")),
-      welcome_image_url: z.string().url().optional().or(z.literal("")),
-      welcome_text: z.string().max(1000).optional().or(z.literal("")),
-      welcome_cta_text: z.string().max(64).optional().or(z.literal("")),
+      preset_id: z.string().trim().min(1).max(40).optional(),
+      preset: z.object({
+        theme: z.object({ primary: z.string(), background: z.string(), accent: z.string() }),
+        token_name: z.string(),
+        token_symbol: z.string(),
+        token_icon_url: z.string().nullable().optional(),
+        action_verb: z.string(),
+        welcome_text: z.string(),
+        welcome_cta_text: z.string(),
+      }).optional(),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -38,11 +44,17 @@ export const createTenant = createServerFn({ method: "POST" })
       owner_user_id: userId,
       bot_token: data.bot_token,
       bot_username: username,
-      mini_app_short_name: data.mini_app_short_name || null,
-      welcome_image_url: data.welcome_image_url || null,
-      welcome_text: data.welcome_text || null,
-      welcome_cta_text: data.welcome_cta_text || null,
     };
+    if (data.preset) {
+      insert.theme = data.preset.theme;
+      insert.token_name = data.preset.token_name;
+      insert.token_symbol = data.preset.token_symbol;
+      insert.token_icon_url = data.preset.token_icon_url || null;
+      insert.action_verb = data.preset.action_verb;
+      insert.welcome_text = data.preset.welcome_text;
+      insert.welcome_cta_text = data.preset.welcome_cta_text;
+      insert.theme_preset = data.preset_id ?? null;
+    }
     const { data: row, error } = await supabase
       .from("tenants")
       .insert(insert)
