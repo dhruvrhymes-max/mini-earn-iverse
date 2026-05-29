@@ -1,14 +1,11 @@
 import { createFileRoute, Link, Outlet, useParams, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState, createContext, useContext } from "react";
+import { useEffect, useState } from "react";
 import { getTenantBySlug, initMiniAppUser, getUser, markOnboarded } from "@/lib/miniapp.functions";
+import { MiniCtx } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
-
-type Ctx = { tenant: any; user: any; refetchUser: () => void };
-const MiniCtx = createContext<Ctx>({ tenant: null, user: null, refetchUser: () => {} });
-export const useMini = () => useContext(MiniCtx);
 
 export const Route = createFileRoute("/app/$tenantSlug")({
   component: MiniLayout,

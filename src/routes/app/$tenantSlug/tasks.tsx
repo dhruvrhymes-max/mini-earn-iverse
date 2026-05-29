@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMini } from "../$tenantSlug";
+import { useMini } from "@/lib/miniapp-context";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyTasks, completeTask, logAdReward } from "@/lib/miniapp.functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

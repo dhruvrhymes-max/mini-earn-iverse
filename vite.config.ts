@@ -11,10 +11,12 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
-  build: {
-    outDir: ".vercel/output/static",
-  },
-  define: {
-    __LOVABLE_ENABLED__: false,
+  vite: {
+    build: {
+      outDir: ".vercel/output/static",
+    },
+    define: {
+      __LOVABLE_ENABLED__: false,
+    },
   },
 });
