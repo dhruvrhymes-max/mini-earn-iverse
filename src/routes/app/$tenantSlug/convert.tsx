@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMini } from "../$tenantSlug";
+import { useMini } from "@/lib/miniapp-context";
 import { useServerFn } from "@tanstack/react-start";
 import { convertToUsdt } from "@/lib/miniapp.functions";
 import { useMutation } from "@tanstack/react-query";

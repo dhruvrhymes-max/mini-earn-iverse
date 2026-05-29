@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMini } from "../$tenantSlug";
+import { useMini } from "@/lib/miniapp-context";
 import { ChevronRight, Wallet, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe } from "lucide-react";
 
 export const Route = createFileRoute("/app/$tenantSlug/profile")({
