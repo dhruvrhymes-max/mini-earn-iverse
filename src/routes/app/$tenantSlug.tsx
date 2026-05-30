@@ -26,6 +26,20 @@ function writeBootCache(slug: string, tenant: any, user: any) {
   localStorage.setItem(`uid_${slug}`, user.id);
 }
 
+function getSearchValue(search: unknown, key: string): string | null {
+  if (typeof search === "string") return new URLSearchParams(search).get(key);
+  if (search && typeof search === "object") {
+    const value = (search as Record<string, unknown>)[key];
+    return typeof value === "string" ? value : value == null ? null : String(value);
+  }
+  return null;
+}
+
+function getSearchKey(search: unknown): string {
+  if (typeof search === "string") return search;
+  try { return JSON.stringify(search ?? {}); } catch { return "{}"; }
+}
+
 export const Route = createFileRoute("/app/$tenantSlug")({
   component: MiniLayout,
 });
@@ -33,6 +47,7 @@ export const Route = createFileRoute("/app/$tenantSlug")({
 function MiniLayout() {
   const { tenantSlug } = useParams({ from: "/app/$tenantSlug" });
   const loc = useLocation();
+  const searchKey = getSearchKey(loc.search);
   const boot = useServerFn(bootMiniApp);
   const getU = useServerFn(getUser);
   const bootRunKey = useRef("");
@@ -50,7 +65,7 @@ function MiniLayout() {
       tgId = stored ? Number(stored) : Math.floor(100000 + Math.random() * 900000);
       localStorage.setItem(`tgid_${tenantSlug}`, String(tgId));
     }
-    const refTg = new URLSearchParams(loc.search as any).get?.("ref") ?? null;
+    const refTg = getSearchValue(loc.search, "ref");
     setBootState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await boot({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null } });
@@ -67,16 +82,16 @@ function MiniLayout() {
       reportClientError(e, { stage: "bootMiniApp" });
       setBootState((prev) => ({ ...prev, loading: false, error: e?.message ?? "Failed to start" }));
     }
-  }, [boot, loc.search, tenantSlug]);
+  }, [boot, searchKey, tenantSlug]);
 
   useEffect(() => {
-    const key = `${tenantSlug}:${loc.search}`;
+    const key = `${tenantSlug}:${searchKey}`;
     if (bootRunKey.current === key) return;
     bootRunKey.current = key;
     setBootState((prev) => (prev.tenant?.slug === tenantSlug && prev.user?.id ? prev : readBootCache(tenantSlug)));
     doBoot();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loc.search, tenantSlug]);
+  }, [searchKey, tenantSlug]);
 
   const { tenant, user, loading, error } = bootState;
   const refetch = useCallback(async () => {
