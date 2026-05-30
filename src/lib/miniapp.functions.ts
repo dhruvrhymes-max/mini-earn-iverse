@@ -38,7 +38,7 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
 
 /**
  * Validate Telegram WebApp initData per Telegram docs.
- * secret_key = HMAC_SHA256(bot_token, "WebAppData")
+ * secret_key = HMAC_SHA256("WebAppData", bot_token)
  * expected_hash = HMAC_SHA256(data_check_string, secret_key)
  */
 function validateTelegramInitData(initData: string, botToken: string): { id: number; username?: string; first_name?: string } | null {
