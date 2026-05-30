@@ -30,7 +30,7 @@ function TaskHub() {
   });
   const am = useMutation({
     mutationFn: (network: "adsgram" | "monetag" | "adexium") => adFn({ data: { userId: user.id, network } }),
-    onSuccess: (r: any) => { toast.success(`+${r.reward.toFixed(2)}`); refetch(); refetchUser(); },
+    onSuccess: (r: any) => { toast.success(`+${r.reward.toFixed(2)} • ${Math.max(0, r.limit - r.used)}/${r.limit} left today`); refetch(); refetchUser(); },
     onError: (e: any) => toast.error(e.message),
   });
 
