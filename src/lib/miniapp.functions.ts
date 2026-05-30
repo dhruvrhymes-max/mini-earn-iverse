@@ -116,6 +116,60 @@ export const initMiniAppUser = createServerFn({ method: "POST" })
     return user;
   });
 
+export const bootMiniApp = createServerFn({ method: "POST" })
+  .inputValidator((i) =>
+    z.object({
+      tenantSlug: z.string().min(1),
+      initData: z.string().nullable().optional(),
+      previewTgId: z.number().int().positive().nullable().optional(),
+      referrerTgId: z.number().int().positive().nullable().optional(),
+    }).parse(i),
+  )
+  .handler(async ({ data }) => {
+    const { data: tenantRow, error: tenantError } = await supabaseAdmin.from("tenants")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,bot_username,bot_token")
+      .eq("slug", data.tenantSlug).maybeSingle();
+    if (tenantError) throw new Error(tenantError.message);
+    const tenant = normalizeTenant(tenantRow);
+    if (!tenant || !tenantRow) return { tenant: null, user: null };
+
+    let tg: { id: number; username?: string; first_name?: string } | null = null;
+    if (data.initData && tenantRow.bot_token) {
+      tg = validateTelegramInitData(data.initData, tenantRow.bot_token);
+      if (!tg) throw new Error("Invalid Telegram signature");
+    } else if (data.previewTgId) {
+      tg = { id: data.previewTgId, username: `preview_${data.previewTgId}`, first_name: "Preview" };
+    }
+    if (!tg) throw new Error("Telegram auth required");
+
+    let { data: user, error: userError } = await supabaseAdmin.from("app_users")
+      .select("*").eq("tenant_id", tenantRow.id).eq("telegram_id", tg.id).maybeSingle();
+    if (userError) throw new Error(userError.message);
+
+    if (!user) {
+      let referrerId: string | null = null;
+      if (data.referrerTgId) {
+        const { data: ref } = await supabaseAdmin.from("app_users")
+          .select("id").eq("tenant_id", tenantRow.id).eq("telegram_id", data.referrerTgId).maybeSingle();
+        referrerId = ref?.id ?? null;
+      }
+      const ins = await supabaseAdmin.from("app_users").insert({
+        tenant_id: tenantRow.id,
+        telegram_id: tg.id,
+        username: tg.username ?? null,
+        first_name: tg.first_name ?? null,
+        referrer_id: referrerId,
+      }).select().single();
+      if (ins.error) throw new Error(ins.error.message);
+      user = ins.data;
+      if (referrerId) {
+        const { data: r } = await supabaseAdmin.from("app_users").select("referral_count").eq("id", referrerId).single();
+        await supabaseAdmin.from("app_users").update({ referral_count: (r?.referral_count ?? 0) + 1 }).eq("id", referrerId);
+      }
+    }
+    return { tenant, user };
+  });
+
 export const claimMining = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
