@@ -8,6 +8,21 @@ const DEFAULT_THEME = { primary: "#f59e0b", background: "#0a0a0a", accent: "#fbb
 const DEFAULT_AD = { daily_watch_limit: 20 };
 const DEFAULT_COMMUNITY = { channel_url: null, support_url: null };
 
+function normalizeTenant(row: any) {
+  if (!row || row.status !== "active") return null;
+  const { bot_token: _botToken, ...safeRow } = row;
+  return {
+    ...safeRow,
+    theme: { ...DEFAULT_THEME, ...((row.theme as any) || {}) },
+    economics: { ...DEFAULT_ECON, ...((row.economics as any) || {}) },
+    ad_config: { ...DEFAULT_AD, ...((row.ad_config as any) || {}) },
+    community: { ...DEFAULT_COMMUNITY, ...((row.community as any) || {}) },
+    token_name: row.token_name || "Token",
+    token_symbol: row.token_symbol || "TKN",
+    action_verb: row.action_verb || "Mine",
+  };
+}
+
 // Public — no auth required (mini-app boot)
 export const getTenantBySlug = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ slug: z.string().min(1) }).parse(i))
@@ -18,19 +33,7 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!row || row.status !== "active") return null;
-    // Coalesce all jsonb columns to safe defaults so the mini-app never crashes
-    // on `tenant.economics.x` if a column is null.
-    return {
-      ...row,
-      theme: { ...DEFAULT_THEME, ...((row.theme as any) || {}) },
-      economics: { ...DEFAULT_ECON, ...((row.economics as any) || {}) },
-      ad_config: { ...DEFAULT_AD, ...((row.ad_config as any) || {}) },
-      community: { ...DEFAULT_COMMUNITY, ...((row.community as any) || {}) },
-      token_name: row.token_name || "Token",
-      token_symbol: row.token_symbol || "TKN",
-      action_verb: row.action_verb || "Mine",
-    };
+    return normalizeTenant(row);
   });
 
 /**
