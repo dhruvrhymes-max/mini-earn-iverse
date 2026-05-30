@@ -71,11 +71,12 @@ function MiniLayout() {
 
   useEffect(() => {
     const key = `${tenantSlug}:${loc.search}`;
-    setBootState(readBootCache(tenantSlug));
     if (bootRunKey.current === key) return;
     bootRunKey.current = key;
+    setBootState((prev) => (prev.tenant?.slug === tenantSlug && prev.user?.id ? prev : readBootCache(tenantSlug)));
     doBoot();
-  }, [doBoot, loc.search, tenantSlug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loc.search, tenantSlug]);
 
   const { tenant, user, loading, error } = bootState;
   const refetch = useCallback(async () => {
