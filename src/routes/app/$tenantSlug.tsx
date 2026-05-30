@@ -1,12 +1,30 @@
 import { createFileRoute, Link, Outlet, useParams, useLocation } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { getTenantBySlug, initMiniAppUser, getUser, markOnboarded } from "@/lib/miniapp.functions";
+import { useCallback, useEffect, useState } from "react";
+import { bootMiniApp, getUser, markOnboarded } from "@/lib/miniapp.functions";
 import { MiniCtx } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
+
+type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
+
+function readBootCache(slug: string): MiniBootState {
+  if (typeof window === "undefined") return { tenant: null, user: null, loading: true, error: null };
+  try {
+    const cached = JSON.parse(localStorage.getItem(`mini_boot_${slug}`) || "null");
+    if (cached?.tenant?.id && cached?.user?.id) return { tenant: cached.tenant, user: cached.user, loading: true, error: null };
+  } catch {
+    localStorage.removeItem(`mini_boot_${slug}`);
+  }
+  return { tenant: null, user: null, loading: true, error: null };
+}
+
+function writeBootCache(slug: string, tenant: any, user: any) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(`mini_boot_${slug}`, JSON.stringify({ tenant, user, cachedAt: Date.now() }));
+  localStorage.setItem(`uid_${slug}`, user.id);
+}
 
 export const Route = createFileRoute("/app/$tenantSlug")({
   component: MiniLayout,
