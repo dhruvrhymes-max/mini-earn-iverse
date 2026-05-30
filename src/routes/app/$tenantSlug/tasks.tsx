@@ -61,7 +61,7 @@ function TaskHub() {
           {partner.length === 0 && <Empty />}
         </TabsContent>
         <TabsContent value="watch" className="space-y-3 mt-4">
-          <p className="text-sm text-white/60 text-center">Daily: {adsToday}/{adLimit}</p>
+          <p className="text-sm text-white/60 text-center">{Math.max(0, adLimit - adsToday)}/{adLimit} ads left today</p>
           {(["adsgram", "monetag", "adexium"] as const).map((n) => (
             <Button key={n} onClick={() => am.mutate(n)} disabled={am.isPending || adsToday >= adLimit} className="w-full" variant="secondary">
               Watch {n.toUpperCase()} ad
