@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useParams, useLocation } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { bootMiniApp, getUser, markOnboarded } from "@/lib/miniapp.functions";
 import { MiniCtx } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
@@ -33,25 +33,14 @@ export const Route = createFileRoute("/app/$tenantSlug")({
 function MiniLayout() {
   const { tenantSlug } = useParams({ from: "/app/$tenantSlug" });
   const loc = useLocation();
-  const getT = useServerFn(getTenantBySlug);
-  const initU = useServerFn(initMiniAppUser);
+  const boot = useServerFn(bootMiniApp);
   const getU = useServerFn(getUser);
+  const bootRunKey = useRef("");
+  const [bootState, setBootState] = useState<MiniBootState>(() => readBootCache(tenantSlug));
 
   useEffect(() => { installClientErrorReporter(); setTenantContext(tenantSlug); }, [tenantSlug]);
 
-  const { data: tenant, isLoading: tenantLoading, isError: tenantErr, error: tErr } = useQuery({
-    queryKey: ["mini-tenant", tenantSlug],
-    queryFn: () => getT({ data: { slug: tenantSlug } }),
-    retry: 1,
-  });
-
-  useEffect(() => { if (tenant?.id) setTenantContext(tenantSlug, tenant.id); }, [tenant, tenantSlug]);
-
-  const [userId, setUserId] = useState<string | null>(() => typeof window !== "undefined" ? localStorage.getItem(`uid_${tenantSlug}`) : null);
-  const [initError, setInitError] = useState<string | null>(null);
-
-  const doInit = () => {
-    if (!tenant) return;
+  const doBoot = useCallback(async () => {
     let tgId: number | null = null;
     let initData: string | null = null;
     const tg = (window as any).Telegram?.WebApp;
@@ -62,52 +51,66 @@ function MiniLayout() {
       localStorage.setItem(`tgid_${tenantSlug}`, String(tgId));
     }
     const refTg = new URLSearchParams(loc.search as any).get?.("ref") ?? null;
-    setInitError(null);
-    initU({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null } })
-      .then((u: any) => { setUserId(u.id); localStorage.setItem(`uid_${tenantSlug}`, u.id); })
-      .catch((e: any) => { reportClientError(e, { stage: "initMiniAppUser" }); setInitError(e?.message ?? "Failed to start"); });
-  };
-
-  useEffect(() => {
-    if (!tenant || userId) return;
-    doInit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenant, userId, tenantSlug]);
-
-  const { data: user, isLoading: userLoading, isFetched: userFetched, refetch } = useQuery({
-    queryKey: ["mini-user", userId],
-    queryFn: () => getU({ data: { userId: userId! } }),
-    enabled: !!userId,
-    retry: 1,
-  });
-
-  // Stale userId in localStorage (e.g. user record was deleted, or a different
-  // tenant overwrote the slot). Clear and re-init so we never get stuck on "Loading user…".
-  useEffect(() => {
-    if (userId && userFetched && !user) {
-      localStorage.removeItem(`uid_${tenantSlug}`);
-      setUserId(null);
+    setBootState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const result = await boot({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null } });
+      if (!result.tenant || !result.user) {
+        localStorage.removeItem(`mini_boot_${tenantSlug}`);
+        localStorage.removeItem(`uid_${tenantSlug}`);
+        setBootState({ tenant: result.tenant, user: null, loading: false, error: null });
+        return;
+      }
+      writeBootCache(tenantSlug, result.tenant, result.user);
+      setTenantContext(tenantSlug, result.tenant.id);
+      setBootState({ tenant: result.tenant, user: result.user, loading: false, error: null });
+    } catch (e: any) {
+      reportClientError(e, { stage: "bootMiniApp" });
+      setBootState((prev) => ({ ...prev, loading: false, error: e?.message ?? "Failed to start" }));
     }
-  }, [userId, userFetched, user, tenantSlug]);
+  }, [boot, loc.search, tenantSlug]);
 
-  if (tenantLoading) return <Splash msg="Loading bot…" />;
-  if (tenantErr || !tenant) return (
-    <Centered>
-      <h1 className="text-xl font-bold mb-2">Bot not available</h1>
-      <p className="text-sm text-white/60">{tenantErr ? (tErr as any)?.message : "This mini app isn't active. Ask the bot owner to check setup."}</p>
-    </Centered>
-  );
-  if (initError) return (
+  useEffect(() => {
+    const key = `${tenantSlug}:${loc.search}`;
+    setBootState(readBootCache(tenantSlug));
+    if (bootRunKey.current === key) return;
+    bootRunKey.current = key;
+    doBoot();
+  }, [doBoot, loc.search, tenantSlug]);
+
+  const { tenant, user, loading, error } = bootState;
+  const refetch = useCallback(async () => {
+    if (!user?.id) return;
+    const fresh = await getU({ data: { userId: user.id } });
+    if (!fresh) {
+      localStorage.removeItem(`mini_boot_${tenantSlug}`);
+      localStorage.removeItem(`uid_${tenantSlug}`);
+      await doBoot();
+      return;
+    }
+    setBootState((prev) => {
+      if (prev.tenant) writeBootCache(tenantSlug, prev.tenant, fresh);
+      return { ...prev, user: fresh, loading: false, error: null };
+    });
+  }, [doBoot, getU, tenantSlug, user?.id]);
+
+  if (loading && (!tenant || !user)) return <Splash msg="Starting…" />;
+  if (error && (!tenant || !user)) return (
     <Centered>
       <h1 className="text-xl font-bold mb-2">Couldn't start</h1>
-      <p className="text-sm text-white/60 mb-4">{initError}</p>
-      <Button onClick={() => { setInitError(null); localStorage.removeItem(`uid_${tenantSlug}`); setUserId(null); }}>Try again</Button>
+      <p className="text-sm text-white/60 mb-4">{error}</p>
+      <Button onClick={doBoot}>Try again</Button>
+    </Centered>
+  );
+  if (!tenant) return (
+    <Centered>
+      <h1 className="text-xl font-bold mb-2">Bot not available</h1>
+      <p className="text-sm text-white/60">This mini app isn't active. Ask the bot owner to check setup.</p>
     </Centered>
   );
   if (!user) return (
     <Centered>
-      <p className="text-sm text-white/70 mb-4">{userLoading || !userFetched ? "Loading user…" : "Setting things up…"}</p>
-      <Button variant="secondary" onClick={() => { localStorage.removeItem(`uid_${tenantSlug}`); setUserId(null); }}>Reset session</Button>
+      <p className="text-sm text-white/70 mb-4">Setting things up…</p>
+      <Button variant="secondary" onClick={doBoot}>Retry</Button>
     </Centered>
   );
 
