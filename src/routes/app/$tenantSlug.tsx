@@ -6,6 +6,7 @@ import { getTenantBySlug, initMiniAppUser, getUser, markOnboarded } from "@/lib/
 import { MiniCtx } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
+import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
 
 export const Route = createFileRoute("/app/$tenantSlug")({
   component: MiniLayout,
@@ -18,16 +19,21 @@ function MiniLayout() {
   const initU = useServerFn(initMiniAppUser);
   const getU = useServerFn(getUser);
 
+  useEffect(() => { installClientErrorReporter(); setTenantContext(tenantSlug); }, [tenantSlug]);
+
   const { data: tenant, isLoading: tenantLoading, isError: tenantErr, error: tErr } = useQuery({
     queryKey: ["mini-tenant", tenantSlug],
     queryFn: () => getT({ data: { slug: tenantSlug } }),
     retry: 1,
   });
+
+  useEffect(() => { if (tenant?.id) setTenantContext(tenantSlug, tenant.id); }, [tenant, tenantSlug]);
+
   const [userId, setUserId] = useState<string | null>(() => typeof window !== "undefined" ? localStorage.getItem(`uid_${tenantSlug}`) : null);
   const [initError, setInitError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!tenant || userId) return;
+  const doInit = () => {
+    if (!tenant) return;
     let tgId: number | null = null;
     let initData: string | null = null;
     const tg = (window as any).Telegram?.WebApp;
@@ -41,30 +47,51 @@ function MiniLayout() {
     setInitError(null);
     initU({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null } })
       .then((u: any) => { setUserId(u.id); localStorage.setItem(`uid_${tenantSlug}`, u.id); })
-      .catch((e: any) => setInitError(e?.message ?? "Failed to start"));
-  }, [tenant, userId, tenantSlug, initU, loc.search]);
+      .catch((e: any) => { reportClientError(e, { stage: "initMiniAppUser" }); setInitError(e?.message ?? "Failed to start"); });
+  };
 
-  const { data: user, refetch } = useQuery({
+  useEffect(() => {
+    if (!tenant || userId) return;
+    doInit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenant, userId, tenantSlug]);
+
+  const { data: user, isLoading: userLoading, isFetched: userFetched, refetch } = useQuery({
     queryKey: ["mini-user", userId],
     queryFn: () => getU({ data: { userId: userId! } }),
     enabled: !!userId,
+    retry: 1,
   });
 
-  if (tenantLoading) return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white">Loading bot…</div>;
+  // Stale userId in localStorage (e.g. user record was deleted, or a different
+  // tenant overwrote the slot). Clear and re-init so we never get stuck on "Loading user…".
+  useEffect(() => {
+    if (userId && userFetched && !user) {
+      localStorage.removeItem(`uid_${tenantSlug}`);
+      setUserId(null);
+    }
+  }, [userId, userFetched, user, tenantSlug]);
+
+  if (tenantLoading) return <Splash msg="Loading bot…" />;
   if (tenantErr || !tenant) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">
+    <Centered>
       <h1 className="text-xl font-bold mb-2">Bot not available</h1>
       <p className="text-sm text-white/60">{tenantErr ? (tErr as any)?.message : "This mini app isn't active. Ask the bot owner to check setup."}</p>
-    </div>
+    </Centered>
   );
   if (initError) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">
+    <Centered>
       <h1 className="text-xl font-bold mb-2">Couldn't start</h1>
       <p className="text-sm text-white/60 mb-4">{initError}</p>
       <Button onClick={() => { setInitError(null); localStorage.removeItem(`uid_${tenantSlug}`); setUserId(null); }}>Try again</Button>
-    </div>
+    </Centered>
   );
-  if (!user) return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white">Loading user…</div>;
+  if (!user) return (
+    <Centered>
+      <p className="text-sm text-white/70 mb-4">{userLoading || !userFetched ? "Loading user…" : "Setting things up…"}</p>
+      <Button variant="secondary" onClick={() => { localStorage.removeItem(`uid_${tenantSlug}`); setUserId(null); }}>Reset session</Button>
+    </Centered>
+  );
 
   const theme = tenant.theme as any;
   const themeStyle: React.CSSProperties = { "--primary": theme.primary, "--background": theme.background, "--accent": theme.accent } as any;
@@ -78,6 +105,13 @@ function MiniLayout() {
       </div>
     </MiniCtx.Provider>
   );
+}
+
+function Splash({ msg }: { msg: string }) {
+  return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white">{msg}</div>;
+}
+function Centered({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">{children}</div>;
 }
 
 function Onboarding({ userId, refetch }: { tenantSlug: string; userId: string; refetch: () => void }) {

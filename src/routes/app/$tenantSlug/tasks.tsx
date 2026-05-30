@@ -30,7 +30,7 @@ function TaskHub() {
   });
   const am = useMutation({
     mutationFn: (network: "adsgram" | "monetag" | "adexium") => adFn({ data: { userId: user.id, network } }),
-    onSuccess: (r: any) => { toast.success(`+${r.reward.toFixed(2)}`); refetch(); refetchUser(); },
+    onSuccess: (r: any) => { toast.success(`+${r.reward.toFixed(2)} • ${Math.max(0, r.limit - r.used)}/${r.limit} left today`); refetch(); refetchUser(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -61,7 +61,7 @@ function TaskHub() {
           {partner.length === 0 && <Empty />}
         </TabsContent>
         <TabsContent value="watch" className="space-y-3 mt-4">
-          <p className="text-sm text-white/60 text-center">Daily: {adsToday}/{adLimit}</p>
+          <p className="text-sm text-white/60 text-center">{Math.max(0, adLimit - adsToday)}/{adLimit} ads left today</p>
           {(["adsgram", "monetag", "adexium"] as const).map((n) => (
             <Button key={n} onClick={() => am.mutate(n)} disabled={am.isPending || adsToday >= adLimit} className="w-full" variant="secondary">
               Watch {n.toUpperCase()} ad
