@@ -2,12 +2,13 @@ import { createFileRoute, Link, Outlet, useParams, useLocation } from "@tanstack
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { bootMiniApp, getUser, markOnboarded } from "@/lib/miniapp.functions";
-import { MiniCtx } from "@/lib/miniapp-context";
+import { EMPTY_MINI_TENANT, EMPTY_MINI_USER, MiniCtx } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
+const BOOT_TIMEOUT_MS = 6_000;
 
 function readBootCache(slug: string): MiniBootState {
   if (typeof window === "undefined") return { tenant: null, user: null, loading: true, error: null };
@@ -90,6 +91,12 @@ function MiniLayout() {
     bootRunKey.current = key;
     setBootState((prev) => (prev.tenant?.slug === tenantSlug && prev.user?.id ? prev : readBootCache(tenantSlug)));
     doBoot();
+    const timeout = window.setTimeout(() => {
+      setBootState((prev) => prev.loading && (!prev.tenant || !prev.user)
+        ? { ...prev, loading: false, error: "Startup took too long. Tap Try again." }
+        : prev);
+    }, BOOT_TIMEOUT_MS);
+    return () => window.clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchKey, tenantSlug]);
 
@@ -109,13 +116,19 @@ function MiniLayout() {
     });
   }, [doBoot, getU, tenantSlug, user?.id]);
 
-  if (loading && (!tenant || !user)) return <Splash msg="Starting…" />;
+  if (loading && (!tenant || !user)) return (
+    <MiniCtx.Provider value={{ tenant: tenant ?? EMPTY_MINI_TENANT, user: user ?? EMPTY_MINI_USER, refetchUser: refetch }}>
+      <Splash msg="Starting…" />
+    </MiniCtx.Provider>
+  );
   if (error && (!tenant || !user)) return (
-    <Centered>
+    <MiniCtx.Provider value={{ tenant: tenant ?? EMPTY_MINI_TENANT, user: user ?? EMPTY_MINI_USER, refetchUser: refetch }}>
+      <Centered>
       <h1 className="text-xl font-bold mb-2">Couldn't start</h1>
       <p className="text-sm text-white/60 mb-4">{error}</p>
       <Button onClick={doBoot}>Try again</Button>
-    </Centered>
+      </Centered>
+    </MiniCtx.Provider>
   );
   if (!tenant) return (
     <Centered>
