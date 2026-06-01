@@ -12,9 +12,6 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    build: {
-      outDir: ".vercel/output/static",
-    },
     define: {
       __LOVABLE_ENABLED__: false,
     },
