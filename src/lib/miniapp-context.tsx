@@ -42,4 +42,11 @@ export const MiniCtx = createContext<MiniAppContextValue>({
   refetchUser: () => {},
 });
 
-export const useMini = () => useContext(MiniCtx);
+export const useMini = () => {
+  const ctx = useContext(MiniCtx);
+  return {
+    tenant: ctx.tenant ?? EMPTY_MINI_TENANT,
+    user: ctx.user ?? EMPTY_MINI_USER,
+    refetchUser: ctx.refetchUser ?? (() => {}),
+  };
+};
