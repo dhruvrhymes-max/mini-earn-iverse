@@ -182,17 +182,21 @@ function AdminIndex() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tenants.map((t) => (
-              <Link key={t.id} to="/admin/$tenantId" params={{ tenantId: t.id }} className="border rounded-lg p-5 hover:border-primary transition-colors">
+              <div key={t.id} className="border rounded-lg p-5 hover:border-primary transition-colors">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">{t.name}</h3>
                   <span className={`text-xs px-2 py-1 rounded ${t.status === "active" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{t.status}</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">@{(t as any).bot_username || t.slug}</p>
-                <div className="mt-3 text-sm flex items-center gap-1 text-primary">
-                  <ExternalLink className="h-3 w-3" />
-                  <a href={`/app/${t.slug}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>Open mini app</a>
+                <div className="mt-3 text-sm flex flex-wrap items-center gap-3 text-primary">
+                  <Link to="/admin/$tenantId" params={{ tenantId: t.id }} className="font-medium">
+                    Manage bot
+                  </Link>
+                  <a href={`/app/${t.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" /> Open mini app
+                  </a>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

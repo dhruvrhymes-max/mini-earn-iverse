@@ -10,6 +10,14 @@ import { installClientErrorReporter, setTenantContext, reportClientError } from 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
 const BOOT_TIMEOUT_MS = 6_000;
 
+function normalizeBootState(state: MiniBootState): MiniBootState {
+  return {
+    ...state,
+    tenant: state.tenant ?? EMPTY_MINI_TENANT,
+    user: state.user ?? EMPTY_MINI_USER,
+  };
+}
+
 function readBootCache(slug: string): MiniBootState {
   if (typeof window === "undefined") return { tenant: null, user: null, loading: true, error: null };
   try {
@@ -101,6 +109,7 @@ function MiniLayout() {
   }, [searchKey, tenantSlug]);
 
   const { tenant, user, loading, error } = bootState;
+  const safeState = normalizeBootState(bootState);
   const refetch = useCallback(async () => {
     if (!user?.id) return;
     const fresh = await getU({ data: { userId: user.id } });
@@ -117,12 +126,12 @@ function MiniLayout() {
   }, [doBoot, getU, tenantSlug, user?.id]);
 
   if (loading && (!tenant || !user)) return (
-    <MiniCtx.Provider value={{ tenant: tenant ?? EMPTY_MINI_TENANT, user: user ?? EMPTY_MINI_USER, refetchUser: refetch }}>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
       <Splash msg="Starting…" />
     </MiniCtx.Provider>
   );
   if (error && (!tenant || !user)) return (
-    <MiniCtx.Provider value={{ tenant: tenant ?? EMPTY_MINI_TENANT, user: user ?? EMPTY_MINI_USER, refetchUser: refetch }}>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
       <Centered>
       <h1 className="text-xl font-bold mb-2">Couldn't start</h1>
       <p className="text-sm text-white/60 mb-4">{error}</p>
@@ -131,16 +140,20 @@ function MiniLayout() {
     </MiniCtx.Provider>
   );
   if (!tenant) return (
-    <Centered>
-      <h1 className="text-xl font-bold mb-2">Bot not available</h1>
-      <p className="text-sm text-white/60">This mini app isn't active. Ask the bot owner to check setup.</p>
-    </Centered>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
+      <Centered>
+        <h1 className="text-xl font-bold mb-2">Bot not available</h1>
+        <p className="text-sm text-white/60">This mini app isn't active. Ask the bot owner to check setup.</p>
+      </Centered>
+    </MiniCtx.Provider>
   );
   if (!user) return (
-    <Centered>
-      <p className="text-sm text-white/70 mb-4">Setting things up…</p>
-      <Button variant="secondary" onClick={doBoot}>Retry</Button>
-    </Centered>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
+      <Centered>
+        <p className="text-sm text-white/70 mb-4">Setting things up…</p>
+        <Button variant="secondary" onClick={doBoot}>Retry</Button>
+      </Centered>
+    </MiniCtx.Provider>
   );
 
   const theme = tenant.theme as any;
