@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/client-error")({
         } catch (e) {
           console.error("[mini-app client error] failed to parse body", e);
         }
-        return new Response("ok", { status: 204 });
+        return new Response(null, { status: 204 });
       },
       OPTIONS: async () =>
         new Response(null, {

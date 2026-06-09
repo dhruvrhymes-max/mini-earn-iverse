@@ -10,6 +10,26 @@ import { installClientErrorReporter, setTenantContext, reportClientError } from 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
 const BOOT_TIMEOUT_MS = 6_000;
 
+async function readTelegramInitData(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const read = () => {
+    const webApp = (window as any).Telegram?.WebApp;
+    const initData = typeof webApp?.initData === "string" ? webApp.initData : "";
+    if (!initData) return null;
+    try { webApp.ready?.(); webApp.expand?.(); } catch { /* Telegram API may be unavailable in preview */ }
+    return initData;
+  };
+  const immediate = read();
+  if (immediate) return immediate;
+  const deadline = Date.now() + 1_200;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => window.setTimeout(resolve, 80));
+    const value = read();
+    if (value) return value;
+  }
+  return null;
+}
+
 function normalizeBootState(state: MiniBootState): MiniBootState {
   return {
     ...state,
@@ -66,10 +86,8 @@ function MiniLayout() {
 
   const doBoot = useCallback(async () => {
     let tgId: number | null = null;
-    let initData: string | null = null;
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.initData) initData = tg.initData;
-    else {
+    const initData = await readTelegramInitData();
+    if (!initData) {
       const stored = localStorage.getItem(`tgid_${tenantSlug}`);
       tgId = stored ? Number(stored) : Math.floor(100000 + Math.random() * 900000);
       localStorage.setItem(`tgid_${tenantSlug}`, String(tgId));
