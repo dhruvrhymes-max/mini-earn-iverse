@@ -17,6 +17,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<string[]>([]);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/app/")) {
+      setLoading(false);
+      return;
+    }
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       if (s?.user?.id) {
