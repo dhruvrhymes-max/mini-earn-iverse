@@ -279,6 +279,7 @@ export const setWallets = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { userId, ...patch } = data;
     const { error } = await supabaseAdmin.from("app_users").update(patch).eq("id", userId);
     if (error) throw new Error(error.message);
@@ -288,6 +289,7 @@ export const setWallets = createServerFn({ method: "POST" })
 export const convertToUsdt = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), tokens: z.number().positive() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("*, tenants(economics)").eq("id", data.userId).single();
     if (!user) throw new Error("Not found");
@@ -314,6 +316,7 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("*, tenants(economics)").eq("id", data.userId).single();
     if (!user) throw new Error("Not found");
