@@ -342,6 +342,7 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
 export const getMyHistory = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: rows } = await supabaseAdmin.from("transactions")
       .select("*").eq("user_id", data.userId).order("created_at", { ascending: false }).limit(50);
     return rows ?? [];
@@ -350,6 +351,7 @@ export const getMyHistory = createServerFn({ method: "GET" })
 export const getMyTasks = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), tenantId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const [tasks, completed, milestones, ads] = await Promise.all([
       supabaseAdmin.from("tasks").select("*").eq("tenant_id", data.tenantId).eq("active", true).order("sort_order"),
       supabaseAdmin.from("user_tasks").select("*").eq("user_id", data.userId),
@@ -368,6 +370,7 @@ export const getMyTasks = createServerFn({ method: "GET" })
 export const markOnboarded = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     await supabaseAdmin.from("app_users").update({ onboarded: true }).eq("id", data.userId);
     return { ok: true };
   });
@@ -375,6 +378,7 @@ export const markOnboarded = createServerFn({ method: "POST" })
 export const getUser = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
     return user;
   });
