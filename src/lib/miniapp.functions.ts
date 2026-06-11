@@ -1,12 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHmac, timingSafeEqual } from "crypto";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const DEFAULT_ECON = { token_per_usdt: 10000, min_withdraw_usdt: 0.1, mining_cycle_hours: 4, mining_rate_per_hour: 100 };
 const DEFAULT_THEME = { primary: "#f59e0b", background: "#0a0a0a", accent: "#fbbf24" };
 const DEFAULT_AD = { daily_watch_limit: 20 };
 const DEFAULT_COMMUNITY = { channel_url: null, support_url: null };
+
+async function getSupabaseAdmin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 function normalizeTenant(row: any) {
   if (!row || row.status !== "active") return null;
@@ -27,6 +31,7 @@ function normalizeTenant(row: any) {
 export const getTenantBySlug = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ slug: z.string().min(1) }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: row, error } = await supabaseAdmin
       .from("tenants")
       .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,bot_username")
@@ -76,6 +81,7 @@ export const initMiniAppUser = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenant } = await supabaseAdmin.from("tenants")
       .select("id,status,bot_token").eq("slug", data.tenantSlug).maybeSingle();
     if (!tenant || tenant.status !== "active") throw new Error("Bot not found");
@@ -126,6 +132,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenantRow, error: tenantError } = await supabaseAdmin.from("tenants")
       .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,bot_username,bot_token")
       .eq("slug", data.tenantSlug).maybeSingle();
