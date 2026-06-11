@@ -8,7 +8,7 @@ import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
-const BOOT_TIMEOUT_MS = 6_000;
+const BOOT_TIMEOUT_MS = 15_000;
 
 async function readTelegramInitData(): Promise<string | null> {
   if (typeof window === "undefined") return null;
