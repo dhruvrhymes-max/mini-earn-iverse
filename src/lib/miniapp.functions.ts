@@ -180,6 +180,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
 export const claimMining = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("*, tenants(economics)").eq("id", data.userId).single();
     if (!user) throw new Error("User not found");
@@ -208,6 +209,7 @@ export const claimMining = createServerFn({ method: "POST" })
 export const completeTask = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), taskId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: task } = await supabaseAdmin.from("tasks").select("*").eq("id", data.taskId).single();
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
     if (!task || !user || task.tenant_id !== user.tenant_id) throw new Error("Not found");
@@ -244,6 +246,7 @@ export const logAdReward = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("*, tenants(economics,ad_config)").eq("id", data.userId).single();
     if (!user) throw new Error("Not found");
