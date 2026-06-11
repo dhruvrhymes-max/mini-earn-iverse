@@ -1,12 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHmac, timingSafeEqual } from "crypto";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const DEFAULT_ECON = { token_per_usdt: 10000, min_withdraw_usdt: 0.1, mining_cycle_hours: 4, mining_rate_per_hour: 100 };
 const DEFAULT_THEME = { primary: "#f59e0b", background: "#0a0a0a", accent: "#fbbf24" };
 const DEFAULT_AD = { daily_watch_limit: 20 };
 const DEFAULT_COMMUNITY = { channel_url: null, support_url: null };
+
+async function getSupabaseAdmin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 function normalizeTenant(row: any) {
   if (!row || row.status !== "active") return null;
@@ -27,6 +31,7 @@ function normalizeTenant(row: any) {
 export const getTenantBySlug = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ slug: z.string().min(1) }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: row, error } = await supabaseAdmin
       .from("tenants")
       .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,bot_username")
@@ -76,6 +81,7 @@ export const initMiniAppUser = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenant } = await supabaseAdmin.from("tenants")
       .select("id,status,bot_token").eq("slug", data.tenantSlug).maybeSingle();
     if (!tenant || tenant.status !== "active") throw new Error("Bot not found");
@@ -126,6 +132,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenantRow, error: tenantError } = await supabaseAdmin.from("tenants")
       .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,bot_username,bot_token")
       .eq("slug", data.tenantSlug).maybeSingle();
@@ -173,6 +180,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
 export const claimMining = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("*, tenants(economics)").eq("id", data.userId).single();
     if (!user) throw new Error("User not found");
@@ -201,6 +209,7 @@ export const claimMining = createServerFn({ method: "POST" })
 export const completeTask = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), taskId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: task } = await supabaseAdmin.from("tasks").select("*").eq("id", data.taskId).single();
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
     if (!task || !user || task.tenant_id !== user.tenant_id) throw new Error("Not found");
@@ -237,6 +246,7 @@ export const logAdReward = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("*, tenants(economics,ad_config)").eq("id", data.userId).single();
     if (!user) throw new Error("Not found");
@@ -269,6 +279,7 @@ export const setWallets = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { userId, ...patch } = data;
     const { error } = await supabaseAdmin.from("app_users").update(patch).eq("id", userId);
     if (error) throw new Error(error.message);
@@ -278,6 +289,7 @@ export const setWallets = createServerFn({ method: "POST" })
 export const convertToUsdt = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), tokens: z.number().positive() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("*, tenants(economics)").eq("id", data.userId).single();
     if (!user) throw new Error("Not found");
@@ -304,6 +316,7 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("*, tenants(economics)").eq("id", data.userId).single();
     if (!user) throw new Error("Not found");
@@ -329,6 +342,7 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
 export const getMyHistory = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: rows } = await supabaseAdmin.from("transactions")
       .select("*").eq("user_id", data.userId).order("created_at", { ascending: false }).limit(50);
     return rows ?? [];
@@ -337,6 +351,7 @@ export const getMyHistory = createServerFn({ method: "GET" })
 export const getMyTasks = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), tenantId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const [tasks, completed, milestones, ads] = await Promise.all([
       supabaseAdmin.from("tasks").select("*").eq("tenant_id", data.tenantId).eq("active", true).order("sort_order"),
       supabaseAdmin.from("user_tasks").select("*").eq("user_id", data.userId),
@@ -355,6 +370,7 @@ export const getMyTasks = createServerFn({ method: "GET" })
 export const markOnboarded = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     await supabaseAdmin.from("app_users").update({ onboarded: true }).eq("id", data.userId);
     return { ok: true };
   });
@@ -362,6 +378,7 @@ export const markOnboarded = createServerFn({ method: "POST" })
 export const getUser = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
     return user;
   });

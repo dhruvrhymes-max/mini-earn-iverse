@@ -5,6 +5,8 @@
 let currentTenantSlug: string | null = null;
 let currentTenantId: string | null = null;
 let installed = false;
+let lastReportKey = "";
+let lastReportAt = 0;
 
 export function setTenantContext(slug: string | null, id: string | null = null) {
   currentTenantSlug = slug;
@@ -14,6 +16,11 @@ export function setTenantContext(slug: string | null, id: string | null = null) 
 export function reportClientError(error: unknown, extra?: Record<string, unknown>) {
   if (typeof window === "undefined") return;
   const err = error instanceof Error ? error : new Error(String(error));
+  const reportKey = `${err.message}:${extra?.kind ?? extra?.boundary ?? "manual"}`;
+  const now = Date.now();
+  if (reportKey === lastReportKey && now - lastReportAt < 5_000) return;
+  lastReportKey = reportKey;
+  lastReportAt = now;
   const payload = {
     message: err.message,
     stack: err.stack,
