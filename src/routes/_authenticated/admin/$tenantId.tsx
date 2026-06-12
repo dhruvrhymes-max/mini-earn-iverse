@@ -16,7 +16,8 @@ function TenantLayout() {
     { to: "/admin/$tenantId/economics", label: "Economics", icon: Coins },
     { to: "/admin/$tenantId/ads", label: "Ads", icon: Megaphone },
     { to: "/admin/$tenantId/tasks", label: "Tasks", icon: ListChecks },
-    { to: "/admin/$tenantId/milestones", label: "Referrals", icon: Users },
+    { to: "/admin/$tenantId/referrals", label: "Referral rewards", icon: Users },
+    { to: "/admin/$tenantId/milestones", label: "Milestones", icon: Users },
     { to: "/admin/$tenantId/withdrawals", label: "Withdrawals", icon: Wallet },
   ];
   return (
