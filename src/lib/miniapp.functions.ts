@@ -96,6 +96,7 @@ function normalizeTenant(row: any) {
     economics: { ...DEFAULT_ECON, ...((row.economics as any) || {}) },
     ad_config: { ...DEFAULT_AD, ...((row.ad_config as any) || {}) },
     community: { ...DEFAULT_COMMUNITY, ...((row.community as any) || {}) },
+    referral_config: { ...DEFAULT_REFERRAL, ...((row.referral_config as any) || {}) },
     token_name: row.token_name || "Token",
     token_symbol: row.token_symbol || "TKN",
     action_verb: row.action_verb || "Mine",
