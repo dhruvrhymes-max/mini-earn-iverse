@@ -210,7 +210,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenantRow, error: tenantError } = await supabaseAdmin.from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,bot_username,bot_token")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,bot_token")
       .eq("slug", data.tenantSlug).maybeSingle();
     if (tenantError) throw new Error(tenantError.message);
     const tenant = normalizeTenant(tenantRow);
@@ -225,29 +225,52 @@ export const bootMiniApp = createServerFn({ method: "POST" })
     }
     if (!tg) throw new Error("Telegram auth required");
 
+    // Prefer Telegram start_param (ref_NNN) over URL ?ref= for invites coming from t.me deep links
+    const startRef = parseStartParamRef(data.initData);
+    const effectiveRefTgId = startRef ?? data.referrerTgId ?? null;
+
     let { data: user, error: userError } = await supabaseAdmin.from("app_users")
       .select("*").eq("tenant_id", tenantRow.id).eq("telegram_id", tg.id).maybeSingle();
     if (userError) throw new Error(userError.message);
 
     if (!user) {
       let referrerId: string | null = null;
-      if (data.referrerTgId) {
+      if (effectiveRefTgId && effectiveRefTgId !== tg.id) {
         const { data: ref } = await supabaseAdmin.from("app_users")
-          .select("id").eq("tenant_id", tenantRow.id).eq("telegram_id", data.referrerTgId).maybeSingle();
+          .select("id").eq("tenant_id", tenantRow.id).eq("telegram_id", effectiveRefTgId).maybeSingle();
         referrerId = ref?.id ?? null;
       }
+      const cfg = { ...DEFAULT_REFERRAL, ...((tenantRow.referral_config as any) || {}) };
+      const signupReward = Number(cfg.signup_reward || 0);
+      const inviterReward = Number(cfg.inviter_reward || 0);
+      // If require_activity is OFF, release inviter reward immediately
+      const releaseImmediately = referrerId && !cfg.require_activity && inviterReward > 0;
       const ins = await supabaseAdmin.from("app_users").insert({
         tenant_id: tenantRow.id,
         telegram_id: tg.id,
         username: tg.username ?? null,
         first_name: tg.first_name ?? null,
         referrer_id: referrerId,
+        balance: signupReward,
+        pending_inviter_reward: referrerId && !releaseImmediately ? inviterReward : 0,
       }).select().single();
       if (ins.error) throw new Error(ins.error.message);
       user = ins.data;
+      if (signupReward > 0) {
+        await supabaseAdmin.from("transactions").insert({
+          tenant_id: tenantRow.id, user_id: user!.id, type: "referral", amount: signupReward, status: "approved",
+        });
+      }
       if (referrerId) {
-        const { data: r } = await supabaseAdmin.from("app_users").select("referral_count").eq("id", referrerId).single();
-        await supabaseAdmin.from("app_users").update({ referral_count: (r?.referral_count ?? 0) + 1 }).eq("id", referrerId);
+        const { data: r } = await supabaseAdmin.from("app_users").select("referral_count,balance").eq("id", referrerId).single();
+        const refPatch: any = { referral_count: (r?.referral_count ?? 0) + 1 };
+        if (releaseImmediately) refPatch.balance = Number(r?.balance ?? 0) + inviterReward;
+        await supabaseAdmin.from("app_users").update(refPatch).eq("id", referrerId);
+        if (releaseImmediately) {
+          await supabaseAdmin.from("transactions").insert({
+            tenant_id: tenantRow.id, user_id: referrerId, type: "referral", amount: inviterReward, status: "approved",
+          });
+        }
       }
     }
     return { tenant, user };
