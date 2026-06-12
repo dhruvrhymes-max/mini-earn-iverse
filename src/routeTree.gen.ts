@@ -34,6 +34,7 @@ import { Route as AuthenticatedAdminTenantIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminTenantIdIndexRouteImport } from './routes/_authenticated/admin/$tenantId/index'
 import { Route as AuthenticatedAdminTenantIdWithdrawalsRouteImport } from './routes/_authenticated/admin/$tenantId/withdrawals'
 import { Route as AuthenticatedAdminTenantIdTasksRouteImport } from './routes/_authenticated/admin/$tenantId/tasks'
+import { Route as AuthenticatedAdminTenantIdReferralsRouteImport } from './routes/_authenticated/admin/$tenantId/referrals'
 import { Route as AuthenticatedAdminTenantIdMilestonesRouteImport } from './routes/_authenticated/admin/$tenantId/milestones'
 import { Route as AuthenticatedAdminTenantIdEconomicsRouteImport } from './routes/_authenticated/admin/$tenantId/economics'
 import { Route as AuthenticatedAdminTenantIdBrandingRouteImport } from './routes/_authenticated/admin/$tenantId/branding'
@@ -169,6 +170,12 @@ const AuthenticatedAdminTenantIdTasksRoute =
     path: '/tasks',
     getParentRoute: () => AuthenticatedAdminTenantIdRoute,
   } as any)
+const AuthenticatedAdminTenantIdReferralsRoute =
+  AuthenticatedAdminTenantIdReferralsRouteImport.update({
+    id: '/referrals',
+    path: '/referrals',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
 const AuthenticatedAdminTenantIdMilestonesRoute =
   AuthenticatedAdminTenantIdMilestonesRouteImport.update({
     id: '/milestones',
@@ -220,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
   '/admin/$tenantId/': typeof AuthenticatedAdminTenantIdIndexRoute
@@ -247,6 +255,7 @@ export interface FileRoutesByTo {
   '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
   '/admin/$tenantId': typeof AuthenticatedAdminTenantIdIndexRoute
@@ -279,6 +288,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/_authenticated/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/_authenticated/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/_authenticated/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/_authenticated/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/_authenticated/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
   '/_authenticated/admin/$tenantId/': typeof AuthenticatedAdminTenantIdIndexRoute
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/$tenantId/branding'
     | '/admin/$tenantId/economics'
     | '/admin/$tenantId/milestones'
+    | '/admin/$tenantId/referrals'
     | '/admin/$tenantId/tasks'
     | '/admin/$tenantId/withdrawals'
     | '/admin/$tenantId/'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin/$tenantId/branding'
     | '/admin/$tenantId/economics'
     | '/admin/$tenantId/milestones'
+    | '/admin/$tenantId/referrals'
     | '/admin/$tenantId/tasks'
     | '/admin/$tenantId/withdrawals'
     | '/admin/$tenantId'
@@ -369,6 +381,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$tenantId/branding'
     | '/_authenticated/admin/$tenantId/economics'
     | '/_authenticated/admin/$tenantId/milestones'
+    | '/_authenticated/admin/$tenantId/referrals'
     | '/_authenticated/admin/$tenantId/tasks'
     | '/_authenticated/admin/$tenantId/withdrawals'
     | '/_authenticated/admin/$tenantId/'
@@ -560,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTenantIdTasksRouteImport
       parentRoute: typeof AuthenticatedAdminTenantIdRoute
     }
+    '/_authenticated/admin/$tenantId/referrals': {
+      id: '/_authenticated/admin/$tenantId/referrals'
+      path: '/referrals'
+      fullPath: '/admin/$tenantId/referrals'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdReferralsRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
     '/_authenticated/admin/$tenantId/milestones': {
       id: '/_authenticated/admin/$tenantId/milestones'
       path: '/milestones'
@@ -611,6 +631,7 @@ interface AuthenticatedAdminTenantIdRouteChildren {
   AuthenticatedAdminTenantIdBrandingRoute: typeof AuthenticatedAdminTenantIdBrandingRoute
   AuthenticatedAdminTenantIdEconomicsRoute: typeof AuthenticatedAdminTenantIdEconomicsRoute
   AuthenticatedAdminTenantIdMilestonesRoute: typeof AuthenticatedAdminTenantIdMilestonesRoute
+  AuthenticatedAdminTenantIdReferralsRoute: typeof AuthenticatedAdminTenantIdReferralsRoute
   AuthenticatedAdminTenantIdTasksRoute: typeof AuthenticatedAdminTenantIdTasksRoute
   AuthenticatedAdminTenantIdWithdrawalsRoute: typeof AuthenticatedAdminTenantIdWithdrawalsRoute
   AuthenticatedAdminTenantIdIndexRoute: typeof AuthenticatedAdminTenantIdIndexRoute
@@ -625,6 +646,8 @@ const AuthenticatedAdminTenantIdRouteChildren: AuthenticatedAdminTenantIdRouteCh
       AuthenticatedAdminTenantIdEconomicsRoute,
     AuthenticatedAdminTenantIdMilestonesRoute:
       AuthenticatedAdminTenantIdMilestonesRoute,
+    AuthenticatedAdminTenantIdReferralsRoute:
+      AuthenticatedAdminTenantIdReferralsRoute,
     AuthenticatedAdminTenantIdTasksRoute: AuthenticatedAdminTenantIdTasksRoute,
     AuthenticatedAdminTenantIdWithdrawalsRoute:
       AuthenticatedAdminTenantIdWithdrawalsRoute,
