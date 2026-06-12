@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMini } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { Copy, Share2, Gift, TrendingUp, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/$tenantSlug/refer")({
@@ -10,16 +10,97 @@ export const Route = createFileRoute("/app/$tenantSlug/refer")({
 
 function Refer() {
   const { tenant, user } = useMini();
-  const link = typeof window !== "undefined" ? `${window.location.origin}/app/${tenant.slug}?ref=${user.telegram_id}` : "";
+  const t: any = tenant;
+  const cfg = t.referral_config ?? {};
+  const botUsername = t.bot_username || "";
+  const shortName = t.mini_app_short_name || "";
+  const startParam = `ref_${user.telegram_id}`;
+
+  // Telegram deep link — opens the mini app inside Telegram
+  const tgLink = botUsername && shortName
+    ? `https://t.me/${botUsername}/${shortName}?startapp=${startParam}`
+    : botUsername
+      ? `https://t.me/${botUsername}?start=${startParam}`
+      : "";
+
+  // Web fallback (browser preview without Telegram)
+  const webLink = typeof window !== "undefined"
+    ? `${window.location.origin}/app/${t.slug}?ref=${user.telegram_id}`
+    : "";
+
+  const link = tgLink || webLink;
+  const shareText = `Join me on ${t.name} and earn ${t.token_symbol}! ${link}`;
+
+  const handleShare = () => {
+    if (typeof window === "undefined") return;
+    const wa = (window as any).Telegram?.WebApp;
+    if (wa?.openTelegramLink && tgLink) {
+      const url = `https://t.me/share/url?url=${encodeURIComponent(tgLink)}&text=${encodeURIComponent(`Join me on ${t.name} and earn ${t.token_symbol}!`)}`;
+      wa.openTelegramLink(url);
+      return;
+    }
+    if ((navigator as any).share) {
+      (navigator as any).share({ title: t.name, text: shareText, url: link }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(link); toast.success("Link copied");
+    }
+  };
+
   return (
-    <div className="p-6 pt-12">
-      <h1 className="text-2xl font-bold mb-4">Invite friends</h1>
-      <p className="text-white/70">Share your link and earn rewards at every milestone.</p>
-      <div className="mt-6 bg-white/5 rounded-lg p-3 font-mono text-xs break-all">{link}</div>
-      <Button className="mt-4 w-full" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>
-        <Copy className="h-4 w-4 mr-2" />Copy link
-      </Button>
-      <p className="mt-8 text-center text-white/60">You have <b className="text-white">{user.referral_count}</b> referrals</p>
+    <div className="p-6 pt-12 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold mb-2">Invite friends</h1>
+        <p className="text-white/70 text-sm">Earn rewards every time a friend joins and stays active.</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <Stat icon={<Users className="h-4 w-4" />} value={user.referral_count} label="Friends" />
+        <Stat icon={<Gift className="h-4 w-4" />} value={`${Number(cfg.inviter_reward ?? 0)}`} label={`per ${t.token_symbol}`} />
+        <Stat icon={<TrendingUp className="h-4 w-4" />} value={`${Number(cfg.lifetime_pct ?? 0)}%`} label="lifetime" />
+      </div>
+
+      <div className="bg-white/5 rounded-xl p-4 space-y-3">
+        <div className="text-xs uppercase text-white/50 tracking-wider">Your invite link</div>
+        <div className="font-mono text-xs break-all text-white/90">{link}</div>
+        <div className="flex gap-2">
+          <Button className="flex-1" onClick={handleShare}>
+            <Share2 className="h-4 w-4 mr-2" />Share
+          </Button>
+          <Button variant="secondary" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-2 text-sm text-white/70">
+        <div className="flex justify-between">
+          <span>You earn per friend</span>
+          <b className="text-white">{Number(cfg.inviter_reward ?? 0)} {t.token_symbol}</b>
+        </div>
+        <div className="flex justify-between">
+          <span>Friend signup bonus</span>
+          <b className="text-white">{Number(cfg.signup_reward ?? 0)} {t.token_symbol}</b>
+        </div>
+        <div className="flex justify-between">
+          <span>Lifetime cut of friend earnings</span>
+          <b className="text-white">{Number(cfg.lifetime_pct ?? 0)}%</b>
+        </div>
+        {cfg.require_activity && (
+          <p className="text-xs text-white/50 pt-2">
+            Friends must complete one activity (mine, task, or watch an ad) before your reward unlocks.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ icon, value, label }: { icon: React.ReactNode; value: React.ReactNode; label: string }) {
+  return (
+    <div className="bg-white/5 rounded-lg p-3 flex flex-col items-center text-center">
+      <div className="text-white/60 mb-1">{icon}</div>
+      <div className="text-lg font-bold">{value}</div>
+      <div className="text-[10px] text-white/50">{label}</div>
     </div>
   );
 }
