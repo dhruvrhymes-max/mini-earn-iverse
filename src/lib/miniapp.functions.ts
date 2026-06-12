@@ -110,7 +110,7 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: row, error } = await supabaseAdmin
       .from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,bot_username")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,referral_config,bot_username,mini_app_short_name")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
