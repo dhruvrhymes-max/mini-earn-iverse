@@ -336,6 +336,8 @@ export const completeTask = createServerFn({ method: "POST" })
     await supabaseAdmin.from("transactions").insert({
       tenant_id: user.tenant_id, user_id: user.id, type: "task", amount: reward, status: "approved",
     });
+    await maybeReleasePendingInviterReward(supabaseAdmin, user, "task");
+    await payLifetimeCut(supabaseAdmin, user, reward);
     return { reward, balance: Number(user.balance) + reward };
   });
 
