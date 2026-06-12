@@ -92,11 +92,14 @@ export type Database = {
           balance: number
           created_at: string
           first_name: string | null
+          has_activity: boolean
           id: string
           language: string
           last_claim_at: string | null
+          lifetime_earned_for_inviter: number
           mining_started_at: string | null
           onboarded: boolean
+          pending_inviter_reward: number
           referral_count: number
           referrer_id: string | null
           startup_ad_shown_at: string | null
@@ -112,11 +115,14 @@ export type Database = {
           balance?: number
           created_at?: string
           first_name?: string | null
+          has_activity?: boolean
           id?: string
           language?: string
           last_claim_at?: string | null
+          lifetime_earned_for_inviter?: number
           mining_started_at?: string | null
           onboarded?: boolean
+          pending_inviter_reward?: number
           referral_count?: number
           referrer_id?: string | null
           startup_ad_shown_at?: string | null
@@ -132,11 +138,14 @@ export type Database = {
           balance?: number
           created_at?: string
           first_name?: string | null
+          has_activity?: boolean
           id?: string
           language?: string
           last_claim_at?: string | null
+          lifetime_earned_for_inviter?: number
           mining_started_at?: string | null
           onboarded?: boolean
+          pending_inviter_reward?: number
           referral_count?: number
           referrer_id?: string | null
           startup_ad_shown_at?: string | null
@@ -281,6 +290,7 @@ export type Database = {
           mini_app_short_name: string | null
           name: string
           owner_user_id: string
+          referral_config: Json
           slug: string
           status: Database["public"]["Enums"]["tenant_status"]
           theme: Json
@@ -304,6 +314,7 @@ export type Database = {
           mini_app_short_name?: string | null
           name: string
           owner_user_id: string
+          referral_config?: Json
           slug: string
           status?: Database["public"]["Enums"]["tenant_status"]
           theme?: Json
@@ -327,6 +338,7 @@ export type Database = {
           mini_app_short_name?: string | null
           name?: string
           owner_user_id?: string
+          referral_config?: Json
           slug?: string
           status?: Database["public"]["Enums"]["tenant_status"]
           theme?: Json
