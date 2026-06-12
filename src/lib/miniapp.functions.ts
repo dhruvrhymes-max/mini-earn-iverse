@@ -302,6 +302,8 @@ export const claimMining = createServerFn({ method: "POST" })
     await supabaseAdmin.from("transactions").insert({
       tenant_id: user.tenant_id, user_id: user.id, type: "mine", amount: reward, status: "approved",
     });
+    await maybeReleasePendingInviterReward(supabaseAdmin, user, "mine");
+    await payLifetimeCut(supabaseAdmin, user, reward);
     return { started: false, claimed: reward, balance: newBalance };
   });
 
