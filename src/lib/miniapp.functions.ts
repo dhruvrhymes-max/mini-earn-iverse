@@ -369,6 +369,8 @@ export const logAdReward = createServerFn({ method: "POST" })
     await supabaseAdmin.from("transactions").insert({
       tenant_id: user.tenant_id, user_id: user.id, type: "ad", amount: reward, status: "approved",
     });
+    await maybeReleasePendingInviterReward(supabaseAdmin, user, "ad");
+    await payLifetimeCut(supabaseAdmin, user, reward);
     return { reward, balance: Number(user.balance) + reward, used: (count ?? 0) + 1, limit };
   });
 
