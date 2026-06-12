@@ -6,6 +6,81 @@ const DEFAULT_ECON = { token_per_usdt: 10000, min_withdraw_usdt: 0.1, mining_cyc
 const DEFAULT_THEME = { primary: "#f59e0b", background: "#0a0a0a", accent: "#fbbf24" };
 const DEFAULT_AD = { daily_watch_limit: 20 };
 const DEFAULT_COMMUNITY = { channel_url: null, support_url: null };
+const DEFAULT_REFERRAL = {
+  signup_reward: 0,
+  inviter_reward: 50,
+  lifetime_pct: 20,
+  require_activity: true,
+  activity_types: ["mine", "task", "ad"] as string[],
+};
+
+/**
+ * Award the inviter when the new user performs a qualifying activity (mine/task/ad).
+ * Releases the pending_inviter_reward queued at signup time.
+ * Returns the released amount (0 if none).
+ */
+async function maybeReleasePendingInviterReward(
+  supabaseAdmin: any,
+  user: any,
+  activityType: "mine" | "task" | "ad",
+): Promise<number> {
+  if (user.has_activity) return 0;
+  // load tenant referral config + activity_types
+  const { data: tenantRow } = await supabaseAdmin
+    .from("tenants").select("referral_config").eq("id", user.tenant_id).maybeSingle();
+  const cfg = { ...DEFAULT_REFERRAL, ...((tenantRow?.referral_config as any) || {}) };
+  const activityCounts = Array.isArray(cfg.activity_types) && cfg.activity_types.includes(activityType);
+  // mark first activity regardless of whether THIS one counts (idempotent)
+  await supabaseAdmin.from("app_users").update({ has_activity: true }).eq("id", user.id);
+  if (!activityCounts) return 0;
+  const pending = Number(user.pending_inviter_reward || 0);
+  if (!user.referrer_id || pending <= 0) return 0;
+  // credit inviter
+  const { data: inv } = await supabaseAdmin.from("app_users").select("balance").eq("id", user.referrer_id).single();
+  if (!inv) return 0;
+  await supabaseAdmin.from("app_users").update({ balance: Number(inv.balance) + pending }).eq("id", user.referrer_id);
+  await supabaseAdmin.from("app_users").update({ pending_inviter_reward: 0 }).eq("id", user.id);
+  await supabaseAdmin.from("transactions").insert({
+    tenant_id: user.tenant_id, user_id: user.referrer_id, type: "referral", amount: pending, status: "approved",
+  });
+  return pending;
+}
+
+/** Pay the inviter a lifetime % cut of this user's earning event. */
+async function payLifetimeCut(
+  supabaseAdmin: any,
+  user: any,
+  earnedAmount: number,
+): Promise<void> {
+  if (!user.referrer_id || earnedAmount <= 0) return;
+  const { data: tenantRow } = await supabaseAdmin
+    .from("tenants").select("referral_config").eq("id", user.tenant_id).maybeSingle();
+  const cfg = { ...DEFAULT_REFERRAL, ...((tenantRow?.referral_config as any) || {}) };
+  const pct = Number(cfg.lifetime_pct || 0);
+  if (pct <= 0) return;
+  const cut = earnedAmount * (pct / 100);
+  if (cut <= 0) return;
+  const { data: inv } = await supabaseAdmin.from("app_users").select("balance").eq("id", user.referrer_id).single();
+  if (!inv) return;
+  await supabaseAdmin.from("app_users").update({ balance: Number(inv.balance) + cut }).eq("id", user.referrer_id);
+  await supabaseAdmin.from("app_users")
+    .update({ lifetime_earned_for_inviter: Number(user.lifetime_earned_for_inviter || 0) + cut })
+    .eq("id", user.id);
+  await supabaseAdmin.from("transactions").insert({
+    tenant_id: user.tenant_id, user_id: user.referrer_id, type: "referral", amount: cut, status: "approved",
+  });
+}
+
+/** Parse start_param from Telegram initData. Returns ref tg id if formatted as ref_NNN. */
+function parseStartParamRef(initData: string | null | undefined): number | null {
+  if (!initData) return null;
+  try {
+    const sp = new URLSearchParams(initData).get("start_param");
+    if (!sp) return null;
+    const m = sp.match(/^ref_(\d+)$/);
+    return m ? Number(m[1]) : null;
+  } catch { return null; }
+}
 
 async function getSupabaseAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
