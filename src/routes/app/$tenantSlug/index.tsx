@@ -4,8 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { claimMining } from "@/lib/miniapp.functions";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { ThemeScene } from "@/components/mini/ThemeScene";
 
 export const Route = createFileRoute("/app/$tenantSlug/")({
   component: Home,
@@ -24,6 +24,7 @@ function Home() {
     onError: (e: any) => toast.error(e.message),
   });
   const econ = tenant.economics as any;
+  const theme = tenant.theme as any;
   const rate = econ.token_per_usdt;
   const usd = (Number(user.balance) / rate).toFixed(4);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -44,21 +45,44 @@ function Home() {
   const idle = !user.mining_started_at;
 
   return (
-    <div className="p-6 pt-12 text-center">
-      <h1 className="text-sm uppercase text-white/60 tracking-wider">{tenant.name}</h1>
-      <div className="mt-8 flex flex-col items-center">
-        {tenant.token_icon_url && <img src={tenant.token_icon_url} alt={tenant.token_symbol} className="h-12 w-12 mb-2 rounded-full object-cover" />}
-        <p className="text-5xl font-bold">{Number(user.balance).toFixed(2)}</p>
-        <p className="text-white/60 mt-1">{tenant.token_symbol} · ${usd}</p>
+    <div className="relative min-h-screen overflow-hidden">
+      <ThemeScene
+        kind={(tenant as any).theme_preset}
+        primary={theme.primary}
+        accent={theme.accent}
+      />
+      <div className="relative z-10 p-6 pt-12 text-center">
+        <h1 className="text-sm uppercase text-white/60 tracking-wider">{tenant.name}</h1>
+        <div className="mt-8 flex flex-col items-center">
+          {tenant.token_icon_url && <img src={tenant.token_icon_url} alt={tenant.token_symbol} className="h-12 w-12 mb-2 rounded-full object-cover" />}
+          <p className="text-5xl font-bold drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">{Number(user.balance).toFixed(2)}</p>
+          <p className="text-white/70 mt-1">{tenant.token_symbol} · ${usd}</p>
+        </div>
+        <p className="mt-4 text-sm text-white/60">{econ.mining_rate_per_hour} {tenant.token_symbol}/hour</p>
+        <button
+          onClick={() => m.mutate()}
+          disabled={m.isPending}
+          className="mt-12 w-48 h-48 rounded-full mx-auto flex flex-col items-center justify-center text-black font-bold shadow-2xl active:scale-95 transition-transform relative"
+          style={{
+            background: `radial-gradient(circle at 30% 25%, ${theme.accent}, ${theme.primary} 60%, ${theme.primary})`,
+            boxShadow: `0 20px 50px ${theme.primary}88, inset 0 -8px 24px rgba(0,0,0,0.35), inset 0 8px 24px rgba(255,255,255,0.35)`,
+          }}
+        >
+          <span
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              background: `conic-gradient(from 0deg, transparent, ${theme.accent}55, transparent 60%)`,
+              animation: "scene-spin 6s linear infinite",
+              opacity: idle ? 0.6 : ready ? 1 : 0.35,
+            }}
+          />
+          <span className="relative">
+            {idle ? <><span className="block text-2xl">{tenant.action_verb}</span><span className="block text-sm font-normal">tap to start</span></>
+             : ready ? <span className="text-2xl">CLAIM</span>
+             : <><span className="block text-3xl">{formatTime(remaining!)}</span><span className="block text-sm font-normal">mining…</span></>}
+          </span>
+        </button>
       </div>
-      <p className="mt-4 text-sm text-white/60">{econ.mining_rate_per_hour} {tenant.token_symbol}/hour</p>
-      <button onClick={() => m.mutate()} disabled={m.isPending}
-        className="mt-12 w-48 h-48 rounded-full mx-auto flex flex-col items-center justify-center text-black font-bold shadow-2xl active:scale-95 transition-transform"
-        style={{ background: (tenant.theme as any).primary }}>
-        {idle ? <><span className="text-2xl">{tenant.action_verb}</span><span className="text-sm font-normal">tap to start</span></>
-         : ready ? <span className="text-2xl">CLAIM</span>
-         : <><span className="text-3xl">{formatTime(remaining!)}</span><span className="text-sm font-normal">mining…</span></>}
-      </button>
     </div>
   );
 }

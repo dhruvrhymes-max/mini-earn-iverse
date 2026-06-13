@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Check } from "lucide-react";
+import { THEME_PRESETS } from "@/lib/theme-presets";
 
 const WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/telegram-webhook`;
 
@@ -38,8 +39,27 @@ function Branding() {
     welcome_cta_text: (t as any).welcome_cta_text ?? "",
     welcome_image_url: (t as any).welcome_image_url ?? "",
     bot_token: "",
+    theme_preset: (t as any).theme_preset ?? "",
     primary: (t.theme as any).primary, background: (t.theme as any).background, accent: (t.theme as any).accent,
   }); }, [t]);
+
+  function applyPreset(presetId: string) {
+    const p = THEME_PRESETS.find((x) => x.id === presetId);
+    if (!p) return;
+    setForm((f: any) => ({
+      ...f,
+      theme_preset: p.id,
+      token_name: p.token_name,
+      token_symbol: p.token_symbol,
+      action_verb: p.action_verb,
+      welcome_text: p.welcome_text,
+      welcome_cta_text: p.welcome_cta_text,
+      primary: p.theme.primary,
+      background: p.theme.background,
+      accent: p.theme.accent,
+    }));
+    toast.success(`${p.label} applied — click Save to publish`);
+  }
 
   const m = useMutation({
     mutationFn: () => {
@@ -52,6 +72,7 @@ function Branding() {
         welcome_cta_text: form.welcome_cta_text || null,
         welcome_image_url: form.welcome_image_url || null,
         theme: { primary: form.primary, background: form.background, accent: form.accent },
+        theme_preset: form.theme_preset || null,
       };
       if (form.bot_token && form.bot_token.trim()) patch.bot_token = form.bot_token.trim();
       return upd({ data: { id: tenantId, patch } });
@@ -95,6 +116,32 @@ function Branding() {
     <div className="max-w-xl pb-12">
       <h1 className="text-2xl font-bold mb-6">Manage Bot</h1>
       <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Theme preset (mining-page animation + colors)</Label>
+          <p className="text-xs text-muted-foreground">Pick a preset to switch the animated scene on the mining page. Colors and token text update too — fine-tune them below.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-72 overflow-y-auto p-1">
+            {THEME_PRESETS.map((p) => {
+              const selected = form.theme_preset === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => applyPreset(p.id)}
+                  className={`relative text-left rounded-lg border-2 p-2 transition-all ${selected ? "border-primary" : "border-border hover:border-muted-foreground/40"}`}
+                  style={{ background: p.theme.background, color: "white" }}
+                >
+                  {selected && <Check className="absolute top-1 right-1 h-4 w-4" style={{ color: p.theme.primary }} />}
+                  <div className="text-xl">{p.emoji}</div>
+                  <div className="text-xs font-semibold mt-0.5 truncate">{p.label}</div>
+                  <div className="flex gap-1 mt-1">
+                    <span className="w-3 h-3 rounded-full border border-white/20" style={{ background: p.theme.primary }} />
+                    <span className="w-3 h-3 rounded-full border border-white/20" style={{ background: p.theme.accent }} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <Field label="Token name"><Input value={form.token_name ?? ""} onChange={(e) => setForm({ ...form, token_name: e.target.value })} /></Field>
         <Field label="Token symbol"><Input value={form.token_symbol ?? ""} onChange={(e) => setForm({ ...form, token_symbol: e.target.value })} /></Field>
         <Field label="Action verb (Mine / Fish / Wood)"><Input value={form.action_verb ?? ""} onChange={(e) => setForm({ ...form, action_verb: e.target.value })} /></Field>
