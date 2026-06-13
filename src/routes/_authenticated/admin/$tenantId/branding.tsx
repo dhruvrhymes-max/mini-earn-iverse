@@ -72,10 +72,14 @@ function Branding() {
         welcome_cta_text: form.welcome_cta_text || null,
         welcome_image_url: form.welcome_image_url || null,
         theme: { primary: form.primary, background: form.background, accent: form.accent },
+        theme_preset: form.theme_preset || null,
       };
       if (form.bot_token && form.bot_token.trim()) patch.bot_token = form.bot_token.trim();
       return upd({ data: { id: tenantId, patch } });
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenant", tenantId] }); toast.success("Saved"); setForm((f: any) => ({ ...f, bot_token: "" })); },
+    onError: (e: any) => toast.error(e.message),
+  });
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenant", tenantId] }); toast.success("Saved"); setForm((f: any) => ({ ...f, bot_token: "" })); },
     onError: (e: any) => toast.error(e.message),
   });
