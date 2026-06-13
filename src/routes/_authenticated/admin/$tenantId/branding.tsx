@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Check } from "lucide-react";
+import { THEME_PRESETS } from "@/lib/theme-presets";
 
 const WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/telegram-webhook`;
 
@@ -38,8 +39,27 @@ function Branding() {
     welcome_cta_text: (t as any).welcome_cta_text ?? "",
     welcome_image_url: (t as any).welcome_image_url ?? "",
     bot_token: "",
+    theme_preset: (t as any).theme_preset ?? "",
     primary: (t.theme as any).primary, background: (t.theme as any).background, accent: (t.theme as any).accent,
   }); }, [t]);
+
+  function applyPreset(presetId: string) {
+    const p = THEME_PRESETS.find((x) => x.id === presetId);
+    if (!p) return;
+    setForm((f: any) => ({
+      ...f,
+      theme_preset: p.id,
+      token_name: p.token_name,
+      token_symbol: p.token_symbol,
+      action_verb: p.action_verb,
+      welcome_text: p.welcome_text,
+      welcome_cta_text: p.welcome_cta_text,
+      primary: p.theme.primary,
+      background: p.theme.background,
+      accent: p.theme.accent,
+    }));
+    toast.success(`${p.label} applied — click Save to publish`);
+  }
 
   const m = useMutation({
     mutationFn: () => {
