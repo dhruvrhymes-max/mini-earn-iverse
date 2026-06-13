@@ -116,6 +116,32 @@ function Branding() {
     <div className="max-w-xl pb-12">
       <h1 className="text-2xl font-bold mb-6">Manage Bot</h1>
       <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Theme preset (mining-page animation + colors)</Label>
+          <p className="text-xs text-muted-foreground">Pick a preset to switch the animated scene on the mining page. Colors and token text update too — fine-tune them below.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-72 overflow-y-auto p-1">
+            {THEME_PRESETS.map((p) => {
+              const selected = form.theme_preset === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => applyPreset(p.id)}
+                  className={`relative text-left rounded-lg border-2 p-2 transition-all ${selected ? "border-primary" : "border-border hover:border-muted-foreground/40"}`}
+                  style={{ background: p.theme.background, color: "white" }}
+                >
+                  {selected && <Check className="absolute top-1 right-1 h-4 w-4" style={{ color: p.theme.primary }} />}
+                  <div className="text-xl">{p.emoji}</div>
+                  <div className="text-xs font-semibold mt-0.5 truncate">{p.label}</div>
+                  <div className="flex gap-1 mt-1">
+                    <span className="w-3 h-3 rounded-full border border-white/20" style={{ background: p.theme.primary }} />
+                    <span className="w-3 h-3 rounded-full border border-white/20" style={{ background: p.theme.accent }} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <Field label="Token name"><Input value={form.token_name ?? ""} onChange={(e) => setForm({ ...form, token_name: e.target.value })} /></Field>
         <Field label="Token symbol"><Input value={form.token_symbol ?? ""} onChange={(e) => setForm({ ...form, token_symbol: e.target.value })} /></Field>
         <Field label="Action verb (Mine / Fish / Wood)"><Input value={form.action_verb ?? ""} onChange={(e) => setForm({ ...form, action_verb: e.target.value })} /></Field>
