@@ -110,7 +110,7 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: row, error } = await supabaseAdmin
       .from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,referral_config,bot_username,mini_app_short_name")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -210,7 +210,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenantRow, error: tenantError } = await supabaseAdmin.from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,bot_token")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,bot_token")
       .eq("slug", data.tenantSlug).maybeSingle();
     if (tenantError) throw new Error(tenantError.message);
     const tenant = normalizeTenant(tenantRow);
