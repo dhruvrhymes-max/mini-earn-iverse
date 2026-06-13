@@ -80,9 +80,6 @@ function Branding() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenant", tenantId] }); toast.success("Saved"); setForm((f: any) => ({ ...f, bot_token: "" })); },
     onError: (e: any) => toast.error(e.message),
   });
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenant", tenantId] }); toast.success("Saved"); setForm((f: any) => ({ ...f, bot_token: "" })); },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   async function uploadImage(file: File) {
     setUploading(true);
