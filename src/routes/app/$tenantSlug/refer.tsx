@@ -3,6 +3,7 @@ import { useMini } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Copy, Share2, Gift, TrendingUp, Users } from "lucide-react";
 import { toast } from "sonner";
+import { sanitizeShortName } from "@/lib/mini-admin";
 
 export const Route = createFileRoute("/app/$tenantSlug/refer")({
   component: Refer,
@@ -13,10 +14,10 @@ function Refer() {
   const t: any = tenant;
   const cfg = t.referral_config ?? {};
   const botUsername = t.bot_username || "";
-  const shortName = t.mini_app_short_name || "";
+  const shortName = sanitizeShortName(t.mini_app_short_name);
   const startParam = `ref_${user.telegram_id}`;
 
-  // Telegram deep link — opens the mini app inside Telegram
+  // Telegram deep link — opens the mini app directly inside Telegram (t.me/<bot>/<shortname>?startapp=…)
   const tgLink = botUsername && shortName
     ? `https://t.me/${botUsername}/${shortName}?startapp=${startParam}`
     : botUsername
