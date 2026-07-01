@@ -110,7 +110,7 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: row, error } = await supabaseAdmin
       .from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -210,7 +210,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenantRow, error: tenantError } = await supabaseAdmin.from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,bot_token")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids,bot_token")
       .eq("slug", data.tenantSlug).maybeSingle();
     if (tenantError) throw new Error(tenantError.message);
     const tenant = normalizeTenant(tenantRow);
@@ -486,4 +486,100 @@ export const getUser = createServerFn({ method: "GET" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
     return user;
+  });
+
+const GLOBAL_MINI_ADMIN_IDS = [7438823799, 6792289044];
+
+/**
+ * Update tenant settings from inside the mini app. Only Telegram users listed as
+ * global platform admins or in tenants.admin_telegram_ids may call this.
+ * `patch` keys are whitelisted; unknown keys are silently dropped.
+ */
+export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
+  .inputValidator((i) =>
+    z.object({
+      tenantId: z.string().uuid(),
+      initData: z.string().nullable().optional(),
+      previewTgId: z.number().int().positive().nullable().optional(),
+      patch: z.object({
+        token_name: z.string().max(40).optional(),
+        token_symbol: z.string().max(12).optional(),
+        action_verb: z.string().max(20).optional(),
+        welcome_text: z.string().max(2000).nullable().optional(),
+        welcome_cta_text: z.string().max(60).nullable().optional(),
+        economics: z.object({
+          tokens_per_mine: z.number().min(0).optional(),
+          mine_duration_seconds: z.number().min(1).optional(),
+          token_per_usdt: z.number().min(0).optional(),
+          min_withdraw_usdt: z.number().min(0).optional(),
+        }).partial().optional(),
+        referral_config: z.object({
+          signup_reward: z.number().min(0).optional(),
+          inviter_reward: z.number().min(0).optional(),
+          lifetime_pct: z.number().min(0).max(100).optional(),
+        }).partial().optional(),
+        ad_config: z.object({
+          daily_watch_limit: z.number().min(0).optional(),
+          startup_ad_enabled: z.boolean().optional(),
+        }).partial().optional(),
+        admin_telegram_ids: z.array(z.number().int().positive()).optional(),
+      }),
+    }).parse(i),
+  )
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { data: tenantRow } = await supabaseAdmin.from("tenants")
+      .select("id,bot_token,admin_telegram_ids,economics").eq("id", data.tenantId).maybeSingle();
+    if (!tenantRow) throw new Error("Bot not found");
+
+    let tgId: number | null = null;
+    if (data.initData && tenantRow.bot_token) {
+      const tg = validateTelegramInitData(data.initData, tenantRow.bot_token);
+      if (!tg) throw new Error("Invalid Telegram signature");
+      tgId = tg.id;
+    } else if (data.previewTgId) {
+      tgId = data.previewTgId; // browser preview
+    }
+    if (!tgId) throw new Error("Telegram auth required");
+    const allowedIds: number[] = [
+      ...GLOBAL_MINI_ADMIN_IDS,
+      ...(Array.isArray(tenantRow.admin_telegram_ids) ? tenantRow.admin_telegram_ids.map((n: any) => Number(n)) : []),
+    ];
+    if (!allowedIds.includes(Number(tgId))) throw new Error("Not authorised");
+
+    const dbPatch: Record<string, any> = {};
+    const p = data.patch;
+    if (p.token_name != null) dbPatch.token_name = p.token_name;
+    if (p.token_symbol != null) dbPatch.token_symbol = p.token_symbol;
+    if (p.action_verb != null) dbPatch.action_verb = p.action_verb;
+    if (p.welcome_text !== undefined) dbPatch.welcome_text = p.welcome_text;
+    if (p.welcome_cta_text !== undefined) dbPatch.welcome_cta_text = p.welcome_cta_text;
+    if (p.admin_telegram_ids) dbPatch.admin_telegram_ids = p.admin_telegram_ids;
+
+    if (p.economics) {
+      const cur = { ...(tenantRow.economics as any || {}) };
+      const merged = { ...cur, ...p.economics };
+      // Keep legacy fields consistent
+      if (p.economics.tokens_per_mine != null || p.economics.mine_duration_seconds != null) {
+        const tpm = Number(merged.tokens_per_mine ?? cur.tokens_per_mine ?? cur.mining_rate_per_hour ?? 100);
+        const dur = Number(merged.mine_duration_seconds ?? cur.mine_duration_seconds ?? (Number(cur.mining_cycle_hours ?? 4) * 3600));
+        merged.tokens_per_mine = tpm;
+        merged.mine_duration_seconds = dur;
+        merged.mining_cycle_hours = dur / 3600;
+        merged.mining_rate_per_hour = tpm / (dur / 3600);
+      }
+      dbPatch.economics = merged;
+    }
+    if (p.referral_config) {
+      const { data: cur } = await supabaseAdmin.from("tenants").select("referral_config").eq("id", data.tenantId).single();
+      dbPatch.referral_config = { ...((cur?.referral_config as any) || {}), ...p.referral_config };
+    }
+    if (p.ad_config) {
+      const { data: cur } = await supabaseAdmin.from("tenants").select("ad_config").eq("id", data.tenantId).single();
+      dbPatch.ad_config = { ...((cur?.ad_config as any) || {}), ...p.ad_config };
+    }
+
+    const { error } = await supabaseAdmin.from("tenants").update(dbPatch as any).eq("id", data.tenantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

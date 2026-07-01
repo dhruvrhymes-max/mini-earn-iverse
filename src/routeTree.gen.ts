@@ -27,6 +27,7 @@ import { Route as AppTenantSlugMineRouteImport } from './routes/app/$tenantSlug/
 import { Route as AppTenantSlugHistoryRouteImport } from './routes/app/$tenantSlug/history'
 import { Route as AppTenantSlugDepositRouteImport } from './routes/app/$tenantSlug/deposit'
 import { Route as AppTenantSlugConvertRouteImport } from './routes/app/$tenantSlug/convert'
+import { Route as AppTenantSlugAdminRouteImport } from './routes/app/$tenantSlug/admin'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as AuthenticatedSuperTenantsRouteImport } from './routes/_authenticated/super/tenants'
 import { Route as AuthenticatedSuperAnnouncementsRouteImport } from './routes/_authenticated/super/announcements'
@@ -129,6 +130,11 @@ const AppTenantSlugConvertRoute = AppTenantSlugConvertRouteImport.update({
   path: '/convert',
   getParentRoute: () => AppTenantSlugRoute,
 } as any)
+const AppTenantSlugAdminRoute = AppTenantSlugAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
 const ApiPublicClientErrorRoute = ApiPublicClientErrorRouteImport.update({
   id: '/api/public/client-error',
   path: '/api/public/client-error',
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
+  '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
   '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
+  '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
   '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/_authenticated/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/_authenticated/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
+  '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
   '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/super/announcements'
     | '/super/tenants'
     | '/api/public/client-error'
+    | '/app/$tenantSlug/admin'
     | '/app/$tenantSlug/convert'
     | '/app/$tenantSlug/deposit'
     | '/app/$tenantSlug/history'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/super/announcements'
     | '/super/tenants'
     | '/api/public/client-error'
+    | '/app/$tenantSlug/admin'
     | '/app/$tenantSlug/convert'
     | '/app/$tenantSlug/deposit'
     | '/app/$tenantSlug/history'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/_authenticated/super/announcements'
     | '/_authenticated/super/tenants'
     | '/api/public/client-error'
+    | '/app/$tenantSlug/admin'
     | '/app/$tenantSlug/convert'
     | '/app/$tenantSlug/deposit'
     | '/app/$tenantSlug/history'
@@ -524,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantSlugConvertRouteImport
       parentRoute: typeof AppTenantSlugRoute
     }
+    '/app/$tenantSlug/admin': {
+      id: '/app/$tenantSlug/admin'
+      path: '/admin'
+      fullPath: '/app/$tenantSlug/admin'
+      preLoaderRoute: typeof AppTenantSlugAdminRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
     '/api/public/client-error': {
       id: '/api/public/client-error'
       path: '/api/public/client-error'
@@ -676,6 +695,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 )
 
 interface AppTenantSlugRouteChildren {
+  AppTenantSlugAdminRoute: typeof AppTenantSlugAdminRoute
   AppTenantSlugConvertRoute: typeof AppTenantSlugConvertRoute
   AppTenantSlugDepositRoute: typeof AppTenantSlugDepositRoute
   AppTenantSlugHistoryRoute: typeof AppTenantSlugHistoryRoute
@@ -689,6 +709,7 @@ interface AppTenantSlugRouteChildren {
 }
 
 const AppTenantSlugRouteChildren: AppTenantSlugRouteChildren = {
+  AppTenantSlugAdminRoute: AppTenantSlugAdminRoute,
   AppTenantSlugConvertRoute: AppTenantSlugConvertRoute,
   AppTenantSlugDepositRoute: AppTenantSlugDepositRoute,
   AppTenantSlugHistoryRoute: AppTenantSlugHistoryRoute,
@@ -716,13 +737,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
