@@ -579,7 +579,7 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
       dbPatch.ad_config = { ...((cur?.ad_config as any) || {}), ...p.ad_config };
     }
 
-    const { error } = await supabaseAdmin.from("tenants").update(dbPatch).eq("id", data.tenantId);
+    const { error } = await supabaseAdmin.from("tenants").update(dbPatch as any).eq("id", data.tenantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
