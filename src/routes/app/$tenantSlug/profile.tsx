@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMini } from "@/lib/miniapp-context";
-import { ChevronRight, Wallet, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe } from "lucide-react";
+import { isMiniAdmin } from "@/lib/mini-admin";
+import { ChevronRight, Wallet, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/app/$tenantSlug/profile")({
   component: Profile,
@@ -8,6 +9,7 @@ export const Route = createFileRoute("/app/$tenantSlug/profile")({
 
 function Profile() {
   const { tenant, user } = useMini();
+  const isAdmin = isMiniAdmin(user?.telegram_id, tenant);
   const items = [
     { to: "/app/$tenantSlug/withdraw", label: "Withdraw USDT", icon: ArrowDownToLine },
     { to: "/app/$tenantSlug/convert", label: "Convert to USDT", icon: ArrowLeftRight },
@@ -21,6 +23,15 @@ function Profile() {
         <p className="font-semibold">{user.first_name || user.username || `User ${user.telegram_id}`}</p>
         <p className="text-sm text-white/60">{Number(user.balance).toFixed(2)} {tenant.token_symbol} · ${Number(user.usd_balance).toFixed(4)} USDT</p>
       </div>
+      {isAdmin && (
+        <Section title="Admin">
+          <Link to="/app/$tenantSlug/admin" params={{ tenantSlug: tenant.slug }} className="flex items-center gap-3 p-3 rounded-lg mb-2" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}>
+            <ShieldCheck className="h-5 w-5" style={{ color: (tenant.theme as any).primary }} />
+            <span className="flex-1">Open admin panel</span>
+            <ChevronRight className="h-4 w-4 text-white/40" />
+          </Link>
+        </Section>
+      )}
       <Section title="Finance">
         {items.map((it) => (
           <Link key={it.to} to={it.to} params={{ tenantSlug: tenant.slug }} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg mb-2">
