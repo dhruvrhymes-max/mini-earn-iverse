@@ -1,0 +1,1 @@
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS admin_telegram_ids BIGINT[] NOT NULL DEFAULT '{}';

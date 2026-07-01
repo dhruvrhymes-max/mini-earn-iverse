@@ -281,6 +281,7 @@ export type Database = {
         Row: {
           action_verb: string
           ad_config: Json
+          admin_telegram_ids: number[]
           bot_token: string | null
           bot_username: string | null
           community: Json
@@ -305,6 +306,7 @@ export type Database = {
         Insert: {
           action_verb?: string
           ad_config?: Json
+          admin_telegram_ids?: number[]
           bot_token?: string | null
           bot_username?: string | null
           community?: Json
@@ -329,6 +331,7 @@ export type Database = {
         Update: {
           action_verb?: string
           ad_config?: Json
+          admin_telegram_ids?: number[]
           bot_token?: string | null
           bot_username?: string | null
           community?: Json
