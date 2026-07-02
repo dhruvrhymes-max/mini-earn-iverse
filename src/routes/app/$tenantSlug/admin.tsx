@@ -213,3 +213,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({ children }: { children: React.ReactNode }) {
   return <div className="space-y-1">{children}</div>;
 }
+function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-2">
+        <input type="color" value={value || "#000000"} onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-9 rounded border border-white/20 bg-transparent cursor-pointer" />
+        <Input value={value || ""} onChange={(e) => onChange(e.target.value)} className="text-xs font-mono" />
+      </div>
+    </div>
+  );
+}
+
