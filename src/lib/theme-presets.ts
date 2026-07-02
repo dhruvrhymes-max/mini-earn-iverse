@@ -3,7 +3,8 @@
 // `scene` selects the animated mining backdrop rendered by <ThemeScene />.
 export type SceneKind =
   | "wood" | "gold" | "diamond" | "crypto" | "galaxy" | "forest" | "fish"
-  | "lava" | "ocean" | "candy" | "neon" | "ice" | "dragon";
+  | "lava" | "ocean" | "candy" | "neon" | "ice" | "dragon" | "ghost" | "milk";
+
 
 export type ThemePreset = {
   id: string;
