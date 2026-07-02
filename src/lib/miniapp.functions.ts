@@ -502,11 +502,20 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
       initData: z.string().nullable().optional(),
       previewTgId: z.number().int().positive().nullable().optional(),
       patch: z.object({
+        name: z.string().max(60).optional(),
         token_name: z.string().max(40).optional(),
         token_symbol: z.string().max(12).optional(),
+        token_icon_url: z.string().url().max(500).nullable().optional(),
         action_verb: z.string().max(20).optional(),
         welcome_text: z.string().max(2000).nullable().optional(),
         welcome_cta_text: z.string().max(60).nullable().optional(),
+        theme: z.object({
+          primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+          background: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+          accent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+          scene: z.string().max(20).optional(),
+          mascot_url: z.string().url().max(500).nullable().optional(),
+        }).partial().optional(),
         economics: z.object({
           tokens_per_mine: z.number().min(0).optional(),
           mine_duration_seconds: z.number().min(1).optional(),
@@ -524,6 +533,7 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
         }).partial().optional(),
         admin_telegram_ids: z.array(z.number().int().positive()).optional(),
       }),
+
     }).parse(i),
   )
   .handler(async ({ data }) => {
