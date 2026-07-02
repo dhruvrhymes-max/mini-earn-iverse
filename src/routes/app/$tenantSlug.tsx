@@ -179,7 +179,10 @@ function MiniLayout() {
 
   return (
     <MiniCtx.Provider value={{ tenant, user, refetchUser: refetch }}>
-      <div style={{ background: theme.background, color: "white", ...themeStyle }} className="min-h-screen pb-20 max-w-md mx-auto">
+      <div
+        style={{ background: theme.background, color: "white", ...themeStyle }}
+        className="tg-mini min-h-screen pb-20 max-w-md mx-auto"
+      >
         {!user.onboarded && <Onboarding tenantSlug={tenantSlug} userId={user.id} refetch={refetch} />}
         <Outlet />
         <BottomNav slug={tenantSlug} verb={tenant.action_verb} primary={theme.primary} />
