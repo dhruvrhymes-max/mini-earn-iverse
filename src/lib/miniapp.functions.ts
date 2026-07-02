@@ -539,8 +539,9 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenantRow } = await supabaseAdmin.from("tenants")
-      .select("id,bot_token,admin_telegram_ids,economics").eq("id", data.tenantId).maybeSingle();
+      .select("id,bot_token,admin_telegram_ids,economics,theme").eq("id", data.tenantId).maybeSingle();
     if (!tenantRow) throw new Error("Bot not found");
+
 
     let tgId: number | null = null;
     if (data.initData && tenantRow.bot_token) {
