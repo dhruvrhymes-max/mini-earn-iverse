@@ -560,12 +560,18 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
 
     const dbPatch: Record<string, any> = {};
     const p = data.patch;
+    if (p.name != null) dbPatch.name = p.name;
     if (p.token_name != null) dbPatch.token_name = p.token_name;
     if (p.token_symbol != null) dbPatch.token_symbol = p.token_symbol;
+    if (p.token_icon_url !== undefined) dbPatch.token_icon_url = p.token_icon_url;
     if (p.action_verb != null) dbPatch.action_verb = p.action_verb;
     if (p.welcome_text !== undefined) dbPatch.welcome_text = p.welcome_text;
     if (p.welcome_cta_text !== undefined) dbPatch.welcome_cta_text = p.welcome_cta_text;
     if (p.admin_telegram_ids) dbPatch.admin_telegram_ids = p.admin_telegram_ids;
+    if (p.theme) {
+      dbPatch.theme = { ...((tenantRow.theme as any) || {}), ...p.theme };
+    }
+
 
     if (p.economics) {
       const cur = { ...(tenantRow.economics as any || {}) };
