@@ -69,11 +69,20 @@ function MiniAdmin() {
   const m = useMutation({
     mutationFn: () => {
       const patch: any = {
+        name: form.name,
         token_name: form.token_name,
         token_symbol: form.token_symbol,
+        token_icon_url: form.token_icon_url?.trim() ? form.token_icon_url.trim() : null,
         action_verb: form.action_verb,
         welcome_text: form.welcome_text,
         welcome_cta_text: form.welcome_cta_text,
+        theme: {
+          primary: form.theme_primary,
+          background: form.theme_background,
+          accent: form.theme_accent,
+          scene: form.theme_scene,
+          mascot_url: form.theme_mascot_url?.trim() ? form.theme_mascot_url.trim() : null,
+        },
         economics: {
           tokens_per_mine: Number(form.tokens_per_mine) || 0,
           mine_duration_seconds: Math.max(1, Number(form.mine_duration_seconds) || 1),
@@ -95,6 +104,7 @@ function MiniAdmin() {
       };
       return upd({ data: { tenantId: t.id, initData, previewTgId: initData ? null : Number(user.telegram_id), patch } });
     },
+
     onSuccess: () => toast.success("Saved — reopen the app to see changes"),
     onError: (e: any) => toast.error(e.message),
   });
