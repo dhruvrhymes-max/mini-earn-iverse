@@ -123,11 +123,47 @@ function MiniAdmin() {
         <h1 className="text-xl font-bold">Admin panel</h1>
       </div>
 
-      <Section title="Token">
+      <Section title="Brand">
+        <Row><Label>Bot / app name</Label><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Row>
         <Row><Label>Token name</Label><Input value={form.token_name ?? ""} onChange={(e) => setForm({ ...form, token_name: e.target.value })} /></Row>
         <Row><Label>Symbol</Label><Input value={form.token_symbol ?? ""} onChange={(e) => setForm({ ...form, token_symbol: e.target.value })} /></Row>
         <Row><Label>Action verb</Label><Input value={form.action_verb ?? ""} onChange={(e) => setForm({ ...form, action_verb: e.target.value })} /></Row>
+        <Row><Label>Token icon URL</Label><Input value={form.token_icon_url ?? ""} placeholder="https://…/coin.png" onChange={(e) => setForm({ ...form, token_icon_url: e.target.value })} /></Row>
       </Section>
+
+      <Section title="Theme & look">
+        <div className="grid grid-cols-3 gap-2">
+          <ColorRow label="Primary" value={form.theme_primary} onChange={(v) => setForm({ ...form, theme_primary: v })} />
+          <ColorRow label="Background" value={form.theme_background} onChange={(v) => setForm({ ...form, theme_background: v })} />
+          <ColorRow label="Accent" value={form.theme_accent} onChange={(v) => setForm({ ...form, theme_accent: v })} />
+        </div>
+        <Row>
+          <Label>Animated scene</Label>
+          <select
+            className="w-full bg-white/10 rounded-md px-3 py-2 text-sm"
+            value={form.theme_scene ?? "gold"}
+            onChange={(e) => setForm({ ...form, theme_scene: e.target.value })}
+          >
+            {["gold","wood","diamond","crypto","galaxy","forest","fish","lava","ocean","candy","neon","ice","dragon","ghost","milk"].map((s) => (
+              <option key={s} value={s} className="bg-neutral-900">{s}</option>
+            ))}
+          </select>
+        </Row>
+        <Row><Label>Mascot image URL</Label><Input value={form.theme_mascot_url ?? ""} placeholder="https://…/mascot.png" onChange={(e) => setForm({ ...form, theme_mascot_url: e.target.value })} /></Row>
+        <div className="rounded-lg p-4 flex items-center gap-3" style={{ background: form.theme_background, border: `1px solid ${form.theme_primary}55` }}>
+          {form.theme_mascot_url ? (
+            <img src={form.theme_mascot_url} alt="" className="h-12 w-12 rounded object-contain" />
+          ) : (
+            <div className="h-12 w-12 rounded-full" style={{ background: form.theme_primary }} />
+          )}
+          <div>
+            <div className="text-sm font-bold" style={{ color: form.theme_primary }}>{form.name || "Preview"}</div>
+            <div className="text-xs" style={{ color: form.theme_accent }}>{form.token_symbol || "TKN"} · {form.action_verb || "Mine"}</div>
+          </div>
+        </div>
+      </Section>
+
+
 
       <Section title="Mining economics">
         <Row><Label>Tokens per mine</Label><Input type="number" value={form.tokens_per_mine ?? 0} onChange={(e) => setForm({ ...form, tokens_per_mine: e.target.value })} /></Row>
