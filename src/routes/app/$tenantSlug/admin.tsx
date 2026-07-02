@@ -38,12 +38,20 @@ function MiniAdmin() {
     const econ: any = t.economics || {};
     const ref: any = t.referral_config || {};
     const ad: any = t.ad_config || {};
+    const th: any = t.theme || {};
     setForm({
+      name: t.name || "",
       token_name: t.token_name || "",
       token_symbol: t.token_symbol || "",
+      token_icon_url: t.token_icon_url || "",
       action_verb: t.action_verb || "",
       welcome_text: t.welcome_text || "",
       welcome_cta_text: t.welcome_cta_text || "",
+      theme_primary: th.primary || "#f59e0b",
+      theme_background: th.background || "#0a0a0a",
+      theme_accent: th.accent || "#fbbf24",
+      theme_scene: th.scene || "gold",
+      theme_mascot_url: th.mascot_url || "",
       tokens_per_mine: econ.tokens_per_mine ?? econ.mining_rate_per_hour ?? 100,
       mine_duration_seconds: econ.mine_duration_seconds ?? (Number(econ.mining_cycle_hours ?? 4) * 3600),
       token_per_usdt: econ.token_per_usdt ?? 10000,
@@ -56,6 +64,7 @@ function MiniAdmin() {
       admin_telegram_ids: Array.isArray(t.admin_telegram_ids) ? t.admin_telegram_ids.join(", ") : "",
     });
   }, [t?.id]);
+
 
   const m = useMutation({
     mutationFn: () => {
