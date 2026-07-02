@@ -127,6 +127,22 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_text: "🐉 Welcome to Dragon Hoard\nHoard SCL scales. Trade for USDT.\n\n🔥 Bigger hoards:\n• Tasks\n• Ads\n• Refer friends",
     welcome_cta_text: "🐉 Start Hoarding",
   },
+  {
+    id: "ghost", label: "Ghostly", emoji: "👻", scene: "ghost",
+    description: "Neon purple — spooky ghost tap-to-earn",
+    theme: { primary: "#a855f7", background: "#0d0620", accent: "#ec4899" },
+    token_name: "Ghost", token_symbol: "GHOST", token_icon_url: null, action_verb: "Haunt",
+    welcome_text: "👻 Welcome to Ghostly\nHaunt the crypt. Stack GHOST. Withdraw USDT.\n\n💀 Earn more:\n• Daily tasks\n• Watch ads\n• Refer friends",
+    welcome_cta_text: "👻 Start Haunting",
+  },
+  {
+    id: "milk", label: "Milk Rush", emoji: "🥛", scene: "milk",
+    description: "Warm cream & orange — cozy dairy vibes",
+    theme: { primary: "#f97316", background: "#1a1108", accent: "#fde68a" },
+    token_name: "Milk", token_symbol: "MILK", token_icon_url: null, action_verb: "Pour",
+    welcome_text: "🥛 Welcome to Milk Rush\nPour MILK, stack rewards, cash out USDT.\n\n🍯 Earn more:\n• Daily tasks\n• Watch ads\n• Refer friends",
+    welcome_cta_text: "🥛 Start Pouring",
+  },
 ];
 
 export const getPreset = (id?: string | null) =>
