@@ -66,6 +66,10 @@ function SceneLayer({
       return <Ice primary={primary} accent={accent} />;
     case "dragon":
       return <Dragon primary={primary} accent={accent} />;
+    case "ghost":
+      return <Ghost primary={primary} accent={accent} />;
+    case "milk":
+      return <Milk primary={primary} accent={accent} />;
     case "fish":
       return <Fish primary={primary} accent={accent} />;
     case "wood":
