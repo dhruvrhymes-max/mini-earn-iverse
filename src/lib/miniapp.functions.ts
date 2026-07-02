@@ -502,11 +502,20 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
       initData: z.string().nullable().optional(),
       previewTgId: z.number().int().positive().nullable().optional(),
       patch: z.object({
+        name: z.string().max(60).optional(),
         token_name: z.string().max(40).optional(),
         token_symbol: z.string().max(12).optional(),
+        token_icon_url: z.string().url().max(500).nullable().optional(),
         action_verb: z.string().max(20).optional(),
         welcome_text: z.string().max(2000).nullable().optional(),
         welcome_cta_text: z.string().max(60).nullable().optional(),
+        theme: z.object({
+          primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+          background: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+          accent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+          scene: z.string().max(20).optional(),
+          mascot_url: z.string().url().max(500).nullable().optional(),
+        }).partial().optional(),
         economics: z.object({
           tokens_per_mine: z.number().min(0).optional(),
           mine_duration_seconds: z.number().min(1).optional(),
@@ -524,13 +533,15 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
         }).partial().optional(),
         admin_telegram_ids: z.array(z.number().int().positive()).optional(),
       }),
+
     }).parse(i),
   )
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenantRow } = await supabaseAdmin.from("tenants")
-      .select("id,bot_token,admin_telegram_ids,economics").eq("id", data.tenantId).maybeSingle();
+      .select("id,bot_token,admin_telegram_ids,economics,theme").eq("id", data.tenantId).maybeSingle();
     if (!tenantRow) throw new Error("Bot not found");
+
 
     let tgId: number | null = null;
     if (data.initData && tenantRow.bot_token) {
@@ -549,12 +560,18 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
 
     const dbPatch: Record<string, any> = {};
     const p = data.patch;
+    if (p.name != null) dbPatch.name = p.name;
     if (p.token_name != null) dbPatch.token_name = p.token_name;
     if (p.token_symbol != null) dbPatch.token_symbol = p.token_symbol;
+    if (p.token_icon_url !== undefined) dbPatch.token_icon_url = p.token_icon_url;
     if (p.action_verb != null) dbPatch.action_verb = p.action_verb;
     if (p.welcome_text !== undefined) dbPatch.welcome_text = p.welcome_text;
     if (p.welcome_cta_text !== undefined) dbPatch.welcome_cta_text = p.welcome_cta_text;
     if (p.admin_telegram_ids) dbPatch.admin_telegram_ids = p.admin_telegram_ids;
+    if (p.theme) {
+      dbPatch.theme = { ...((tenantRow.theme as any) || {}), ...p.theme };
+    }
+
 
     if (p.economics) {
       const cur = { ...(tenantRow.economics as any || {}) };

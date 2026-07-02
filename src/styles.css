@@ -142,3 +142,34 @@
     color: var(--color-foreground);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+ * Telegram Mini App: block the native long-press URL preview.
+ * Any element inside .tg-mini disables touch callout + text
+ * selection + image drag so long-press on Home/Tasks/Refer/
+ * Profile buttons no longer exposes the underlying app URL.
+ * Inputs & textareas re-enable selection so typing still works.
+ * ───────────────────────────────────────────────────────────── */
+.tg-mini,
+.tg-mini * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.tg-mini a,
+.tg-mini button,
+.tg-mini [role="button"] {
+  -webkit-user-drag: none;
+}
+.tg-mini img {
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.tg-mini input,
+.tg-mini textarea,
+.tg-mini [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+

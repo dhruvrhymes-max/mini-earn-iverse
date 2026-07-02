@@ -38,12 +38,20 @@ function MiniAdmin() {
     const econ: any = t.economics || {};
     const ref: any = t.referral_config || {};
     const ad: any = t.ad_config || {};
+    const th: any = t.theme || {};
     setForm({
+      name: t.name || "",
       token_name: t.token_name || "",
       token_symbol: t.token_symbol || "",
+      token_icon_url: t.token_icon_url || "",
       action_verb: t.action_verb || "",
       welcome_text: t.welcome_text || "",
       welcome_cta_text: t.welcome_cta_text || "",
+      theme_primary: th.primary || "#f59e0b",
+      theme_background: th.background || "#0a0a0a",
+      theme_accent: th.accent || "#fbbf24",
+      theme_scene: th.scene || "gold",
+      theme_mascot_url: th.mascot_url || "",
       tokens_per_mine: econ.tokens_per_mine ?? econ.mining_rate_per_hour ?? 100,
       mine_duration_seconds: econ.mine_duration_seconds ?? (Number(econ.mining_cycle_hours ?? 4) * 3600),
       token_per_usdt: econ.token_per_usdt ?? 10000,
@@ -57,14 +65,24 @@ function MiniAdmin() {
     });
   }, [t?.id]);
 
+
   const m = useMutation({
     mutationFn: () => {
       const patch: any = {
+        name: form.name,
         token_name: form.token_name,
         token_symbol: form.token_symbol,
+        token_icon_url: form.token_icon_url?.trim() ? form.token_icon_url.trim() : null,
         action_verb: form.action_verb,
         welcome_text: form.welcome_text,
         welcome_cta_text: form.welcome_cta_text,
+        theme: {
+          primary: form.theme_primary,
+          background: form.theme_background,
+          accent: form.theme_accent,
+          scene: form.theme_scene,
+          mascot_url: form.theme_mascot_url?.trim() ? form.theme_mascot_url.trim() : null,
+        },
         economics: {
           tokens_per_mine: Number(form.tokens_per_mine) || 0,
           mine_duration_seconds: Math.max(1, Number(form.mine_duration_seconds) || 1),
@@ -86,6 +104,7 @@ function MiniAdmin() {
       };
       return upd({ data: { tenantId: t.id, initData, previewTgId: initData ? null : Number(user.telegram_id), patch } });
     },
+
     onSuccess: () => toast.success("Saved — reopen the app to see changes"),
     onError: (e: any) => toast.error(e.message),
   });
@@ -104,11 +123,47 @@ function MiniAdmin() {
         <h1 className="text-xl font-bold">Admin panel</h1>
       </div>
 
-      <Section title="Token">
+      <Section title="Brand">
+        <Row><Label>Bot / app name</Label><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Row>
         <Row><Label>Token name</Label><Input value={form.token_name ?? ""} onChange={(e) => setForm({ ...form, token_name: e.target.value })} /></Row>
         <Row><Label>Symbol</Label><Input value={form.token_symbol ?? ""} onChange={(e) => setForm({ ...form, token_symbol: e.target.value })} /></Row>
         <Row><Label>Action verb</Label><Input value={form.action_verb ?? ""} onChange={(e) => setForm({ ...form, action_verb: e.target.value })} /></Row>
+        <Row><Label>Token icon URL</Label><Input value={form.token_icon_url ?? ""} placeholder="https://…/coin.png" onChange={(e) => setForm({ ...form, token_icon_url: e.target.value })} /></Row>
       </Section>
+
+      <Section title="Theme & look">
+        <div className="grid grid-cols-3 gap-2">
+          <ColorRow label="Primary" value={form.theme_primary} onChange={(v) => setForm({ ...form, theme_primary: v })} />
+          <ColorRow label="Background" value={form.theme_background} onChange={(v) => setForm({ ...form, theme_background: v })} />
+          <ColorRow label="Accent" value={form.theme_accent} onChange={(v) => setForm({ ...form, theme_accent: v })} />
+        </div>
+        <Row>
+          <Label>Animated scene</Label>
+          <select
+            className="w-full bg-white/10 rounded-md px-3 py-2 text-sm"
+            value={form.theme_scene ?? "gold"}
+            onChange={(e) => setForm({ ...form, theme_scene: e.target.value })}
+          >
+            {["gold","wood","diamond","crypto","galaxy","forest","fish","lava","ocean","candy","neon","ice","dragon","ghost","milk"].map((s) => (
+              <option key={s} value={s} className="bg-neutral-900">{s}</option>
+            ))}
+          </select>
+        </Row>
+        <Row><Label>Mascot image URL</Label><Input value={form.theme_mascot_url ?? ""} placeholder="https://…/mascot.png" onChange={(e) => setForm({ ...form, theme_mascot_url: e.target.value })} /></Row>
+        <div className="rounded-lg p-4 flex items-center gap-3" style={{ background: form.theme_background, border: `1px solid ${form.theme_primary}55` }}>
+          {form.theme_mascot_url ? (
+            <img src={form.theme_mascot_url} alt="" className="h-12 w-12 rounded object-contain" />
+          ) : (
+            <div className="h-12 w-12 rounded-full" style={{ background: form.theme_primary }} />
+          )}
+          <div>
+            <div className="text-sm font-bold" style={{ color: form.theme_primary }}>{form.name || "Preview"}</div>
+            <div className="text-xs" style={{ color: form.theme_accent }}>{form.token_symbol || "TKN"} · {form.action_verb || "Mine"}</div>
+          </div>
+        </div>
+      </Section>
+
+
 
       <Section title="Mining economics">
         <Row><Label>Tokens per mine</Label><Input type="number" value={form.tokens_per_mine ?? 0} onChange={(e) => setForm({ ...form, tokens_per_mine: e.target.value })} /></Row>
@@ -158,3 +213,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({ children }: { children: React.ReactNode }) {
   return <div className="space-y-1">{children}</div>;
 }
+function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-2">
+        <input type="color" value={value || "#000000"} onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-9 rounded border border-white/20 bg-transparent cursor-pointer" />
+        <Input value={value || ""} onChange={(e) => onChange(e.target.value)} className="text-xs font-mono" />
+      </div>
+    </div>
+  );
+}
+

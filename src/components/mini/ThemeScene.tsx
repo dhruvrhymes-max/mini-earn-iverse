@@ -66,6 +66,10 @@ function SceneLayer({
       return <Ice primary={primary} accent={accent} />;
     case "dragon":
       return <Dragon primary={primary} accent={accent} />;
+    case "ghost":
+      return <Ghost primary={primary} accent={accent} />;
+    case "milk":
+      return <Milk primary={primary} accent={accent} />;
     case "fish":
       return <Fish primary={primary} accent={accent} />;
     case "wood":
@@ -372,6 +376,31 @@ function Gold({ primary, accent }: { primary: string; accent: string }) {
     </>
   );
 }
+
+function Ghost({ primary, accent }: { primary: string; accent: string }) {
+  return (
+    <>
+      <Floaters count={14} emoji="👻" duration={12} size={24} />
+      <Floaters count={8} emoji="💀" duration={14} size={20} />
+      <Dots color={accent} count={30} />
+      <div className="absolute inset-0 opacity-40 scene-pulse"
+        style={{ background: `radial-gradient(circle at 50% 50%, ${primary}66, transparent 60%), radial-gradient(circle at 20% 80%, ${accent}44, transparent 50%)` }} />
+    </>
+  );
+}
+
+function Milk({ primary, accent }: { primary: string; accent: string }) {
+  return (
+    <>
+      <Floaters count={12} emoji="🥛" duration={13} size={22} />
+      <Floaters count={8} emoji="🍯" duration={11} size={20} />
+      <Dots color={accent} count={25} />
+      <div className="absolute inset-0 opacity-30 scene-pulse"
+        style={{ background: `radial-gradient(circle at 50% 60%, ${primary}55, transparent 60%)` }} />
+    </>
+  );
+}
+
 
 function SceneStyles() {
   return (
