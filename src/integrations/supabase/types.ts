@@ -181,6 +181,99 @@ export type Database = {
           },
         ]
       }
+      global_tasks: {
+        Row: {
+          active: boolean
+          created_at: string
+          daily_limit: number | null
+          id: string
+          kind: string
+          reward: number
+          sort_order: number
+          title: string
+          url: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          daily_limit?: number | null
+          id?: string
+          kind?: string
+          reward?: number
+          sort_order?: number
+          title: string
+          url?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          daily_limit?: number | null
+          id?: string
+          kind?: string
+          reward?: number
+          sort_order?: number
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      miners: {
+        Row: {
+          active: boolean
+          created_at: string
+          duration_hours: number
+          emoji: string | null
+          id: string
+          is_free: boolean
+          name: string
+          price_tokens: number
+          rate_boost_per_hour: number
+          sort_order: number
+          tenant_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          duration_hours?: number
+          emoji?: string | null
+          id?: string
+          is_free?: boolean
+          name: string
+          price_tokens?: number
+          rate_boost_per_hour?: number
+          sort_order?: number
+          tenant_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          duration_hours?: number
+          emoji?: string | null
+          id?: string
+          is_free?: boolean
+          name?: string
+          price_tokens?: number
+          rate_boost_per_hour?: number
+          sort_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "miners_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "miners_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_milestones: {
         Row: {
           created_at: string
@@ -412,6 +505,118 @@ export type Database = {
           },
           {
             foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_global_tasks: {
+        Row: {
+          count: number
+          id: string
+          last_completed_at: string
+          task_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          id?: string
+          last_completed_at?: string
+          task_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          id?: string
+          last_completed_at?: string
+          task_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_global_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "global_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_global_tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_global_tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_global_tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_miners: {
+        Row: {
+          expires_at: string | null
+          id: string
+          miner_id: string
+          purchased_at: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string
+          miner_id: string
+          purchased_at?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string
+          miner_id?: string
+          purchased_at?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_miners_miner_id_fkey"
+            columns: ["miner_id"]
+            isOneToOne: false
+            referencedRelation: "miners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_miners_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_miners_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_miners_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "app_users"
