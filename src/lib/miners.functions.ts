@@ -77,7 +77,7 @@ export const buyMiner = createServerFn({ method: "POST" })
       if (Number(user.balance) < price) throw new Error("Insufficient balance");
       await supabaseAdmin.from("app_users").update({ balance: Number(user.balance) - price }).eq("id", user.id);
       await supabaseAdmin.from("transactions").insert({
-        tenant_id: user.tenant_id, user_id: user.id, type: "miner_purchase", amount: -price, status: "approved",
+        tenant_id: user.tenant_id, user_id: user.id, type: "convert" as any, amount: -price, status: "approved",
       });
     }
 
