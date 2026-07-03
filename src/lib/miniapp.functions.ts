@@ -284,7 +284,14 @@ export const claimMining = createServerFn({ method: "POST" })
       .select("*, tenants(economics)").eq("id", data.userId).single();
     if (!user) throw new Error("User not found");
     const econ = (user as any).tenants.economics as any;
-    const ratePerHour = Number(econ.mining_rate_per_hour || 0);
+    const baseRate = Number(econ.mining_rate_per_hour || 0);
+    // Active miners boost
+    const nowIso = new Date().toISOString();
+    const { data: activeMiners } = await supabaseAdmin.from("user_miners")
+      .select("miners(rate_boost_per_hour)").eq("user_id", user.id)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
+    const boost = (activeMiners ?? []).reduce((sum: number, um: any) => sum + Number(um?.miners?.rate_boost_per_hour ?? 0), 0);
+    const ratePerHour = baseRate + boost;
     const cycleHours = Number(econ.mining_cycle_hours || 4);
     const now = Date.now();
     const started = user.mining_started_at ? new Date(user.mining_started_at).getTime() : null;
@@ -304,7 +311,7 @@ export const claimMining = createServerFn({ method: "POST" })
     });
     await maybeReleasePendingInviterReward(supabaseAdmin, user, "mine");
     await payLifetimeCut(supabaseAdmin, user, reward);
-    return { started: false, claimed: reward, balance: newBalance };
+    return { started: false, claimed: reward, balance: newBalance, boost };
   });
 
 export const completeTask = createServerFn({ method: "POST" })
@@ -457,16 +464,27 @@ export const getMyTasks = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), tenantId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
-    const [tasks, completed, milestones, ads] = await Promise.all([
+    const [tasks, completed, milestones, ads, globalTasks, globalCompleted] = await Promise.all([
       supabaseAdmin.from("tasks").select("*").eq("tenant_id", data.tenantId).eq("active", true).order("sort_order"),
       supabaseAdmin.from("user_tasks").select("*").eq("user_id", data.userId),
       supabaseAdmin.from("referral_milestones").select("*").eq("tenant_id", data.tenantId).order("threshold"),
       supabaseAdmin.from("ad_logs").select("id", { count: "exact", head: true }).eq("user_id", data.userId)
         .gte("created_at", new Date(new Date().setUTCHours(0,0,0,0)).toISOString()),
+      supabaseAdmin.from("global_tasks").select("*").eq("active", true).order("sort_order"),
+      supabaseAdmin.from("user_global_tasks").select("*").eq("user_id", data.userId),
     ]);
+    // Merge global tasks in — mark with is_global so client can route completion correctly.
+    const merged = [
+      ...(tasks.data ?? []),
+      ...((globalTasks.data ?? []).map((t: any) => ({ ...t, tenant_id: data.tenantId, is_global: true }))),
+    ];
+    const mergedCompleted = [
+      ...(completed.data ?? []),
+      ...((globalCompleted.data ?? []).map((c: any) => ({ ...c, is_global: true }))),
+    ];
     return {
-      tasks: tasks.data ?? [],
-      completed: completed.data ?? [],
+      tasks: merged,
+      completed: mergedCompleted,
       milestones: milestones.data ?? [],
       adsToday: ads.count ?? 0,
     };
