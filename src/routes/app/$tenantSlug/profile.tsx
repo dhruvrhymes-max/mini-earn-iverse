@@ -19,7 +19,7 @@ function Profile() {
     { to: "/app/$tenantSlug/history", label: "Transaction history", icon: History },
   ] as const;
   const c = tenant.community as any;
-  const go = (to: any) => nav({ to, params: { tenantSlug: tenant.slug } });
+  const go = (to: any) => nav({ to, params: { tenantSlug: tenant.slug } as any });
   return (
     <div className="p-4 pt-8" onContextMenu={(e) => e.preventDefault()}>
       <div className="bg-white/5 rounded-lg p-4 mb-6 text-center">

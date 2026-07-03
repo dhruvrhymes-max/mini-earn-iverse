@@ -224,13 +224,13 @@ function Onboarding({ userId, refetch }: { tenantSlug: string; userId: string; r
 function BottomNav({ slug, verb, primary }: { slug: string; verb: string; primary: string }) {
   const nav = useNavigate();
   const matchRoute = useMatchRoute();
-  const items = [
+  const items: Array<{ to: string; label: string; Icon: any; exact?: boolean; center?: boolean }> = [
     { to: "/app/$tenantSlug", label: "Home", Icon: Home, exact: true },
     { to: "/app/$tenantSlug/tasks", label: "Tasks", Icon: ListChecks },
     { to: "/app/$tenantSlug/miners", label: verb, Icon: Pickaxe, center: true },
     { to: "/app/$tenantSlug/refer", label: "Refer", Icon: Users },
     { to: "/app/$tenantSlug/profile", label: "Profile", Icon: User },
-  ] as const;
+  ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-black/80 backdrop-blur border-t border-white/10 flex justify-around items-center py-2 z-40">
       {items.map((it) => {
@@ -239,7 +239,7 @@ function BottomNav({ slug, verb, primary }: { slug: string; verb: string; primar
           <button
             key={it.to}
             type="button"
-            onClick={() => nav({ to: it.to, params: { tenantSlug: slug } })}
+            onClick={() => nav({ to: it.to as any, params: { tenantSlug: slug } as any })}
             onContextMenu={(e) => e.preventDefault()}
             className={`flex flex-col items-center text-xs bg-transparent border-0 outline-none select-none ${it.center ? "-mt-6" : ""}`}
             style={active ? { color: primary } : undefined}
