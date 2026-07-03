@@ -24,7 +24,7 @@ function TaskHub() {
     queryFn: () => getT({ data: { userId: user.id, tenantId: tenant.id } }),
   });
   const m = useMutation({
-    mutationFn: (taskId: string) => comp({ data: { userId: user.id, taskId } }),
+    mutationFn: (t: { taskId: string; isGlobal: boolean }) => comp({ data: { userId: user.id, taskId: t.taskId, isGlobal: t.isGlobal } }),
     onSuccess: (r: any) => { toast.success(`+${r.reward}`); refetch(); refetchUser(); qc.invalidateQueries({ queryKey: ["mini-user"] }); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -53,11 +53,11 @@ function TaskHub() {
           <TabsTrigger value="refer">Refer</TabsTrigger>
         </TabsList>
         <TabsContent value="social" className="space-y-2 mt-4">
-          {social.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate(t.id)} symbol={tenant.token_symbol} />)}
+          {social.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
           {social.length === 0 && <Empty />}
         </TabsContent>
         <TabsContent value="partner" className="space-y-2 mt-4">
-          {partner.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate(t.id)} symbol={tenant.token_symbol} />)}
+          {partner.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
           {partner.length === 0 && <Empty />}
         </TabsContent>
         <TabsContent value="watch" className="space-y-3 mt-4">
@@ -67,7 +67,7 @@ function TaskHub() {
               Watch {n.toUpperCase()} ad
             </Button>
           ))}
-          {watch.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate(t.id)} symbol={tenant.token_symbol} />)}
+          {watch.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
         </TabsContent>
         <TabsContent value="refer" className="space-y-2 mt-4">
           <ReferMilestones milestones={data?.milestones ?? []} count={user.referral_count} />

@@ -315,30 +315,33 @@ export const claimMining = createServerFn({ method: "POST" })
   });
 
 export const completeTask = createServerFn({ method: "POST" })
-  .inputValidator((i) => z.object({ userId: z.string().uuid(), taskId: z.string().uuid() }).parse(i))
+  .inputValidator((i) => z.object({ userId: z.string().uuid(), taskId: z.string().uuid(), isGlobal: z.boolean().optional().default(false) }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
-    const { data: task } = await supabaseAdmin.from("tasks").select("*").eq("id", data.taskId).single();
+    const taskTable = data.isGlobal ? "global_tasks" : "tasks";
+    const compTable = data.isGlobal ? "user_global_tasks" : "user_tasks";
+    const { data: task } = await supabaseAdmin.from(taskTable).select("*").eq("id", data.taskId).single();
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
-    if (!task || !user || task.tenant_id !== user.tenant_id) throw new Error("Not found");
-    const { data: existing } = await supabaseAdmin.from("user_tasks")
+    if (!task || !user) throw new Error("Not found");
+    if (!data.isGlobal && (task as any).tenant_id !== user.tenant_id) throw new Error("Not found");
+    const { data: existing } = await supabaseAdmin.from(compTable)
       .select("*").eq("user_id", user.id).eq("task_id", task.id).maybeSingle();
     const today = new Date(); today.setUTCHours(0, 0, 0, 0);
-    if (task.daily_limit) {
-      const sameDay = existing && new Date(existing.last_completed_at) >= today;
-      const usedToday = sameDay ? existing.count : 0;
-      if (usedToday >= task.daily_limit) throw new Error("Daily limit reached");
-      await supabaseAdmin.from("user_tasks").upsert({
+    if ((task as any).daily_limit) {
+      const sameDay = existing && new Date((existing as any).last_completed_at) >= today;
+      const usedToday = sameDay ? (existing as any).count : 0;
+      if (usedToday >= (task as any).daily_limit) throw new Error("Daily limit reached");
+      await supabaseAdmin.from(compTable).upsert({
         tenant_id: user.tenant_id, user_id: user.id, task_id: task.id,
-        count: sameDay ? existing.count + 1 : 1, last_completed_at: new Date().toISOString(),
+        count: sameDay ? (existing as any).count + 1 : 1, last_completed_at: new Date().toISOString(),
       }, { onConflict: "user_id,task_id" });
     } else {
       if (existing) throw new Error("Already completed");
-      await supabaseAdmin.from("user_tasks").insert({
+      await supabaseAdmin.from(compTable).insert({
         tenant_id: user.tenant_id, user_id: user.id, task_id: task.id, count: 1,
       });
     }
-    const reward = Number(task.reward);
+    const reward = Number((task as any).reward);
     await supabaseAdmin.from("app_users").update({ balance: Number(user.balance) + reward }).eq("id", user.id);
     await supabaseAdmin.from("transactions").insert({
       tenant_id: user.tenant_id, user_id: user.id, type: "task", amount: reward, status: "approved",
