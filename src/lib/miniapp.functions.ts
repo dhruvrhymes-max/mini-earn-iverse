@@ -284,7 +284,14 @@ export const claimMining = createServerFn({ method: "POST" })
       .select("*, tenants(economics)").eq("id", data.userId).single();
     if (!user) throw new Error("User not found");
     const econ = (user as any).tenants.economics as any;
-    const ratePerHour = Number(econ.mining_rate_per_hour || 0);
+    const baseRate = Number(econ.mining_rate_per_hour || 0);
+    // Active miners boost
+    const nowIso = new Date().toISOString();
+    const { data: activeMiners } = await supabaseAdmin.from("user_miners")
+      .select("miners(rate_boost_per_hour)").eq("user_id", user.id)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
+    const boost = (activeMiners ?? []).reduce((sum: number, um: any) => sum + Number(um?.miners?.rate_boost_per_hour ?? 0), 0);
+    const ratePerHour = baseRate + boost;
     const cycleHours = Number(econ.mining_cycle_hours || 4);
     const now = Date.now();
     const started = user.mining_started_at ? new Date(user.mining_started_at).getTime() : null;
@@ -304,34 +311,37 @@ export const claimMining = createServerFn({ method: "POST" })
     });
     await maybeReleasePendingInviterReward(supabaseAdmin, user, "mine");
     await payLifetimeCut(supabaseAdmin, user, reward);
-    return { started: false, claimed: reward, balance: newBalance };
+    return { started: false, claimed: reward, balance: newBalance, boost };
   });
 
 export const completeTask = createServerFn({ method: "POST" })
-  .inputValidator((i) => z.object({ userId: z.string().uuid(), taskId: z.string().uuid() }).parse(i))
+  .inputValidator((i) => z.object({ userId: z.string().uuid(), taskId: z.string().uuid(), isGlobal: z.boolean().optional().default(false) }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
-    const { data: task } = await supabaseAdmin.from("tasks").select("*").eq("id", data.taskId).single();
+    const taskTable = data.isGlobal ? "global_tasks" : "tasks";
+    const compTable = data.isGlobal ? "user_global_tasks" : "user_tasks";
+    const { data: task } = await supabaseAdmin.from(taskTable).select("*").eq("id", data.taskId).single();
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
-    if (!task || !user || task.tenant_id !== user.tenant_id) throw new Error("Not found");
-    const { data: existing } = await supabaseAdmin.from("user_tasks")
+    if (!task || !user) throw new Error("Not found");
+    if (!data.isGlobal && (task as any).tenant_id !== user.tenant_id) throw new Error("Not found");
+    const { data: existing } = await supabaseAdmin.from(compTable)
       .select("*").eq("user_id", user.id).eq("task_id", task.id).maybeSingle();
     const today = new Date(); today.setUTCHours(0, 0, 0, 0);
-    if (task.daily_limit) {
-      const sameDay = existing && new Date(existing.last_completed_at) >= today;
-      const usedToday = sameDay ? existing.count : 0;
-      if (usedToday >= task.daily_limit) throw new Error("Daily limit reached");
-      await supabaseAdmin.from("user_tasks").upsert({
+    if ((task as any).daily_limit) {
+      const sameDay = existing && new Date((existing as any).last_completed_at) >= today;
+      const usedToday = sameDay ? (existing as any).count : 0;
+      if (usedToday >= (task as any).daily_limit) throw new Error("Daily limit reached");
+      await supabaseAdmin.from(compTable).upsert({
         tenant_id: user.tenant_id, user_id: user.id, task_id: task.id,
-        count: sameDay ? existing.count + 1 : 1, last_completed_at: new Date().toISOString(),
+        count: sameDay ? (existing as any).count + 1 : 1, last_completed_at: new Date().toISOString(),
       }, { onConflict: "user_id,task_id" });
     } else {
       if (existing) throw new Error("Already completed");
-      await supabaseAdmin.from("user_tasks").insert({
+      await supabaseAdmin.from(compTable).insert({
         tenant_id: user.tenant_id, user_id: user.id, task_id: task.id, count: 1,
       });
     }
-    const reward = Number(task.reward);
+    const reward = Number((task as any).reward);
     await supabaseAdmin.from("app_users").update({ balance: Number(user.balance) + reward }).eq("id", user.id);
     await supabaseAdmin.from("transactions").insert({
       tenant_id: user.tenant_id, user_id: user.id, type: "task", amount: reward, status: "approved",
@@ -457,16 +467,27 @@ export const getMyTasks = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), tenantId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
-    const [tasks, completed, milestones, ads] = await Promise.all([
+    const [tasks, completed, milestones, ads, globalTasks, globalCompleted] = await Promise.all([
       supabaseAdmin.from("tasks").select("*").eq("tenant_id", data.tenantId).eq("active", true).order("sort_order"),
       supabaseAdmin.from("user_tasks").select("*").eq("user_id", data.userId),
       supabaseAdmin.from("referral_milestones").select("*").eq("tenant_id", data.tenantId).order("threshold"),
       supabaseAdmin.from("ad_logs").select("id", { count: "exact", head: true }).eq("user_id", data.userId)
         .gte("created_at", new Date(new Date().setUTCHours(0,0,0,0)).toISOString()),
+      supabaseAdmin.from("global_tasks").select("*").eq("active", true).order("sort_order"),
+      supabaseAdmin.from("user_global_tasks").select("*").eq("user_id", data.userId),
     ]);
+    // Merge global tasks in — mark with is_global so client can route completion correctly.
+    const merged = [
+      ...(tasks.data ?? []),
+      ...((globalTasks.data ?? []).map((t: any) => ({ ...t, tenant_id: data.tenantId, is_global: true }))),
+    ];
+    const mergedCompleted = [
+      ...(completed.data ?? []),
+      ...((globalCompleted.data ?? []).map((c: any) => ({ ...c, is_global: true }))),
+    ];
     return {
-      tasks: tasks.data ?? [],
-      completed: completed.data ?? [],
+      tasks: merged,
+      completed: mergedCompleted,
       milestones: milestones.data ?? [],
       adsToday: ads.count ?? 0,
     };

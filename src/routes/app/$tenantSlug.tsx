@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useParams, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useParams, useLocation, useNavigate, useMatchRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { bootMiniApp, getUser, markOnboarded } from "@/lib/miniapp.functions";
@@ -182,6 +182,8 @@ function MiniLayout() {
       <div
         style={{ background: theme.background, color: "white", ...themeStyle }}
         className="tg-mini min-h-screen pb-20 max-w-md mx-auto"
+        onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
       >
         {!user.onboarded && <Onboarding tenantSlug={tenantSlug} userId={user.id} refetch={refetch} />}
         <Outlet />
@@ -220,25 +222,35 @@ function Onboarding({ userId, refetch }: { tenantSlug: string; userId: string; r
 }
 
 function BottomNav({ slug, verb, primary }: { slug: string; verb: string; primary: string }) {
-  const items = [
+  const nav = useNavigate();
+  const matchRoute = useMatchRoute();
+  const items: Array<{ to: string; label: string; Icon: any; exact?: boolean; center?: boolean }> = [
     { to: "/app/$tenantSlug", label: "Home", Icon: Home, exact: true },
     { to: "/app/$tenantSlug/tasks", label: "Tasks", Icon: ListChecks },
-    { to: "/app/$tenantSlug/mine", label: verb, Icon: Pickaxe, center: true },
+    { to: "/app/$tenantSlug/miners", label: verb, Icon: Pickaxe, center: true },
     { to: "/app/$tenantSlug/refer", label: "Refer", Icon: Users },
     { to: "/app/$tenantSlug/profile", label: "Profile", Icon: User },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-black/80 backdrop-blur border-t border-white/10 flex justify-around items-center py-2 z-40">
-      {items.map((it) => (
-        <Link key={it.to} to={it.to} params={{ tenantSlug: slug }} activeOptions={{ exact: it.exact }}
-          className={`flex flex-col items-center text-xs ${it.center ? "-mt-6" : ""}`}
-          activeProps={{ style: { color: primary } }}>
-          <div className={it.center ? "w-14 h-14 rounded-full flex items-center justify-center shadow-lg" : "p-1"} style={it.center ? { background: primary } : {}}>
-            <it.Icon className={it.center ? "h-7 w-7 text-black" : "h-5 w-5"} />
-          </div>
-          <span className="mt-1 text-white/70">{it.label}</span>
-        </Link>
-      ))}
+      {items.map((it) => {
+        const active = !!matchRoute({ to: it.to, params: { tenantSlug: slug } as any, ...(it.exact ? { fuzzy: false } : { fuzzy: true }) } as any);
+        return (
+          <button
+            key={it.to}
+            type="button"
+            onClick={() => nav({ to: it.to as any, params: { tenantSlug: slug } as any })}
+            onContextMenu={(e) => e.preventDefault()}
+            className={`flex flex-col items-center text-xs bg-transparent border-0 outline-none select-none ${it.center ? "-mt-6" : ""}`}
+            style={active ? { color: primary } : undefined}
+          >
+            <div className={it.center ? "w-14 h-14 rounded-full flex items-center justify-center shadow-lg" : "p-1"} style={it.center ? { background: primary } : {}}>
+              <it.Icon className={it.center ? "h-7 w-7 text-black" : "h-5 w-5"} />
+            </div>
+            <span className="mt-1 text-white/70">{it.label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }

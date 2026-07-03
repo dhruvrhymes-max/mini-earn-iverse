@@ -23,6 +23,7 @@ import { Route as AppTenantSlugWalletsRouteImport } from './routes/app/$tenantSl
 import { Route as AppTenantSlugTasksRouteImport } from './routes/app/$tenantSlug/tasks'
 import { Route as AppTenantSlugReferRouteImport } from './routes/app/$tenantSlug/refer'
 import { Route as AppTenantSlugProfileRouteImport } from './routes/app/$tenantSlug/profile'
+import { Route as AppTenantSlugMinersRouteImport } from './routes/app/$tenantSlug/miners'
 import { Route as AppTenantSlugMineRouteImport } from './routes/app/$tenantSlug/mine'
 import { Route as AppTenantSlugHistoryRouteImport } from './routes/app/$tenantSlug/history'
 import { Route as AppTenantSlugDepositRouteImport } from './routes/app/$tenantSlug/deposit'
@@ -30,6 +31,7 @@ import { Route as AppTenantSlugConvertRouteImport } from './routes/app/$tenantSl
 import { Route as AppTenantSlugAdminRouteImport } from './routes/app/$tenantSlug/admin'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as AuthenticatedSuperTenantsRouteImport } from './routes/_authenticated/super/tenants'
+import { Route as AuthenticatedSuperTasksRouteImport } from './routes/_authenticated/super/tasks'
 import { Route as AuthenticatedSuperAnnouncementsRouteImport } from './routes/_authenticated/super/announcements'
 import { Route as AuthenticatedAdminTenantIdRouteImport } from './routes/_authenticated/admin/$tenantId'
 import { Route as AuthenticatedAdminTenantIdIndexRouteImport } from './routes/_authenticated/admin/$tenantId/index'
@@ -110,6 +112,11 @@ const AppTenantSlugProfileRoute = AppTenantSlugProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppTenantSlugRoute,
 } as any)
+const AppTenantSlugMinersRoute = AppTenantSlugMinersRouteImport.update({
+  id: '/miners',
+  path: '/miners',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
 const AppTenantSlugMineRoute = AppTenantSlugMineRouteImport.update({
   id: '/mine',
   path: '/mine',
@@ -146,6 +153,11 @@ const AuthenticatedSuperTenantsRoute =
     path: '/tenants',
     getParentRoute: () => AuthenticatedSuperRoute,
   } as any)
+const AuthenticatedSuperTasksRoute = AuthenticatedSuperTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthenticatedSuperRoute,
+} as any)
 const AuthenticatedSuperAnnouncementsRoute =
   AuthenticatedSuperAnnouncementsRouteImport.update({
     id: '/announcements',
@@ -215,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/app/$tenantSlug': typeof AppTenantSlugRouteWithChildren
   '/admin/$tenantId': typeof AuthenticatedAdminTenantIdRouteWithChildren
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
+  '/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
@@ -222,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
   '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
+  '/app/$tenantSlug/miners': typeof AppTenantSlugMinersRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
@@ -244,6 +258,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
+  '/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
@@ -251,6 +266,7 @@ export interface FileRoutesByTo {
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
   '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
+  '/app/$tenantSlug/miners': typeof AppTenantSlugMinersRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
@@ -278,6 +294,7 @@ export interface FileRoutesById {
   '/app/$tenantSlug': typeof AppTenantSlugRouteWithChildren
   '/_authenticated/admin/$tenantId': typeof AuthenticatedAdminTenantIdRouteWithChildren
   '/_authenticated/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
+  '/_authenticated/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/_authenticated/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
@@ -285,6 +302,7 @@ export interface FileRoutesById {
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
   '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
+  '/app/$tenantSlug/miners': typeof AppTenantSlugMinersRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
@@ -312,6 +330,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug'
     | '/admin/$tenantId'
     | '/super/announcements'
+    | '/super/tasks'
     | '/super/tenants'
     | '/api/public/client-error'
     | '/app/$tenantSlug/admin'
@@ -319,6 +338,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/deposit'
     | '/app/$tenantSlug/history'
     | '/app/$tenantSlug/mine'
+    | '/app/$tenantSlug/miners'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
     | '/app/$tenantSlug/tasks'
@@ -341,6 +361,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/super/announcements'
+    | '/super/tasks'
     | '/super/tenants'
     | '/api/public/client-error'
     | '/app/$tenantSlug/admin'
@@ -348,6 +369,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/deposit'
     | '/app/$tenantSlug/history'
     | '/app/$tenantSlug/mine'
+    | '/app/$tenantSlug/miners'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
     | '/app/$tenantSlug/tasks'
@@ -374,6 +396,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug'
     | '/_authenticated/admin/$tenantId'
     | '/_authenticated/super/announcements'
+    | '/_authenticated/super/tasks'
     | '/_authenticated/super/tenants'
     | '/api/public/client-error'
     | '/app/$tenantSlug/admin'
@@ -381,6 +404,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/deposit'
     | '/app/$tenantSlug/history'
     | '/app/$tenantSlug/mine'
+    | '/app/$tenantSlug/miners'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
     | '/app/$tenantSlug/tasks'
@@ -508,6 +532,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantSlugProfileRouteImport
       parentRoute: typeof AppTenantSlugRoute
     }
+    '/app/$tenantSlug/miners': {
+      id: '/app/$tenantSlug/miners'
+      path: '/miners'
+      fullPath: '/app/$tenantSlug/miners'
+      preLoaderRoute: typeof AppTenantSlugMinersRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
     '/app/$tenantSlug/mine': {
       id: '/app/$tenantSlug/mine'
       path: '/mine'
@@ -555,6 +586,13 @@ declare module '@tanstack/react-router' {
       path: '/tenants'
       fullPath: '/super/tenants'
       preLoaderRoute: typeof AuthenticatedSuperTenantsRouteImport
+      parentRoute: typeof AuthenticatedSuperRoute
+    }
+    '/_authenticated/super/tasks': {
+      id: '/_authenticated/super/tasks'
+      path: '/tasks'
+      fullPath: '/super/tasks'
+      preLoaderRoute: typeof AuthenticatedSuperTasksRouteImport
       parentRoute: typeof AuthenticatedSuperRoute
     }
     '/_authenticated/super/announcements': {
@@ -632,12 +670,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedSuperRouteChildren {
   AuthenticatedSuperAnnouncementsRoute: typeof AuthenticatedSuperAnnouncementsRoute
+  AuthenticatedSuperTasksRoute: typeof AuthenticatedSuperTasksRoute
   AuthenticatedSuperTenantsRoute: typeof AuthenticatedSuperTenantsRoute
   AuthenticatedSuperIndexRoute: typeof AuthenticatedSuperIndexRoute
 }
 
 const AuthenticatedSuperRouteChildren: AuthenticatedSuperRouteChildren = {
   AuthenticatedSuperAnnouncementsRoute: AuthenticatedSuperAnnouncementsRoute,
+  AuthenticatedSuperTasksRoute: AuthenticatedSuperTasksRoute,
   AuthenticatedSuperTenantsRoute: AuthenticatedSuperTenantsRoute,
   AuthenticatedSuperIndexRoute: AuthenticatedSuperIndexRoute,
 }
@@ -700,6 +740,7 @@ interface AppTenantSlugRouteChildren {
   AppTenantSlugDepositRoute: typeof AppTenantSlugDepositRoute
   AppTenantSlugHistoryRoute: typeof AppTenantSlugHistoryRoute
   AppTenantSlugMineRoute: typeof AppTenantSlugMineRoute
+  AppTenantSlugMinersRoute: typeof AppTenantSlugMinersRoute
   AppTenantSlugProfileRoute: typeof AppTenantSlugProfileRoute
   AppTenantSlugReferRoute: typeof AppTenantSlugReferRoute
   AppTenantSlugTasksRoute: typeof AppTenantSlugTasksRoute
@@ -714,6 +755,7 @@ const AppTenantSlugRouteChildren: AppTenantSlugRouteChildren = {
   AppTenantSlugDepositRoute: AppTenantSlugDepositRoute,
   AppTenantSlugHistoryRoute: AppTenantSlugHistoryRoute,
   AppTenantSlugMineRoute: AppTenantSlugMineRoute,
+  AppTenantSlugMinersRoute: AppTenantSlugMinersRoute,
   AppTenantSlugProfileRoute: AppTenantSlugProfileRoute,
   AppTenantSlugReferRoute: AppTenantSlugReferRoute,
   AppTenantSlugTasksRoute: AppTenantSlugTasksRoute,

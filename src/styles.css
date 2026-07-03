@@ -152,18 +152,21 @@
  * ───────────────────────────────────────────────────────────── */
 .tg-mini,
 .tg-mini * {
-  -webkit-touch-callout: none;
+  -webkit-touch-callout: none !important;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  touch-action: manipulation;
 }
 .tg-mini a,
 .tg-mini button,
 .tg-mini [role="button"] {
   -webkit-user-drag: none;
+  -webkit-touch-callout: none !important;
 }
 .tg-mini img {
   -webkit-user-drag: none;
+  -webkit-touch-callout: none !important;
   pointer-events: none;
 }
 .tg-mini input,
@@ -171,5 +174,6 @@
 .tg-mini [contenteditable="true"] {
   -webkit-user-select: text;
   user-select: text;
+  -webkit-touch-callout: default;
 }
 
