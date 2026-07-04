@@ -144,36 +144,46 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
- * Telegram Mini App: block the native long-press URL preview.
- * Any element inside .tg-mini disables touch callout + text
- * selection + image drag so long-press on Home/Tasks/Refer/
- * Profile buttons no longer exposes the underlying app URL.
- * Inputs & textareas re-enable selection so typing still works.
+ * Telegram Mini App: hard-block the native long-press URL preview
+ * across every route. Applied on html/body AND every descendant of
+ * .tg-mini so the whole mini app (nav + pages + modals) never
+ * exposes the underlying app URL on long-press.
  * ───────────────────────────────────────────────────────────── */
-.tg-mini,
-.tg-mini * {
+html:has(.tg-mini),
+html:has(.tg-mini) body {
   -webkit-touch-callout: none !important;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+  overscroll-behavior: none;
+}
+.tg-mini,
+.tg-mini *,
+.tg-mini *::before,
+.tg-mini *::after {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
   touch-action: manipulation;
 }
 .tg-mini a,
 .tg-mini button,
-.tg-mini [role="button"] {
-  -webkit-user-drag: none;
+.tg-mini [role="button"],
+.tg-mini img,
+.tg-mini svg {
+  -webkit-user-drag: none !important;
   -webkit-touch-callout: none !important;
+  user-drag: none;
 }
 .tg-mini img {
-  -webkit-user-drag: none;
-  -webkit-touch-callout: none !important;
   pointer-events: none;
 }
 .tg-mini input,
 .tg-mini textarea,
 .tg-mini [contenteditable="true"] {
-  -webkit-user-select: text;
-  user-select: text;
-  -webkit-touch-callout: default;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
 }
 
