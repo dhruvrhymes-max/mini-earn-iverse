@@ -84,6 +84,35 @@ function MiniLayout() {
 
   useEffect(() => { installClientErrorReporter(); setTenantContext(tenantSlug); }, [tenantSlug]);
 
+  // Hard-block long-press URL previews at the document level for all routes
+  useEffect(() => {
+    const stop = (e: Event) => { e.preventDefault(); };
+    const stopContext = (e: MouseEvent) => { e.preventDefault(); return false; };
+    let pressTimer: number | null = null;
+    const onTouchStart = () => {
+      if (pressTimer) window.clearTimeout(pressTimer);
+      pressTimer = window.setTimeout(() => { /* consume long-press window */ }, 300);
+    };
+    const onTouchEnd = () => { if (pressTimer) { window.clearTimeout(pressTimer); pressTimer = null; } };
+    document.addEventListener("contextmenu", stopContext, { capture: true });
+    document.addEventListener("dragstart", stop, { capture: true });
+    document.addEventListener("selectstart", stop, { capture: true });
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    try {
+      const wa = (window as any).Telegram?.WebApp;
+      wa?.disableVerticalSwipes?.();
+      wa?.expand?.();
+    } catch { /* Telegram API may be unavailable */ }
+    return () => {
+      document.removeEventListener("contextmenu", stopContext, { capture: true } as any);
+      document.removeEventListener("dragstart", stop, { capture: true } as any);
+      document.removeEventListener("selectstart", stop, { capture: true } as any);
+      document.removeEventListener("touchstart", onTouchStart as any);
+      document.removeEventListener("touchend", onTouchEnd as any);
+    };
+  }, []);
+
   const doBoot = useCallback(async () => {
     let tgId: number | null = null;
     const initData = await readTelegramInitData();
