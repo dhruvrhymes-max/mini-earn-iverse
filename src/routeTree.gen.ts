@@ -33,11 +33,13 @@ import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/cl
 import { Route as AuthenticatedSuperTenantsRouteImport } from './routes/_authenticated/super/tenants'
 import { Route as AuthenticatedSuperTasksRouteImport } from './routes/_authenticated/super/tasks'
 import { Route as AuthenticatedSuperAnnouncementsRouteImport } from './routes/_authenticated/super/announcements'
+import { Route as AuthenticatedAdminNewAiRouteImport } from './routes/_authenticated/admin/new-ai'
 import { Route as AuthenticatedAdminTenantIdRouteImport } from './routes/_authenticated/admin/$tenantId'
 import { Route as AuthenticatedAdminTenantIdIndexRouteImport } from './routes/_authenticated/admin/$tenantId/index'
 import { Route as AuthenticatedAdminTenantIdWithdrawalsRouteImport } from './routes/_authenticated/admin/$tenantId/withdrawals'
 import { Route as AuthenticatedAdminTenantIdTasksRouteImport } from './routes/_authenticated/admin/$tenantId/tasks'
 import { Route as AuthenticatedAdminTenantIdReferralsRouteImport } from './routes/_authenticated/admin/$tenantId/referrals'
+import { Route as AuthenticatedAdminTenantIdMinersRouteImport } from './routes/_authenticated/admin/$tenantId/miners'
 import { Route as AuthenticatedAdminTenantIdMilestonesRouteImport } from './routes/_authenticated/admin/$tenantId/milestones'
 import { Route as AuthenticatedAdminTenantIdEconomicsRouteImport } from './routes/_authenticated/admin/$tenantId/economics'
 import { Route as AuthenticatedAdminTenantIdBrandingRouteImport } from './routes/_authenticated/admin/$tenantId/branding'
@@ -164,6 +166,11 @@ const AuthenticatedSuperAnnouncementsRoute =
     path: '/announcements',
     getParentRoute: () => AuthenticatedSuperRoute,
   } as any)
+const AuthenticatedAdminNewAiRoute = AuthenticatedAdminNewAiRouteImport.update({
+  id: '/admin/new-ai',
+  path: '/admin/new-ai',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAdminTenantIdRoute =
   AuthenticatedAdminTenantIdRouteImport.update({
     id: '/admin/$tenantId',
@@ -192,6 +199,12 @@ const AuthenticatedAdminTenantIdReferralsRoute =
   AuthenticatedAdminTenantIdReferralsRouteImport.update({
     id: '/referrals',
     path: '/referrals',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
+const AuthenticatedAdminTenantIdMinersRoute =
+  AuthenticatedAdminTenantIdMinersRouteImport.update({
+    id: '/miners',
+    path: '/miners',
     getParentRoute: () => AuthenticatedAdminTenantIdRoute,
   } as any)
 const AuthenticatedAdminTenantIdMilestonesRoute =
@@ -226,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/super': typeof AuthenticatedSuperRouteWithChildren
   '/app/$tenantSlug': typeof AppTenantSlugRouteWithChildren
   '/admin/$tenantId': typeof AuthenticatedAdminTenantIdRouteWithChildren
+  '/admin/new-ai': typeof AuthenticatedAdminNewAiRoute
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
@@ -248,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
   '/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
@@ -257,6 +272,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/admin/new-ai': typeof AuthenticatedAdminNewAiRoute
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
@@ -279,6 +295,7 @@ export interface FileRoutesByTo {
   '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
   '/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
@@ -293,6 +310,7 @@ export interface FileRoutesById {
   '/_authenticated/super': typeof AuthenticatedSuperRouteWithChildren
   '/app/$tenantSlug': typeof AppTenantSlugRouteWithChildren
   '/_authenticated/admin/$tenantId': typeof AuthenticatedAdminTenantIdRouteWithChildren
+  '/_authenticated/admin/new-ai': typeof AuthenticatedAdminNewAiRoute
   '/_authenticated/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/_authenticated/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/_authenticated/super/tenants': typeof AuthenticatedSuperTenantsRoute
@@ -315,6 +333,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
   '/_authenticated/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/_authenticated/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
+  '/_authenticated/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
   '/_authenticated/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/_authenticated/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/_authenticated/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
@@ -329,6 +348,7 @@ export interface FileRouteTypes {
     | '/super'
     | '/app/$tenantSlug'
     | '/admin/$tenantId'
+    | '/admin/new-ai'
     | '/super/announcements'
     | '/super/tasks'
     | '/super/tenants'
@@ -351,6 +371,7 @@ export interface FileRouteTypes {
     | '/admin/$tenantId/branding'
     | '/admin/$tenantId/economics'
     | '/admin/$tenantId/milestones'
+    | '/admin/$tenantId/miners'
     | '/admin/$tenantId/referrals'
     | '/admin/$tenantId/tasks'
     | '/admin/$tenantId/withdrawals'
@@ -360,6 +381,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/admin/new-ai'
     | '/super/announcements'
     | '/super/tasks'
     | '/super/tenants'
@@ -382,6 +404,7 @@ export interface FileRouteTypes {
     | '/admin/$tenantId/branding'
     | '/admin/$tenantId/economics'
     | '/admin/$tenantId/milestones'
+    | '/admin/$tenantId/miners'
     | '/admin/$tenantId/referrals'
     | '/admin/$tenantId/tasks'
     | '/admin/$tenantId/withdrawals'
@@ -395,6 +418,7 @@ export interface FileRouteTypes {
     | '/_authenticated/super'
     | '/app/$tenantSlug'
     | '/_authenticated/admin/$tenantId'
+    | '/_authenticated/admin/new-ai'
     | '/_authenticated/super/announcements'
     | '/_authenticated/super/tasks'
     | '/_authenticated/super/tenants'
@@ -417,6 +441,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$tenantId/branding'
     | '/_authenticated/admin/$tenantId/economics'
     | '/_authenticated/admin/$tenantId/milestones'
+    | '/_authenticated/admin/$tenantId/miners'
     | '/_authenticated/admin/$tenantId/referrals'
     | '/_authenticated/admin/$tenantId/tasks'
     | '/_authenticated/admin/$tenantId/withdrawals'
@@ -602,6 +627,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperAnnouncementsRouteImport
       parentRoute: typeof AuthenticatedSuperRoute
     }
+    '/_authenticated/admin/new-ai': {
+      id: '/_authenticated/admin/new-ai'
+      path: '/admin/new-ai'
+      fullPath: '/admin/new-ai'
+      preLoaderRoute: typeof AuthenticatedAdminNewAiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/$tenantId': {
       id: '/_authenticated/admin/$tenantId'
       path: '/admin/$tenantId'
@@ -635,6 +667,13 @@ declare module '@tanstack/react-router' {
       path: '/referrals'
       fullPath: '/admin/$tenantId/referrals'
       preLoaderRoute: typeof AuthenticatedAdminTenantIdReferralsRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
+    '/_authenticated/admin/$tenantId/miners': {
+      id: '/_authenticated/admin/$tenantId/miners'
+      path: '/miners'
+      fullPath: '/admin/$tenantId/miners'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdMinersRouteImport
       parentRoute: typeof AuthenticatedAdminTenantIdRoute
     }
     '/_authenticated/admin/$tenantId/milestones': {
@@ -690,6 +729,7 @@ interface AuthenticatedAdminTenantIdRouteChildren {
   AuthenticatedAdminTenantIdBrandingRoute: typeof AuthenticatedAdminTenantIdBrandingRoute
   AuthenticatedAdminTenantIdEconomicsRoute: typeof AuthenticatedAdminTenantIdEconomicsRoute
   AuthenticatedAdminTenantIdMilestonesRoute: typeof AuthenticatedAdminTenantIdMilestonesRoute
+  AuthenticatedAdminTenantIdMinersRoute: typeof AuthenticatedAdminTenantIdMinersRoute
   AuthenticatedAdminTenantIdReferralsRoute: typeof AuthenticatedAdminTenantIdReferralsRoute
   AuthenticatedAdminTenantIdTasksRoute: typeof AuthenticatedAdminTenantIdTasksRoute
   AuthenticatedAdminTenantIdWithdrawalsRoute: typeof AuthenticatedAdminTenantIdWithdrawalsRoute
@@ -705,6 +745,8 @@ const AuthenticatedAdminTenantIdRouteChildren: AuthenticatedAdminTenantIdRouteCh
       AuthenticatedAdminTenantIdEconomicsRoute,
     AuthenticatedAdminTenantIdMilestonesRoute:
       AuthenticatedAdminTenantIdMilestonesRoute,
+    AuthenticatedAdminTenantIdMinersRoute:
+      AuthenticatedAdminTenantIdMinersRoute,
     AuthenticatedAdminTenantIdReferralsRoute:
       AuthenticatedAdminTenantIdReferralsRoute,
     AuthenticatedAdminTenantIdTasksRoute: AuthenticatedAdminTenantIdTasksRoute,
@@ -721,12 +763,14 @@ const AuthenticatedAdminTenantIdRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedSuperRoute: typeof AuthenticatedSuperRouteWithChildren
   AuthenticatedAdminTenantIdRoute: typeof AuthenticatedAdminTenantIdRouteWithChildren
+  AuthenticatedAdminNewAiRoute: typeof AuthenticatedAdminNewAiRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSuperRoute: AuthenticatedSuperRouteWithChildren,
   AuthenticatedAdminTenantIdRoute: AuthenticatedAdminTenantIdRouteWithChildren,
+  AuthenticatedAdminNewAiRoute: AuthenticatedAdminNewAiRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 

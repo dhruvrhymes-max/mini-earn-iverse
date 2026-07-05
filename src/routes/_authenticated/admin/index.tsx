@@ -110,6 +110,8 @@ function AdminIndex() {
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">My Bots</h1>
+          <div className="flex gap-2">
+            <Button asChild variant="outline"><Link to="/admin/new-ai"><Shield className="mr-1 h-4 w-4" />AI Creator</Link></Button>
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />New bot</Button></DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -174,6 +176,7 @@ function AdminIndex() {
               )}
             </DialogContent>
           </Dialog>
+          </div>
         </div>
         {isLoading ? <p className="text-muted-foreground">Loading…</p> : tenants.length === 0 ? (
           <div className="border rounded-lg p-12 text-center text-muted-foreground">

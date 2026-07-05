@@ -6,6 +6,8 @@ import { EMPTY_MINI_TENANT, EMPTY_MINI_USER, MiniCtx } from "@/lib/miniapp-conte
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
+import { lazy, Suspense as ReactSuspense } from "react";
+const Theme3D = lazy(() => import("@/components/mini/Theme3D"));
 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
 const BOOT_TIMEOUT_MS = 15_000;
@@ -210,12 +212,15 @@ function MiniLayout() {
     <MiniCtx.Provider value={{ tenant, user, refetchUser: refetch }}>
       <div
         style={{ background: theme.background, color: "white", ...themeStyle }}
-        className="tg-mini min-h-screen pb-20 max-w-md mx-auto"
+        className="tg-mini min-h-screen pb-20 max-w-md mx-auto relative"
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       >
+        <ReactSuspense fallback={null}>
+          <Theme3D scene={theme.scene ?? "gold"} primary={theme.primary} accent={theme.accent} background={theme.background} />
+        </ReactSuspense>
         {!user.onboarded && <Onboarding tenantSlug={tenantSlug} userId={user.id} refetch={refetch} />}
-        <Outlet />
+        <div className="relative z-10"><Outlet /></div>
         <BottomNav slug={tenantSlug} verb={tenant.action_verb} primary={theme.primary} />
       </div>
     </MiniCtx.Provider>
