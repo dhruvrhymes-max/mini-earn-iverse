@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useParams } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, BarChart, Coins, Megaphone, ListChecks, Wallet, Users, Settings, Menu, X } from "lucide-react";
+import { ArrowLeft, BarChart, Coins, Megaphone, ListChecks, Wallet, Users, Settings, Menu, X, Pickaxe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/admin/$tenantId")({
@@ -14,6 +14,7 @@ function TenantLayout() {
     { to: "/admin/$tenantId", label: "Analytics", icon: BarChart, exact: true },
     { to: "/admin/$tenantId/branding", label: "Manage Bot", icon: Settings },
     { to: "/admin/$tenantId/economics", label: "Economics", icon: Coins },
+    { to: "/admin/$tenantId/miners", label: "Miners", icon: Pickaxe },
     { to: "/admin/$tenantId/ads", label: "Ads", icon: Megaphone },
     { to: "/admin/$tenantId/tasks", label: "Tasks", icon: ListChecks },
     { to: "/admin/$tenantId/referrals", label: "Referral rewards", icon: Users },
