@@ -63,6 +63,63 @@ export type Database = {
           },
         ]
       }
+      ad_providers: {
+        Row: {
+          active: boolean
+          config: Json
+          created_at: string
+          daily_cap: number
+          id: string
+          kind: string
+          label: string
+          reward_tokens: number
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          config?: Json
+          created_at?: string
+          daily_cap?: number
+          id?: string
+          kind: string
+          label: string
+          reward_tokens?: number
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          config?: Json
+          created_at?: string
+          daily_cap?: number
+          id?: string
+          kind?: string
+          label?: string
+          reward_tokens?: number
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_providers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_providers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           active: boolean
@@ -221,12 +278,15 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          description: string | null
           duration_hours: number
           emoji: string | null
           id: string
+          image_url: string | null
           is_free: boolean
           name: string
           price_tokens: number
+          rarity: string
           rate_boost_per_hour: number
           sort_order: number
           tenant_id: string
@@ -234,12 +294,15 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          description?: string | null
           duration_hours?: number
           emoji?: string | null
           id?: string
+          image_url?: string | null
           is_free?: boolean
           name: string
           price_tokens?: number
+          rarity?: string
           rate_boost_per_hour?: number
           sort_order?: number
           tenant_id: string
@@ -247,12 +310,15 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          description?: string | null
           duration_hours?: number
           emoji?: string | null
           id?: string
+          image_url?: string | null
           is_free?: boolean
           name?: string
           price_tokens?: number
+          rarity?: string
           rate_boost_per_hour?: number
           sort_order?: number
           tenant_id?: string
