@@ -46,7 +46,7 @@ export const applyAiBotConfig = createServerFn({ method: "POST" })
     if (data.config.tasks?.length) {
       await supabaseAdmin.from("tasks").insert(data.config.tasks.map((t: any, idx: number) => ({
         tenant_id: tenant.id, title: t.title, reward: Number(t.reward) || 0,
-        url: t.url ?? null, type: "social", sort_order: idx, active: true,
+        url: t.url ?? null, kind: "social" as const, sort_order: idx, active: true,
       })));
     }
     if (data.config.miners?.length) {
