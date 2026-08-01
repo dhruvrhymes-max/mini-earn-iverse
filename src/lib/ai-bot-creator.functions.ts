@@ -61,7 +61,7 @@ async function callLovable(prompt: string) {
     method: "POST",
     headers: { "content-type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
+      model: "google/gemini-3.6-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt },
@@ -70,7 +70,9 @@ async function callLovable(prompt: string) {
       temperature: 0.9,
     }),
   });
-  if (!res.ok) throw new Error(`Lovable AI ${res.status}: ${await res.text()}`);
+  if (res.status === 429) throw new Error("AI rate limit reached. Try again in a minute.");
+  if (res.status === 402) throw new Error("AI credits exhausted. Add credits to your workspace.");
+  if (!res.ok) throw new Error(`Lovable AI ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const j = await res.json();
   return j?.choices?.[0]?.message?.content ?? "";
 }
@@ -78,19 +80,30 @@ async function callLovable(prompt: string) {
 export const generateBotConfig = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({
     description: z.string().min(3).max(500),
-    provider: z.enum(["gemini", "lovable"]).default("gemini"),
+    provider: z.enum(["gemini", "lovable"]).default("lovable"),
   }).parse(i))
   .handler(async ({ data }) => {
     const prompt = `User request: "${data.description}"\n\nGenerate the JSON config for this Telegram mini-app bot.`;
-    const text = data.provider === "gemini" ? await callGemini(prompt) : await callLovable(prompt);
+    let text = "";
+    if (data.provider === "gemini") {
+      try {
+        text = await callGemini(prompt);
+      } catch (e) {
+        // Gemini key quota/errors shouldn't dead-end the creator — fall back.
+        console.error("gemini failed, falling back to Lovable AI:", e);
+        text = await callLovable(prompt);
+      }
+    } else {
+      text = await callLovable(prompt);
+    }
     let parsed: unknown;
     try {
-      const cleaned = text.trim().replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+      const cleaned = String(text).trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/, "").trim();
       parsed = JSON.parse(cleaned);
     } catch {
       throw new Error("AI returned invalid JSON. Try again with a clearer description.");
     }
     const result = BotConfigSchema.safeParse(parsed);
-    if (!result.success) throw new Error(`Config validation failed: ${result.error.errors.slice(0, 2).map(e => e.message).join("; ")}`);
+    if (!result.success) throw new Error(`Config validation failed: ${result.error.errors.slice(0, 2).map(e => `${e.path.join(".")}: ${e.message}`).join("; ")}`);
     return result.data;
   });
