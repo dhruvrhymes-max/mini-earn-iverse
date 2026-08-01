@@ -186,6 +186,11 @@ function MiniAdmin() {
         </label>
       </Section>
 
+      <Section title="Ad providers">
+        <AdProvidersAdmin tenantId={t.id} initData={initData} previewTgId={user?.telegram_id ?? null} />
+      </Section>
+
+
       <Section title="Welcome message">
         <Row><Label>Welcome text</Label><Textarea rows={3} value={form.welcome_text ?? ""} onChange={(e) => setForm({ ...form, welcome_text: e.target.value })} /></Row>
         <Row><Label>CTA button text</Label><Input value={form.welcome_cta_text ?? ""} onChange={(e) => setForm({ ...form, welcome_cta_text: e.target.value })} /></Row>
