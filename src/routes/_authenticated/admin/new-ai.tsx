@@ -21,7 +21,7 @@ function AiCreator() {
   const gen = useServerFn(generateBotConfig);
   const apply = useServerFn(applyAiBotConfig);
   const [description, setDescription] = useState("");
-  const [provider, setProvider] = useState<"gemini" | "lovable">("gemini");
+  const [provider, setProvider] = useState<"gemini" | "lovable">("lovable");
   const [config, setConfig] = useState<any>(null);
   const [botToken, setBotToken] = useState("");
   const [botUsername, setBotUsername] = useState("");
