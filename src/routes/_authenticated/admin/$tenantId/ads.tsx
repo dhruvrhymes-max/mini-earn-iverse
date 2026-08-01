@@ -53,7 +53,7 @@ function AdsPage() {
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(EMPTY); }}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Add provider</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{form.id ? "Edit" : "New"} ad provider</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div><Label>Network</Label>
