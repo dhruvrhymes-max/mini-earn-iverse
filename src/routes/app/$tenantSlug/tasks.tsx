@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMini } from "@/lib/miniapp-context";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyTasks, completeTask, logAdReward } from "@/lib/miniapp.functions";
+import { listAdProviders } from "@/lib/ad-providers.functions";
+import { AdSlot, type AdProvider } from "@/components/mini/AdRunner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
