@@ -31,9 +31,15 @@ function TaskHub() {
     onError: (e: any) => toast.error(e.message),
   });
   const am = useMutation({
-    mutationFn: (network: "adsgram" | "monetag" | "adexium") => adFn({ data: { userId: user.id, network } }),
+    mutationFn: (v: { network: any; providerId?: string | null }) =>
+      adFn({ data: { userId: user.id, network: v.network, providerId: v.providerId ?? null } }),
     onSuccess: (r: any) => { toast.success(`+${r.reward.toFixed(2)} • ${Math.max(0, r.limit - r.used)}/${r.limit} left today`); refetch(); refetchUser(); },
     onError: (e: any) => toast.error(e.message),
+  });
+  const listAds = useServerFn(listAdProviders);
+  const { data: adProviders = [] } = useQuery({
+    queryKey: ["ad-providers", tenant.id],
+    queryFn: () => listAds({ data: { tenantId: tenant.id } }) as Promise<AdProvider[]>,
   });
 
   const tasks = data?.tasks ?? [];
