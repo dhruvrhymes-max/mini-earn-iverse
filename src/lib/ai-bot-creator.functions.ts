@@ -27,14 +27,30 @@ const BotConfigSchema = z.object({
   })).max(6),
 });
 
-const SYSTEM_PROMPT = `You are a Telegram mini-app bot designer. Generate a complete tap-to-earn bot config as JSON.
+const SYSTEM_PROMPT = `You are a Telegram mini-app bot designer. Generate a tap-to-earn bot config as JSON.
+
+Return ONLY a JSON object with EXACTLY these keys (no extra keys, no markdown, no commentary):
+{
+  "name": string,
+  "slug_hint": string (lowercase a-z0-9 and dashes only),
+  "token_name": string,
+  "token_symbol": string (2-6 uppercase chars),
+  "action_verb": string (e.g. "Mine", "Squeeze", "Haunt"),
+  "mascot_emoji": string (single emoji),
+  "welcome_text": string (3-4 lines with emojis, ends with an earning tip),
+  "welcome_cta_text": string,
+  "theme": { "primary": "#rrggbb", "background": "#rrggbb", "accent": "#rrggbb" },
+  "scene": one of "wood","gold","diamond","crypto","galaxy","forest","fish","lava","ocean","candy","neon","ice","dragon","ghost","milk",
+  "tasks": [ { "title": string, "reward": number, "url": string|null } ]  (3-5 items),
+  "miners": [ { "name": string, "emoji": string, "price_tokens": number, "rate_boost_per_hour": number, "duration_hours": integer, "rarity": "common"|"rare"|"epic"|"legendary", "is_free": boolean } ]  (5 items)
+}
+
 Rules:
-- Colors MUST be dark, saturated, high-contrast hex (background always dark, e.g. #0a0512).
-- Pick the closest matching scene from the allowed enum.
-- Give the first miner is_free:true (400/h boost, permanent, 0 price), then 4 paid tiers scaling in price and rate (common → legendary).
-- Tasks: 3-5 mix of social + partner tasks with realistic rewards (50-500 tokens).
-- Welcome text: 3-4 lines with emojis, ending with earning tips.
-- Return ONLY valid JSON matching the schema. No markdown, no commentary.`;
+- Hex colors must be exactly 6 digits; background must be very dark (e.g. #0a0512), primary/accent saturated and high-contrast.
+- "scene" MUST be one of the listed values — pick the closest match to the user's theme.
+- First miner: is_free true, price_tokens 0, duration_hours 0 (permanent), rate_boost_per_hour 400. Then 4 paid tiers scaling common → legendary.
+- Task rewards between 50 and 500.`;
+
 
 async function callGemini(prompt: string) {
   const key = process.env.GEMINI_API_KEY;
