@@ -21,7 +21,7 @@ function AiCreator() {
   const gen = useServerFn(generateBotConfig);
   const apply = useServerFn(applyAiBotConfig);
   const [description, setDescription] = useState("");
-  const [provider, setProvider] = useState<"gemini" | "lovable">("gemini");
+  const [provider, setProvider] = useState<"gemini" | "lovable">("lovable");
   const [config, setConfig] = useState<any>(null);
   const [botToken, setBotToken] = useState("");
   const [botUsername, setBotUsername] = useState("");
@@ -61,8 +61,8 @@ function AiCreator() {
           <div>
             <Label>Provider</Label>
             <select className="w-full border rounded-md h-10 px-2 bg-background mt-1" value={provider} onChange={(e) => setProvider(e.target.value as any)}>
-              <option value="gemini">Gemini Pro (your key)</option>
-              <option value="lovable">Claude Pro (via Lovable)</option>
+              <option value="lovable">Lovable AI (recommended)</option>
+              <option value="gemini">Gemini (your key)</option>
             </select>
           </div>
           <div>

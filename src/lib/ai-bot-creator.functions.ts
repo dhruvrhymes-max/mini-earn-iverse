@@ -17,29 +17,45 @@ const BotConfigSchema = z.object({
   }),
   scene: z.enum(["wood","gold","diamond","crypto","galaxy","forest","fish","lava","ocean","candy","neon","ice","dragon","ghost","milk"]),
   tasks: z.array(z.object({
-    title: z.string(), reward: z.number().min(0), url: z.string().url().optional().nullable(),
+    title: z.string(), reward: z.coerce.number().min(0), url: z.string().optional().nullable(),
   })).max(8),
   miners: z.array(z.object({
     name: z.string(), emoji: z.string(),
-    price_tokens: z.number().min(0), rate_boost_per_hour: z.number().min(0),
-    duration_hours: z.number().int().min(0), rarity: z.enum(["common","rare","epic","legendary"]),
+    price_tokens: z.coerce.number().min(0), rate_boost_per_hour: z.coerce.number().min(0),
+    duration_hours: z.coerce.number().int().min(0), rarity: z.enum(["common","rare","epic","legendary"]),
     is_free: z.boolean().default(false),
   })).max(6),
 });
 
-const SYSTEM_PROMPT = `You are a Telegram mini-app bot designer. Generate a complete tap-to-earn bot config as JSON.
+const SYSTEM_PROMPT = `You are a Telegram mini-app bot designer. Generate a tap-to-earn bot config as JSON.
+
+Return ONLY a JSON object with EXACTLY these keys (no extra keys, no markdown, no commentary):
+{
+  "name": string,
+  "slug_hint": string (lowercase a-z0-9 and dashes only),
+  "token_name": string,
+  "token_symbol": string (2-6 uppercase chars),
+  "action_verb": string (e.g. "Mine", "Squeeze", "Haunt"),
+  "mascot_emoji": string (single emoji),
+  "welcome_text": string (3-4 lines with emojis, ends with an earning tip),
+  "welcome_cta_text": string,
+  "theme": { "primary": "#rrggbb", "background": "#rrggbb", "accent": "#rrggbb" },
+  "scene": one of "wood","gold","diamond","crypto","galaxy","forest","fish","lava","ocean","candy","neon","ice","dragon","ghost","milk",
+  "tasks": [ { "title": string, "reward": number, "url": string|null } ]  (3-5 items),
+  "miners": [ { "name": string, "emoji": string, "price_tokens": number, "rate_boost_per_hour": number, "duration_hours": integer, "rarity": "common"|"rare"|"epic"|"legendary", "is_free": boolean } ]  (5 items)
+}
+
 Rules:
-- Colors MUST be dark, saturated, high-contrast hex (background always dark, e.g. #0a0512).
-- Pick the closest matching scene from the allowed enum.
-- Give the first miner is_free:true (400/h boost, permanent, 0 price), then 4 paid tiers scaling in price and rate (common → legendary).
-- Tasks: 3-5 mix of social + partner tasks with realistic rewards (50-500 tokens).
-- Welcome text: 3-4 lines with emojis, ending with earning tips.
-- Return ONLY valid JSON matching the schema. No markdown, no commentary.`;
+- Hex colors must be exactly 6 digits; background must be very dark (e.g. #0a0512), primary/accent saturated and high-contrast.
+- "scene" MUST be one of the listed values — pick the closest match to the user's theme.
+- First miner: is_free true, price_tokens 0, duration_hours 0 (permanent), rate_boost_per_hour 400. Then 4 paid tiers scaling common → legendary.
+- Task rewards between 50 and 500.`;
+
 
 async function callGemini(prompt: string) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY not configured");
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${key}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -61,7 +77,7 @@ async function callLovable(prompt: string) {
     method: "POST",
     headers: { "content-type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
+      model: "google/gemini-3.6-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt },
@@ -70,7 +86,9 @@ async function callLovable(prompt: string) {
       temperature: 0.9,
     }),
   });
-  if (!res.ok) throw new Error(`Lovable AI ${res.status}: ${await res.text()}`);
+  if (res.status === 429) throw new Error("AI rate limit reached. Try again in a minute.");
+  if (res.status === 402) throw new Error("AI credits exhausted. Add credits to your workspace.");
+  if (!res.ok) throw new Error(`Lovable AI ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const j = await res.json();
   return j?.choices?.[0]?.message?.content ?? "";
 }
@@ -78,19 +96,30 @@ async function callLovable(prompt: string) {
 export const generateBotConfig = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({
     description: z.string().min(3).max(500),
-    provider: z.enum(["gemini", "lovable"]).default("gemini"),
+    provider: z.enum(["gemini", "lovable"]).default("lovable"),
   }).parse(i))
   .handler(async ({ data }) => {
     const prompt = `User request: "${data.description}"\n\nGenerate the JSON config for this Telegram mini-app bot.`;
-    const text = data.provider === "gemini" ? await callGemini(prompt) : await callLovable(prompt);
+    let text = "";
+    if (data.provider === "gemini") {
+      try {
+        text = await callGemini(prompt);
+      } catch (e) {
+        // Gemini key quota/errors shouldn't dead-end the creator — fall back.
+        console.error("gemini failed, falling back to Lovable AI:", e);
+        text = await callLovable(prompt);
+      }
+    } else {
+      text = await callLovable(prompt);
+    }
     let parsed: unknown;
     try {
-      const cleaned = text.trim().replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+      const cleaned = String(text).trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/, "").trim();
       parsed = JSON.parse(cleaned);
     } catch {
       throw new Error("AI returned invalid JSON. Try again with a clearer description.");
     }
     const result = BotConfigSchema.safeParse(parsed);
-    if (!result.success) throw new Error(`Config validation failed: ${result.error.errors.slice(0, 2).map(e => e.message).join("; ")}`);
+    if (!result.success) throw new Error(`Config validation failed: ${result.error.errors.slice(0, 2).map(e => `${e.path.join(".")}: ${e.message}`).join("; ")}`);
     return result.data;
   });
