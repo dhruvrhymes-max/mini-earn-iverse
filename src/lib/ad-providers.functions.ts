@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-const PROVIDER_KIND = z.enum(["monetag", "adsgram", "onclicka", "custom"]);
+const PROVIDER_KIND = z.enum(["monetag", "adsgram", "onclicka", "direct_link", "ao_code", "custom"]);
 const PROVIDER_SCHEMA = z.object({
   id: z.string().uuid().nullable().optional(),
   kind: PROVIDER_KIND,

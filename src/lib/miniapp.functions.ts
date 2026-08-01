@@ -355,7 +355,8 @@ export const logAdReward = createServerFn({ method: "POST" })
   .inputValidator((i) =>
     z.object({
       userId: z.string().uuid(),
-      network: z.enum(["adsgram", "monetag", "adexium"]),
+      network: z.enum(["adsgram", "monetag", "adexium", "onclicka", "custom", "direct_link", "ao_code"]),
+      providerId: z.string().uuid().nullable().optional(),
     }).parse(i),
   )
   .handler(async ({ data }) => {
@@ -371,9 +372,25 @@ export const logAdReward = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id).gte("created_at", today.toISOString());
     if ((count ?? 0) >= limit) throw new Error("Daily ad limit reached");
-    const reward = Number(econ.mining_rate_per_hour || 100) / 4; // small reward
+
+    let reward = Number(econ.mining_rate_per_hour || 100) / 4; // default small reward
+    if (data.providerId) {
+      const { data: prov } = await supabaseAdmin.from("ad_providers")
+        .select("reward_tokens,daily_cap,active,tenant_id").eq("id", data.providerId).maybeSingle();
+      if (!prov || !prov.active || prov.tenant_id !== user.tenant_id) throw new Error("Ad provider unavailable");
+      const cap = Number(prov.daily_cap || 0);
+      if (cap > 0) {
+        const { count: pCount } = await supabaseAdmin.from("ad_logs")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id).eq("provider_id", data.providerId).gte("created_at", today.toISOString());
+        if ((pCount ?? 0) >= cap) throw new Error("Limit reached for this ad");
+      }
+      if (Number(prov.reward_tokens) > 0) reward = Number(prov.reward_tokens);
+    }
+
     await supabaseAdmin.from("ad_logs").insert({
       tenant_id: user.tenant_id, user_id: user.id, network: data.network, reward,
+      provider_id: data.providerId ?? null,
     });
     await supabaseAdmin.from("app_users").update({ balance: Number(user.balance) + reward }).eq("id", user.id);
     await supabaseAdmin.from("transactions").insert({

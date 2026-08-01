@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { miniAdminUpdateTenant } from "@/lib/miniapp.functions";
 import { useMini } from "@/lib/miniapp-context";
 import { isMiniAdmin } from "@/lib/mini-admin";
+import { AdProvidersAdmin } from "@/components/mini/AdProvidersAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -185,6 +186,11 @@ function MiniAdmin() {
           Show ad on app open
         </label>
       </Section>
+
+      <Section title="Ad providers">
+        <AdProvidersAdmin tenantId={t.id} initData={initData} previewTgId={user?.telegram_id ?? null} />
+      </Section>
+
 
       <Section title="Welcome message">
         <Row><Label>Welcome text</Label><Textarea rows={3} value={form.welcome_text ?? ""} onChange={(e) => setForm({ ...form, welcome_text: e.target.value })} /></Row>

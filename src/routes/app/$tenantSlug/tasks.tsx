@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMini } from "@/lib/miniapp-context";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyTasks, completeTask, logAdReward } from "@/lib/miniapp.functions";
+import { listAdProviders } from "@/lib/ad-providers.functions";
+import { AdSlot, type AdProvider } from "@/components/mini/AdRunner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -29,9 +31,15 @@ function TaskHub() {
     onError: (e: any) => toast.error(e.message),
   });
   const am = useMutation({
-    mutationFn: (network: "adsgram" | "monetag" | "adexium") => adFn({ data: { userId: user.id, network } }),
+    mutationFn: (v: { network: any; providerId?: string | null }) =>
+      adFn({ data: { userId: user.id, network: v.network, providerId: v.providerId ?? null } }),
     onSuccess: (r: any) => { toast.success(`+${r.reward.toFixed(2)} • ${Math.max(0, r.limit - r.used)}/${r.limit} left today`); refetch(); refetchUser(); },
     onError: (e: any) => toast.error(e.message),
+  });
+  const listAds = useServerFn(listAdProviders);
+  const { data: adProviders = [] } = useQuery({
+    queryKey: ["ad-providers", tenant.id],
+    queryFn: () => listAds({ data: { tenantId: tenant.id } }) as Promise<AdProvider[]>,
   });
 
   const tasks = data?.tasks ?? [];
@@ -62,13 +70,22 @@ function TaskHub() {
         </TabsContent>
         <TabsContent value="watch" className="space-y-3 mt-4">
           <p className="text-sm text-white/60 text-center">{Math.max(0, adLimit - adsToday)}/{adLimit} ads left today</p>
-          {(["adsgram", "monetag", "adexium"] as const).map((n) => (
-            <Button key={n} onClick={() => am.mutate(n)} disabled={am.isPending || adsToday >= adLimit} className="w-full" variant="secondary">
-              Watch {n.toUpperCase()} ad
-            </Button>
-          ))}
+          {adProviders.length === 0 ? (
+            <p className="text-center text-white/50 py-8">No ads available right now.</p>
+          ) : (
+            adProviders.map((p) => (
+              <AdSlot
+                key={p.id}
+                provider={p}
+                symbol={tenant.token_symbol}
+                disabled={am.isPending || adsToday >= adLimit}
+                onWatched={async (prov) => { await am.mutateAsync({ network: prov.kind, providerId: prov.id }); }}
+              />
+            ))
+          )}
           {watch.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
         </TabsContent>
+
         <TabsContent value="refer" className="space-y-2 mt-4">
           <ReferMilestones milestones={data?.milestones ?? []} count={user.referral_count} />
         </TabsContent>

@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { AD_KINDS, EMPTY_AD_PROVIDER } from "@/lib/ad-kinds";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -15,14 +17,8 @@ export const Route = createFileRoute("/_authenticated/admin/$tenantId/ads")({
   component: AdsPage,
 });
 
-const KINDS = [
-  { id: "monetag", label: "Monetag", fields: ["zone_id"] },
-  { id: "adsgram", label: "Adsgram", fields: ["block_id"] },
-  { id: "onclicka", label: "Onclicka", fields: ["zone_id"] },
-  { id: "custom", label: "Custom", fields: ["script_url", "zone_id"] },
-] as const;
-
-const EMPTY = { id: null as string|null, kind: "monetag", label: "", config: {} as Record<string,string>, reward_tokens: 100, daily_cap: 20, active: true, sort_order: 0 };
+const KINDS = AD_KINDS;
+const EMPTY = EMPTY_AD_PROVIDER;
 
 function AdsPage() {
   const { tenantId } = useParams({ from: "/_authenticated/admin/$tenantId/ads" });
@@ -57,7 +53,7 @@ function AdsPage() {
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(EMPTY); }}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Add provider</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{form.id ? "Edit" : "New"} ad provider</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div><Label>Network</Label>
@@ -65,10 +61,19 @@ function AdsPage() {
                   {KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
                 </select>
               </div>
-              <div><Label>Label (shown to admin)</Label><Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} /></div>
+              <p className="text-xs text-muted-foreground -mt-2">{kindDef.hint}</p>
+              <div><Label>Label (shown to users)</Label><Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Watch & earn" /></div>
               {kindDef.fields.map((f) => (
-                <div key={f}><Label>{f.replace(/_/g, " ")}</Label><Input value={form.config?.[f] ?? ""} onChange={(e) => setForm({ ...form, config: { ...form.config, [f]: e.target.value } })} /></div>
+                <div key={f.name}>
+                  <Label>{f.label}</Label>
+                  {f.kind === "textarea" ? (
+                    <Textarea rows={5} className="font-mono text-xs" placeholder={f.placeholder} value={form.config?.[f.name] ?? ""} onChange={(e) => setForm({ ...form, config: { ...form.config, [f.name]: e.target.value } })} />
+                  ) : (
+                    <Input placeholder={f.placeholder} value={form.config?.[f.name] ?? ""} onChange={(e) => setForm({ ...form, config: { ...form.config, [f.name]: e.target.value } })} />
+                  )}
+                </div>
               ))}
+
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Reward (tokens)</Label><Input type="number" value={form.reward_tokens} onChange={(e) => setForm({ ...form, reward_tokens: e.target.value })} /></div>
                 <div><Label>Daily cap</Label><Input type="number" value={form.daily_cap} onChange={(e) => setForm({ ...form, daily_cap: e.target.value })} /></div>

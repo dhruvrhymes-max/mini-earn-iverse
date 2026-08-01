@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           id: string
           network: Database["public"]["Enums"]["ad_network"]
+          provider_id: string | null
           reward: number
           tenant_id: string
           user_id: string
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string
           id?: string
           network: Database["public"]["Enums"]["ad_network"]
+          provider_id?: string | null
           reward?: number
           tenant_id: string
           user_id: string
@@ -35,11 +37,19 @@ export type Database = {
           created_at?: string
           id?: string
           network?: Database["public"]["Enums"]["ad_network"]
+          provider_id?: string | null
           reward?: number
           tenant_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ad_logs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "ad_providers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ad_logs_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -829,7 +839,14 @@ export type Database = {
       }
     }
     Enums: {
-      ad_network: "adsgram" | "monetag" | "adexium"
+      ad_network:
+        | "adsgram"
+        | "monetag"
+        | "adexium"
+        | "onclicka"
+        | "custom"
+        | "direct_link"
+        | "ao_code"
       app_role: "super_admin" | "bot_admin"
       task_kind: "social" | "partner" | "watch"
       tenant_status: "active" | "suspended"
@@ -969,7 +986,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      ad_network: ["adsgram", "monetag", "adexium"],
+      ad_network: [
+        "adsgram",
+        "monetag",
+        "adexium",
+        "onclicka",
+        "custom",
+        "direct_link",
+        "ao_code",
+      ],
       app_role: ["super_admin", "bot_admin"],
       task_kind: ["social", "partner", "watch"],
       tenant_status: ["active", "suspended"],
