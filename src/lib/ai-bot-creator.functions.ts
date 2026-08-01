@@ -17,12 +17,12 @@ const BotConfigSchema = z.object({
   }),
   scene: z.enum(["wood","gold","diamond","crypto","galaxy","forest","fish","lava","ocean","candy","neon","ice","dragon","ghost","milk"]),
   tasks: z.array(z.object({
-    title: z.string(), reward: z.number().min(0), url: z.string().url().optional().nullable(),
+    title: z.string(), reward: z.coerce.number().min(0), url: z.string().optional().nullable(),
   })).max(8),
   miners: z.array(z.object({
     name: z.string(), emoji: z.string(),
-    price_tokens: z.number().min(0), rate_boost_per_hour: z.number().min(0),
-    duration_hours: z.number().int().min(0), rarity: z.enum(["common","rare","epic","legendary"]),
+    price_tokens: z.coerce.number().min(0), rate_boost_per_hour: z.coerce.number().min(0),
+    duration_hours: z.coerce.number().int().min(0), rarity: z.enum(["common","rare","epic","legendary"]),
     is_free: z.boolean().default(false),
   })).max(6),
 });
