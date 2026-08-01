@@ -70,13 +70,22 @@ function TaskHub() {
         </TabsContent>
         <TabsContent value="watch" className="space-y-3 mt-4">
           <p className="text-sm text-white/60 text-center">{Math.max(0, adLimit - adsToday)}/{adLimit} ads left today</p>
-          {(["adsgram", "monetag", "adexium"] as const).map((n) => (
-            <Button key={n} onClick={() => am.mutate(n)} disabled={am.isPending || adsToday >= adLimit} className="w-full" variant="secondary">
-              Watch {n.toUpperCase()} ad
-            </Button>
-          ))}
+          {adProviders.length === 0 ? (
+            <p className="text-center text-white/50 py-8">No ads available right now.</p>
+          ) : (
+            adProviders.map((p) => (
+              <AdSlot
+                key={p.id}
+                provider={p}
+                symbol={tenant.token_symbol}
+                disabled={am.isPending || adsToday >= adLimit}
+                onWatched={async (prov) => { await am.mutateAsync({ network: prov.kind, providerId: prov.id }); }}
+              />
+            ))
+          )}
           {watch.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
         </TabsContent>
+
         <TabsContent value="refer" className="space-y-2 mt-4">
           <ReferMilestones milestones={data?.milestones ?? []} count={user.referral_count} />
         </TabsContent>
