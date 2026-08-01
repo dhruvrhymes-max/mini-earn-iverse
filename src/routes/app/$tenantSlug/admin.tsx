@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { miniAdminUpdateTenant } from "@/lib/miniapp.functions";
 import { useMini } from "@/lib/miniapp-context";
 import { isMiniAdmin } from "@/lib/mini-admin";
+import { AdProvidersAdmin } from "@/components/mini/AdProvidersAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
