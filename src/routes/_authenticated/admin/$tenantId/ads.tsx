@@ -82,10 +82,19 @@ function AdsPage() {
                   {KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
                 </select>
               </div>
-              <div><Label>Label (shown to admin)</Label><Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} /></div>
+              <p className="text-xs text-muted-foreground -mt-2">{kindDef.hint}</p>
+              <div><Label>Label (shown to users)</Label><Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Watch & earn" /></div>
               {kindDef.fields.map((f) => (
-                <div key={f}><Label>{f.replace(/_/g, " ")}</Label><Input value={form.config?.[f] ?? ""} onChange={(e) => setForm({ ...form, config: { ...form.config, [f]: e.target.value } })} /></div>
+                <div key={f.name}>
+                  <Label>{f.label}</Label>
+                  {f.kind === "textarea" ? (
+                    <Textarea rows={5} className="font-mono text-xs" placeholder={f.placeholder} value={form.config?.[f.name] ?? ""} onChange={(e) => setForm({ ...form, config: { ...form.config, [f.name]: e.target.value } })} />
+                  ) : (
+                    <Input placeholder={f.placeholder} value={form.config?.[f.name] ?? ""} onChange={(e) => setForm({ ...form, config: { ...form.config, [f.name]: e.target.value } })} />
+                  )}
+                </div>
               ))}
+
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Reward (tokens)</Label><Input type="number" value={form.reward_tokens} onChange={(e) => setForm({ ...form, reward_tokens: e.target.value })} /></div>
                 <div><Label>Daily cap</Label><Input type="number" value={form.daily_cap} onChange={(e) => setForm({ ...form, daily_cap: e.target.value })} /></div>
