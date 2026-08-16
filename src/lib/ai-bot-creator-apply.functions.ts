@@ -13,7 +13,16 @@ const ApplySchema = z.object({
     action_verb: z.string(),
     welcome_text: z.string(),
     welcome_cta_text: z.string(),
-    theme: z.object({ primary: z.string(), background: z.string(), accent: z.string() }),
+    concept: z.string().optional(),
+    visual_direction: z.string().optional(),
+    gameplay_idea: z.string().optional(),
+    mascot_emoji: z.string().optional(),
+    theme: z.object({
+      primary: z.string(), background: z.string(), accent: z.string(),
+      layout_family: z.enum(["cosmic", "crystal", "forge", "playful", "nature"]).optional(),
+      surface_style: z.string().optional(),
+      motion_style: z.string().optional(),
+    }),
     scene: z.string(),
     tasks: z.array(z.any()),
     miners: z.array(z.any()),
@@ -37,7 +46,14 @@ export const applyAiBotConfig = createServerFn({ method: "POST" })
       action_verb: data.config.action_verb,
       welcome_text: data.config.welcome_text,
       welcome_cta_text: data.config.welcome_cta_text,
-      theme: { ...data.config.theme, scene: data.config.scene },
+      theme: {
+        ...data.config.theme,
+        scene: data.config.scene,
+        concept: data.config.concept,
+        visual_direction: data.config.visual_direction,
+        gameplay_idea: data.config.gameplay_idea,
+        mascot_emoji: data.config.mascot_emoji,
+      },
     }).select().single();
     if (error) throw new Error(error.message);
 
