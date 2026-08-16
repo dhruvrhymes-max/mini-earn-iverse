@@ -113,7 +113,7 @@ async function generateWithGemini(description: string) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: "user", parts: [{ text: generationPrompt(description) }] }],
-      generationConfig: { responseMimeType: "application/json", responseJsonSchema: z.toJSONSchema ? undefined : undefined, temperature: 0.95 },
+      generationConfig: { responseMimeType: "application/json", temperature: 0.95 },
     }),
   });
   if (!response.ok) throw new Error(`Gemini request failed (${response.status}).`);

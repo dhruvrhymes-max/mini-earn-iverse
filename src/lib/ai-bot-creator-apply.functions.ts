@@ -13,7 +13,12 @@ const ApplySchema = z.object({
     action_verb: z.string(),
     welcome_text: z.string(),
     welcome_cta_text: z.string(),
-    theme: z.object({ primary: z.string(), background: z.string(), accent: z.string() }),
+    theme: z.object({
+      primary: z.string(), background: z.string(), accent: z.string(),
+      layout_family: z.enum(["cosmic", "crystal", "forge", "playful", "nature"]).optional(),
+      surface_style: z.string().optional(),
+      motion_style: z.string().optional(),
+    }),
     scene: z.string(),
     tasks: z.array(z.any()),
     miners: z.array(z.any()),

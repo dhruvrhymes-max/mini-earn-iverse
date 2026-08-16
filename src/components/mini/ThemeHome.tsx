@@ -25,8 +25,8 @@ const FAMILY: Record<string, "cosmic" | "crystal" | "forge" | "playful" | "natur
 
 export function ThemeHome(props: HomeLayoutProps) {
   const kind = (props.tenant.theme_preset || props.tenant.theme?.scene || "gold") as SceneKind;
-  const family = FAMILY[kind] || "playful";
   const theme = props.tenant.theme as any;
+  const family = theme.layout_family || FAMILY[kind] || "playful";
 
   const layouts = { cosmic: CosmicLayout, crystal: CrystalLayout, forge: ForgeLayout, playful: PlayfulLayout, nature: NatureLayout } as const;
   const Layout = layouts[family];
