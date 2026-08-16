@@ -26,10 +26,12 @@ const AiOutputSchema = z.object({
     motion_style: z.string(),
   }),
   scene: z.enum(scenes),
-  tasks: z.array(z.object({ title: z.string(), reward: z.number(), url: z.string().nullable() })),
+  tasks: z.array(z.object({ title: z.string(), reward: z.coerce.number(), url: z.string().nullable().default(null) })),
   miners: z.array(z.object({
-    name: z.string(), emoji: z.string(), price_tokens: z.number(), rate_boost_per_hour: z.number(),
-    duration_hours: z.number(), rarity: z.enum(["common", "rare", "epic", "legendary"]), is_free: z.boolean(),
+    name: z.string(), emoji: z.string(), price_tokens: z.coerce.number(), rate_boost_per_hour: z.coerce.number(),
+    duration_hours: z.coerce.number(),
+    rarity: z.preprocess((value) => String(value).toLowerCase(), z.enum(["common", "rare", "epic", "legendary"])),
+    is_free: z.coerce.boolean(),
   })),
 });
 
@@ -61,7 +63,41 @@ Requirements:
 - Generate 3-5 relevant tasks and exactly 5 themed miners/upgrades with unique names.
 - First miner is free, permanent, and earns 400/hour. Paid miners scale from common through legendary.
 - Task rewards are 50-500. Token symbol is 2-6 uppercase letters or digits.
-- Avoid repeating names from popular crypto projects. Every generation should feel bespoke.`;
+- Avoid repeating names from popular crypto projects. Every generation should feel bespoke.
+
+Return ONLY JSON using this exact contract and exact snake_case property names:
+{
+  "name": "string",
+  "slug_hint": "lowercase-dashed-string",
+  "concept": "string",
+  "visual_direction": "string",
+  "gameplay_idea": "string",
+  "token_name": "string",
+  "token_symbol": "ABC",
+  "action_verb": "string",
+  "mascot_emoji": "single emoji",
+  "welcome_text": "string",
+  "welcome_cta_text": "string",
+  "theme": {
+    "primary": "#rrggbb",
+    "background": "#rrggbb",
+    "accent": "#rrggbb",
+    "layout_family": "cosmic|crystal|forge|playful|nature",
+    "surface_style": "string",
+    "motion_style": "string"
+  },
+  "scene": "one allowed scene",
+  "tasks": [{ "title": "string", "reward": 100, "url": null }],
+  "miners": [{
+    "name": "string",
+    "emoji": "single emoji",
+    "price_tokens": 0,
+    "rate_boost_per_hour": 400,
+    "duration_hours": 0,
+    "rarity": "common",
+    "is_free": true
+  }]
+}`;
 
 function generationPrompt(description: string) {
   return `Design an original bot for this request: ${description}\n\nReturn a complete JSON configuration. Prioritize a unique name, token identity, visual system, interaction idea, and themed upgrade collection.`;
