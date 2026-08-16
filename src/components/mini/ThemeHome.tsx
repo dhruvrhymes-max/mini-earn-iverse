@@ -26,9 +26,10 @@ const FAMILY: Record<string, "cosmic" | "crystal" | "forge" | "playful" | "natur
 export function ThemeHome(props: HomeLayoutProps) {
   const kind = (props.tenant.theme_preset || props.tenant.theme?.scene || "gold") as SceneKind;
   const theme = props.tenant.theme as any;
-  const family = theme.layout_family || FAMILY[kind] || "playful";
+  const requestedFamily = theme.layout_family as keyof typeof layouts | undefined;
 
   const layouts = { cosmic: CosmicLayout, crystal: CrystalLayout, forge: ForgeLayout, playful: PlayfulLayout, nature: NatureLayout } as const;
+  const family: keyof typeof layouts = requestedFamily && requestedFamily in layouts ? requestedFamily : (FAMILY[kind] || "playful");
   const Layout = layouts[family];
 
   return (
