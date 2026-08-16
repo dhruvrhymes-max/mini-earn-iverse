@@ -12,7 +12,14 @@ import { toast } from "sonner";
 import { Sparkles, ArrowLeft, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/new-ai")({
-  head: () => ({ meta: [{ title: "AI Bot Creator" }] }),
+  head: () => ({ meta: [
+    { title: "AI Bot Creator | Mine-to-Earn" },
+    { name: "description", content: "Create a unique Telegram earning bot concept, theme, token, tasks, and miners with AI." },
+    { property: "og:title", content: "AI Bot Creator | Mine-to-Earn" },
+    { property: "og:description", content: "Create a unique Telegram earning bot concept, theme, token, tasks, and miners with AI." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AiCreator,
 });
 
@@ -88,12 +95,17 @@ function AiCreator() {
                 </div>
               </div>
               <p className="mt-4 text-sm whitespace-pre-line opacity-90">{config.welcome_text}</p>
+              <div className="mt-4 space-y-3 border-t border-white/15 pt-4">
+                <div><div className="text-[10px] uppercase opacity-60">Concept</div><p className="text-sm">{config.concept}</p></div>
+                <div><div className="text-[10px] uppercase opacity-60">Gameplay idea</div><p className="text-sm">{config.gameplay_idea}</p></div>
+                <div><div className="text-[10px] uppercase opacity-60">Visual direction</div><p className="text-sm">{config.visual_direction}</p></div>
+              </div>
               <div className="mt-4 grid grid-cols-3 gap-2">
                 {[config.theme.primary, config.theme.background, config.theme.accent].map((c) => (
                   <div key={c} className="rounded p-2 text-xs font-mono" style={{ background: c, color: "#000" }}>{c}</div>
                 ))}
               </div>
-              <div className="mt-4 text-xs opacity-70">Tasks: {config.tasks.length} · Miners: {config.miners.length}</div>
+              <div className="mt-4 text-xs opacity-70">{config.token_name} ({config.token_symbol}) · {config.theme.layout_family} layout · Tasks: {config.tasks.length} · Miners: {config.miners.length}</div>
             </div>
           </div>
 
