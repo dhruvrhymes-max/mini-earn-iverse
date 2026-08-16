@@ -133,9 +133,15 @@ async function generateWithLovable(description: string) {
   });
   const cleaned = result.text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
   try {
-    return normalize(AiOutputSchema.parse(JSON.parse(cleaned)));
+    const parsed = JSON.parse(cleaned) as { miners?: Array<Record<string, unknown>> };
+    return normalize(AiOutputSchema.parse(parsed));
   } catch (error) {
-    console.error("AI bot design validation failed", error);
+    let minerKeys: string[][] = [];
+    try {
+      const parsed = JSON.parse(cleaned) as { miners?: Array<Record<string, unknown>> };
+      minerKeys = parsed.miners?.map((miner) => Object.keys(miner)) ?? [];
+    } catch { /* invalid JSON */ }
+    console.error("AI bot design validation failed", { error, minerKeys });
     throw new Error("AI could not finish this design. Please generate it again.");
   }
 }
