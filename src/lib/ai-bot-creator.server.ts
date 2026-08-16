@@ -1,4 +1,4 @@
-import { generateText, NoObjectGeneratedError, Output } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -88,19 +88,19 @@ async function generateWithLovable(description: string) {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("Lovable AI is not configured.");
   const gateway = createLovableAiGatewayProvider(key);
+  const result = await generateText({
+    model: gateway("google/gemini-3.6-flash"),
+    system: `${systemPrompt}\nReturn only one valid JSON object with exactly the requested fields. Do not use markdown fences.`,
+    prompt: generationPrompt(description),
+    temperature: 0.95,
+    maxRetries: 1,
+  });
+  const cleaned = result.text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
   try {
-    const result = await generateText({
-      model: gateway("google/gemini-3.6-flash"),
-      system: systemPrompt,
-      prompt: generationPrompt(description),
-      output: Output.object({ schema: AiOutputSchema }),
-      temperature: 0.95,
-      maxRetries: 1,
-    });
-    return normalize(result.output);
+    return normalize(AiOutputSchema.parse(JSON.parse(cleaned)));
   } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) throw new Error("AI could not finish this design. Please try once more.");
-    throw error;
+    console.error("AI bot design validation failed", error);
+    throw new Error("AI could not finish this design. Please generate it again.");
   }
 }
 
