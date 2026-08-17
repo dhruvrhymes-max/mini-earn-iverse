@@ -93,9 +93,18 @@ function CommunityRow({ skin, theme, url, label }: any) {
   );
 }
 
+/** Avatar: Telegram profile photo when available, initial as fallback. */
+function Pfp({ photo, initial, className, style, alt }: { photo: string | null; initial: string; className?: string; style?: React.CSSProperties; alt: string }) {
+  if (photo) {
+    return <img src={photo} alt={alt} loading="lazy" className={`${className ?? ""} object-cover`} style={style} />;
+  }
+  return <div className={className} style={style}>{initial}</div>;
+}
+
 /** Each family gets a visually distinct identity header. */
 function ProfileHeader({ family, tenant, user }: { family: string; tenant: any; user: any }) {
   const theme = tenant.theme as any;
+  const photo = useTelegramPhoto();
   const name = user.first_name || user.username || `User ${user.telegram_id}`;
   const bal = `${Number(user.balance).toFixed(2)} ${tenant.token_symbol}`;
   const usd = `$${Number(user.usd_balance).toFixed(4)}`;
@@ -104,10 +113,9 @@ function ProfileHeader({ family, tenant, user }: { family: string; tenant: any; 
   if (family === "cosmic") {
     return (
       <div className="mb-7 text-center">
-        <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black"
-          style={{ background: `radial-gradient(circle at 30% 30%, ${theme.primary}, transparent 70%)`, border: `1px solid ${hexA(theme.primary, 0.6)}`, boxShadow: `0 0 40px -10px ${theme.primary}` }}>
-          {initial}
-        </div>
+        <Pfp photo={photo} initial={initial} alt={name}
+          className="mx-auto w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black"
+          style={{ background: `radial-gradient(circle at 30% 30%, ${theme.primary}, transparent 70%)`, border: `1px solid ${hexA(theme.primary, 0.6)}`, boxShadow: `0 0 40px -10px ${theme.primary}` }} />
         <p className="mt-3 text-lg font-black uppercase tracking-[0.2em]">{name}</p>
         <p className="text-xs text-white/50 tracking-[0.25em] uppercase mt-1">{bal} · {usd}</p>
       </div>
