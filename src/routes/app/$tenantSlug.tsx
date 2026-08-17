@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useParams, useLocation, useNavigate, useMatchRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { bootMiniApp, getUser, markOnboarded } from "@/lib/miniapp.functions";
+import { bootMiniApp, getTenantBySlug, getUser, markOnboarded } from "@/lib/miniapp.functions";
 import { EMPTY_MINI_TENANT, EMPTY_MINI_USER, MiniCtx } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
