@@ -619,3 +619,17 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Update the user's interface language (top supported languages only). */
+export const setLanguage = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({
+    userId: z.string().uuid(),
+    language: z.enum(["en", "hi", "ru", "ng"]),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { error } = await supabaseAdmin.from("app_users")
+      .update({ language: data.language }).eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

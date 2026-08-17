@@ -1,8 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { toast } from "sonner";
 import { useMini } from "@/lib/miniapp-context";
 import { isMiniAdmin } from "@/lib/mini-admin";
+import { setLanguage } from "@/lib/miniapp.functions";
+import { LANGUAGES } from "@/lib/languages";
 import { familyOf, skinOf, hexA } from "@/lib/theme-family";
-import { ChevronRight, Wallet, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck, Pickaxe } from "lucide-react";
+import { ChevronRight, Wallet, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck, Pickaxe, ShoppingBag } from "lucide-react";
 
 export const Route = createFileRoute("/app/$tenantSlug/profile")({
   component: Profile,
@@ -16,12 +21,13 @@ function Profile() {
   const family = familyOf(tenant);
   const theme = tenant.theme as any;
   const items = [
+    { to: "/app/$tenantSlug/shop", label: "Bake shop", icon: ShoppingBag },
     { to: "/app/$tenantSlug/miners", label: "Miners", icon: Pickaxe },
     { to: "/app/$tenantSlug/withdraw", label: "Withdraw USDT", icon: ArrowDownToLine },
     { to: "/app/$tenantSlug/convert", label: "Convert to USDT", icon: ArrowLeftRight },
     { to: "/app/$tenantSlug/wallets", label: "Wallet addresses", icon: Wallet },
     { to: "/app/$tenantSlug/history", label: "Transaction history", icon: History },
-    { to: "/app/$tenantSlug/payouts", label: "Payout proof", icon: ShieldCheck },
+    { to: "/app/$tenantSlug/payouts", label: "Payouts & proof", icon: ShieldCheck },
   ] as const;
   const c = tenant.community as any;
   const go = (to: any) => nav({ to, params: { tenantSlug: tenant.slug } as any });
@@ -67,10 +73,7 @@ function Profile() {
       </Section>
 
       <Section skin={skin} primary={theme.primary} title="Settings">
-        <div className={`${skin.card} flex items-center gap-3`} style={skin.cardStyle(theme.primary, theme.accent)}>
-          <Globe className="h-5 w-5" /><span className="flex-1">Language</span>
-          <span className="text-white/60">{user.language?.toUpperCase() || "EN"}</span>
-        </div>
+        <LanguagePicker skin={skin} theme={theme} user={user} />
       </Section>
     </div>
   );
@@ -165,6 +168,49 @@ function Section({ title, children, skin, primary }: any) {
     <div className="mb-6">
       <h3 className={skin.section} style={{ borderColor: primary }}>{title}</h3>
       {children}
+    </div>
+  );
+}
+
+function LanguagePicker({ skin, theme, user }: any) {
+  const { refetchUser } = useMini();
+  const save = useServerFn(setLanguage);
+  const [lang, setLang] = useState<string>(user.language || "en");
+  const pick = async (code: string) => {
+    const prev = lang;
+    setLang(code);
+    try {
+      await save({ data: { userId: user.id, language: code as any } });
+      refetchUser();
+    } catch (e: any) {
+      setLang(prev);
+      toast.error(e?.message ?? "Couldn't change language");
+    }
+  };
+  return (
+    <div className={skin.card} style={skin.cardStyle(theme.primary, theme.accent)}>
+      <div className="flex items-center gap-3">
+        <Globe className="h-5 w-5" /><span className="flex-1 font-semibold">Language</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        {LANGUAGES.map((l) => {
+          const active = lang === l.code;
+          return (
+            <button
+              key={l.code}
+              onClick={() => pick(l.code)}
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-left"
+              style={{
+                background: active ? `${theme.primary}22` : "rgba(255,255,255,0.05)",
+                border: `1px solid ${active ? theme.primary : "rgba(255,255,255,0.1)"}`,
+              }}
+            >
+              <span>{l.flag}</span>
+              <span className="truncate">{l.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

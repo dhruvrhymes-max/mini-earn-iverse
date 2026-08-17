@@ -21,6 +21,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AppTenantSlugWithdrawRouteImport } from './routes/app/$tenantSlug/withdraw'
 import { Route as AppTenantSlugWalletsRouteImport } from './routes/app/$tenantSlug/wallets'
 import { Route as AppTenantSlugTasksRouteImport } from './routes/app/$tenantSlug/tasks'
+import { Route as AppTenantSlugShopRouteImport } from './routes/app/$tenantSlug/shop'
 import { Route as AppTenantSlugReferRouteImport } from './routes/app/$tenantSlug/refer'
 import { Route as AppTenantSlugProfileRouteImport } from './routes/app/$tenantSlug/profile'
 import { Route as AppTenantSlugPayoutsRouteImport } from './routes/app/$tenantSlug/payouts'
@@ -104,6 +105,11 @@ const AppTenantSlugWalletsRoute = AppTenantSlugWalletsRouteImport.update({
 const AppTenantSlugTasksRoute = AppTenantSlugTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugShopRoute = AppTenantSlugShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => AppTenantSlugRoute,
 } as any)
 const AppTenantSlugReferRoute = AppTenantSlugReferRouteImport.update({
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/app/$tenantSlug/payouts': typeof AppTenantSlugPayoutsRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
+  '/app/$tenantSlug/shop': typeof AppTenantSlugShopRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
   '/app/$tenantSlug/wallets': typeof AppTenantSlugWalletsRoute
   '/app/$tenantSlug/withdraw': typeof AppTenantSlugWithdrawRoute
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/app/$tenantSlug/payouts': typeof AppTenantSlugPayoutsRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
+  '/app/$tenantSlug/shop': typeof AppTenantSlugShopRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
   '/app/$tenantSlug/wallets': typeof AppTenantSlugWalletsRoute
   '/app/$tenantSlug/withdraw': typeof AppTenantSlugWithdrawRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/app/$tenantSlug/payouts': typeof AppTenantSlugPayoutsRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
+  '/app/$tenantSlug/shop': typeof AppTenantSlugShopRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
   '/app/$tenantSlug/wallets': typeof AppTenantSlugWalletsRoute
   '/app/$tenantSlug/withdraw': typeof AppTenantSlugWithdrawRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/payouts'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
+    | '/app/$tenantSlug/shop'
     | '/app/$tenantSlug/tasks'
     | '/app/$tenantSlug/wallets'
     | '/app/$tenantSlug/withdraw'
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/payouts'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
+    | '/app/$tenantSlug/shop'
     | '/app/$tenantSlug/tasks'
     | '/app/$tenantSlug/wallets'
     | '/app/$tenantSlug/withdraw'
@@ -456,6 +467,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/payouts'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
+    | '/app/$tenantSlug/shop'
     | '/app/$tenantSlug/tasks'
     | '/app/$tenantSlug/wallets'
     | '/app/$tenantSlug/withdraw'
@@ -566,6 +578,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/app/$tenantSlug/tasks'
       preLoaderRoute: typeof AppTenantSlugTasksRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/shop': {
+      id: '/app/$tenantSlug/shop'
+      path: '/shop'
+      fullPath: '/app/$tenantSlug/shop'
+      preLoaderRoute: typeof AppTenantSlugShopRouteImport
       parentRoute: typeof AppTenantSlugRoute
     }
     '/app/$tenantSlug/refer': {
@@ -829,6 +848,7 @@ interface AppTenantSlugRouteChildren {
   AppTenantSlugPayoutsRoute: typeof AppTenantSlugPayoutsRoute
   AppTenantSlugProfileRoute: typeof AppTenantSlugProfileRoute
   AppTenantSlugReferRoute: typeof AppTenantSlugReferRoute
+  AppTenantSlugShopRoute: typeof AppTenantSlugShopRoute
   AppTenantSlugTasksRoute: typeof AppTenantSlugTasksRoute
   AppTenantSlugWalletsRoute: typeof AppTenantSlugWalletsRoute
   AppTenantSlugWithdrawRoute: typeof AppTenantSlugWithdrawRoute
@@ -845,6 +865,7 @@ const AppTenantSlugRouteChildren: AppTenantSlugRouteChildren = {
   AppTenantSlugPayoutsRoute: AppTenantSlugPayoutsRoute,
   AppTenantSlugProfileRoute: AppTenantSlugProfileRoute,
   AppTenantSlugReferRoute: AppTenantSlugReferRoute,
+  AppTenantSlugShopRoute: AppTenantSlugShopRoute,
   AppTenantSlugTasksRoute: AppTenantSlugTasksRoute,
   AppTenantSlugWalletsRoute: AppTenantSlugWalletsRoute,
   AppTenantSlugWithdrawRoute: AppTenantSlugWithdrawRoute,

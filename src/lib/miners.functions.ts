@@ -222,3 +222,26 @@ export const ownerDeleteMiner = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Purchase receipts for the bake shop (what the user bought, when, at what price). */
+export const myReceipts = createServerFn({ method: "GET" })
+  .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { data: rows } = await supabaseAdmin.from("user_miners")
+      .select("id,purchased_at,expires_at,miners(name,emoji,currency,price_tokens,price_ton,is_free,rate_boost_per_hour)")
+      .eq("user_id", data.userId)
+      .order("purchased_at", { ascending: false })
+      .limit(50);
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      purchased_at: r.purchased_at,
+      expires_at: r.expires_at,
+      name: r.miners?.name ?? "Bake",
+      emoji: r.miners?.emoji ?? "🧁",
+      boost: Number(r.miners?.rate_boost_per_hour ?? 0),
+      free: !!r.miners?.is_free,
+      currency: r.miners?.currency ?? "token",
+      price: r.miners?.currency === "ton" ? Number(r.miners?.price_ton ?? 0) : Number(r.miners?.price_tokens ?? 0),
+    }));
+  });
