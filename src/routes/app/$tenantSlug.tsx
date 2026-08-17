@@ -3,11 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { bootMiniApp, getTenantBySlug, getUser, markOnboarded } from "@/lib/miniapp.functions";
 import { EMPTY_MINI_TENANT, EMPTY_MINI_USER, MiniCtx } from "@/lib/miniapp-context";
+import { skinOf, familyOf } from "@/lib/theme-family";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
-import { lazy, Suspense as ReactSuspense } from "react";
-const Theme3D = lazy(() => import("@/components/mini/Theme3D"));
 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
 const BOOT_TIMEOUT_MS = 15_000;
@@ -255,12 +254,9 @@ function MiniLayout() {
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       >
-        <ReactSuspense fallback={null}>
-          <Theme3D scene={theme.scene ?? "gold"} primary={theme.primary} accent={theme.accent} background={theme.background} />
-        </ReactSuspense>
         {!user.onboarded && <Onboarding tenantSlug={tenantSlug} userId={user.id} refetch={refetch} />}
         <div className="relative z-10"><Outlet /></div>
-        <BottomNav slug={tenantSlug} verb={tenant.action_verb} primary={theme.primary} />
+        <BottomNav slug={tenantSlug} verb={tenant.action_verb} primary={theme.primary} tenant={tenant} />
       </div>
     </MiniCtx.Provider>
   );
@@ -328,36 +324,62 @@ function Onboarding({ userId, refetch }: { tenantSlug: string; userId: string; r
   );
 }
 
-function BottomNav({ slug, verb, primary }: { slug: string; verb: string; primary: string }) {
+function BottomNav({ slug, verb, primary, tenant }: { slug: string; verb: string; primary: string; tenant: any }) {
   const nav = useNavigate();
   const matchRoute = useMatchRoute();
-  const items: Array<{ to: string; label: string; Icon: any; exact?: boolean; center?: boolean }> = [
-    { to: "/app/$tenantSlug", label: "Home", Icon: Home, exact: true },
-    { to: "/app/$tenantSlug/tasks", label: "Tasks", Icon: ListChecks },
-    { to: "/app/$tenantSlug/miners", label: verb, Icon: Pickaxe, center: true },
-    { to: "/app/$tenantSlug/refer", label: "Refer", Icon: Users },
-    { to: "/app/$tenantSlug/profile", label: "Profile", Icon: User },
-  ];
+  const skin = skinOf(tenant);
+  const DEST: Record<string, { to: string; label: string; Icon: any; exact?: boolean }> = {
+    home: { to: "/app/$tenantSlug", label: "Home", Icon: Home, exact: true },
+    tasks: { to: "/app/$tenantSlug/tasks", label: "Tasks", Icon: ListChecks },
+    miners: { to: "/app/$tenantSlug/miners", label: verb, Icon: Pickaxe },
+    refer: { to: "/app/$tenantSlug/refer", label: "Refer", Icon: Users },
+    profile: { to: "/app/$tenantSlug/profile", label: "Profile", Icon: User },
+    wallet: { to: "/app/$tenantSlug/withdraw", label: "Cash", Icon: Wallet },
+  };
+  const keys = skin.navKeys;
+  const centerIndex = skin.centerAction ? Math.floor(keys.length / 2) : -1;
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-black/80 backdrop-blur border-t border-white/10 flex justify-around items-center py-2 z-40">
-      {items.map((it) => {
+    <nav className={skin.nav} style={skin.navStyle(primary)}>
+      {keys.map((key, idx) => {
+        const it = DEST[key];
+        const isCenter = idx === centerIndex;
         const active = !!matchRoute({ to: it.to, params: { tenantSlug: slug } as any, ...(it.exact ? { fuzzy: false } : { fuzzy: true }) } as any);
         return (
           <button
-            key={it.to}
+            key={key}
             type="button"
             onClick={() => nav({ to: it.to as any, params: { tenantSlug: slug } as any })}
             onContextMenu={(e) => e.preventDefault()}
-            className={`flex flex-col items-center text-xs bg-transparent border-0 outline-none select-none ${it.center ? "-mt-6" : ""}`}
-            style={active ? { color: primary } : undefined}
+            className={`${skin.navItem} bg-transparent border-0 outline-none select-none ${isCenter ? "-mt-7" : ""}`}
+            style={active ? { color: primary } : { color: "rgba(255,255,255,0.65)" }}
           >
-            <div className={it.center ? "w-14 h-14 rounded-full flex items-center justify-center shadow-lg" : "p-1"} style={it.center ? { background: primary } : {}}>
-              <it.Icon className={it.center ? "h-7 w-7 text-black" : "h-5 w-5"} />
-            </div>
-            <span className="mt-1 text-white/70">{it.label}</span>
+            {isCenter ? (
+              <div
+                className="w-14 h-14 flex items-center justify-center shadow-lg"
+                style={{
+                  background: primary,
+                  clipPath: skin.centerAction && tenantFamilyIsForge(tenant)
+                    ? "polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%)"
+                    : undefined,
+                  borderRadius: tenantFamilyIsForge(tenant) ? 0 : 9999,
+                }}
+              >
+                <it.Icon className="h-7 w-7 text-black" />
+              </div>
+            ) : (
+              <div className={skin.navIconWrap(active)}>
+                <it.Icon className="h-5 w-5" />
+              </div>
+            )}
+            <span className={`mt-1 ${skin.labelClass}`}>{it.label}</span>
           </button>
         );
       })}
     </nav>
   );
+}
+
+function tenantFamilyIsForge(tenant: any) {
+  return familyOf(tenant) === "forge";
 }
