@@ -131,6 +131,25 @@ function MiniLayout() {
 
   useEffect(() => { installClientErrorReporter(); setTenantContext(tenantSlug); }, [tenantSlug]);
 
+  // Paint an opaque page background (html/body + Telegram chrome) so the
+  // Telegram-rendered bot avatar placeholder never shows through the app.
+  const bgColor = (bootState.tenant?.theme as any)?.background || "#0a0a0a";
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.background;
+    const prevBody = body.style.background;
+    html.style.background = bgColor;
+    body.style.background = bgColor;
+    try {
+      const wa = (window as any).Telegram?.WebApp;
+      wa?.setBackgroundColor?.(bgColor);
+      wa?.setHeaderColor?.(bgColor);
+    } catch { /* ignore */ }
+    return () => { html.style.background = prevHtml; body.style.background = prevBody; };
+  }, [bgColor]);
+
+
   // Hard-block long-press URL previews at the document level for all routes
   useEffect(() => {
     const stop = (e: Event) => { e.preventDefault(); };
