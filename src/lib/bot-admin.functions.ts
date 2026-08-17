@@ -115,11 +115,14 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
       referral: z.object({
         instant_reward: z.number().min(0),
         bonus_reward: z.number().min(0),
+        bonus_trigger: z.enum(["ads", "tasks", "either", "both"]).optional(),
         bonus_after_ads: z.number().int().min(0).max(100),
+        bonus_after_tasks: z.number().int().min(0).max(100).optional(),
         lifetime_pct: z.number().min(0).max(100),
         daily_cap: z.number().int().min(0).max(10000),
         weekly_cap: z.number().int().min(0).max(100000),
       }).optional(),
+
     }).parse(i),
   )
   .handler(async ({ data }) => {
