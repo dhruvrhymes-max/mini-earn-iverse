@@ -557,6 +557,12 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
         ad_config: z.object({
           daily_watch_limit: z.number().min(0).optional(),
           startup_ad_enabled: z.boolean().optional(),
+          task_tabs: z.object({
+            social: z.boolean(),
+            partner: z.boolean(),
+            watch: z.boolean(),
+            refer: z.boolean(),
+          }).partial().optional(),
         }).partial().optional(),
         admin_telegram_ids: z.array(z.number().int().positive()).optional(),
       }),
