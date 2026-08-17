@@ -241,6 +241,16 @@ function MiniAdmin() {
           <input type="checkbox" checked={!!form.startup_ad_enabled} onChange={(e) => setForm({ ...form, startup_ad_enabled: e.target.checked })} />
           Show ad on app open
         </label>
+        <p className="text-xs text-white/50">Daily counters reset at 2:00 AM.</p>
+      </Section>
+
+      <Section title="Task Hub tabs">
+        {([["tab_watch", "Watch & earn"], ["tab_social", "Social"], ["tab_partner", "Partners"], ["tab_refer", "Refer"]] as const).map(([k, label]) => (
+          <label key={k} className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={!!form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.checked })} />
+            Show {label}
+          </label>
+        ))}
       </Section>
 
       <Section title="Ad providers">
