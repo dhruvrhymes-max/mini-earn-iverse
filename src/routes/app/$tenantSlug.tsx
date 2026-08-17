@@ -5,7 +5,7 @@ import { bootMiniApp, getTenantBySlug, getUser, markOnboarded } from "@/lib/mini
 import { EMPTY_MINI_TENANT, EMPTY_MINI_USER, MiniCtx } from "@/lib/miniapp-context";
 import { skinOf, familyOf } from "@/lib/theme-family";
 import { Button } from "@/components/ui/button";
-import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
+import { Home, ListChecks, Pickaxe, Users, User, Wallet } from "lucide-react";
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
