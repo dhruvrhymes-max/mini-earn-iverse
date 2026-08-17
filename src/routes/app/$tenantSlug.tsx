@@ -320,25 +320,32 @@ function Splash({ msg, seo }: { msg: string; seo: any }) {
     idle: "Production runs while you're away — collect on return.",
   };
   return (
-    <main className="min-h-screen px-6 py-10 text-white" style={{ background: bg }}>
-      <h1 className="text-3xl font-black" style={{ color: primary }}>
-        {seo ? seo.name : "Telegram earning mini app"}
-      </h1>
-      <p className="mt-3 text-white/75 max-w-md">
-        {seo
-          ? `${verb} to earn ${seo.token_name} (${seo.token_symbol}). ${modeCopy[seo.game_mode] ?? modeCopy.mine}`
-          : "Play, complete quests and withdraw your rewards."}
-      </p>
-      <section className="mt-8 space-y-3 max-w-md">
-        <h2 className="text-lg font-bold">How it works</h2>
-        <ul className="space-y-2 text-sm text-white/70 list-disc pl-5">
+    <main className="min-h-screen flex flex-col items-center justify-center text-white" style={{ background: bg }}>
+      {/* Visible: a quiet branded loader only — no wall of text flashing on open. */}
+      <div
+        className="h-12 w-12 rounded-full border-2 border-white/15 animate-spin"
+        style={{ borderTopColor: primary }}
+        aria-hidden
+      />
+      <p className="mt-4 text-sm font-semibold" style={{ color: primary }}>{seo ? seo.name : ""}</p>
+
+      {/* Kept in the HTML for crawlers/moderation review, hidden from members. */}
+      <div className="sr-only">
+        <h1>{seo ? seo.name : "Telegram earning mini app"}</h1>
+        <p>
+          {seo
+            ? `${verb} to earn ${seo.token_name} (${seo.token_symbol}). ${modeCopy[seo.game_mode] ?? modeCopy.mine}`
+            : "Play, complete quests and withdraw your rewards."}
+        </p>
+        <h2>How it works</h2>
+        <ul>
           <li>{verb} in the app to collect {seo?.token_symbol ?? "tokens"} — always free, never behind an ad.</li>
           <li>Complete quests and optional "Watch ad &amp; earn" offers for bonus tokens.</li>
           <li>Invite friends and receive a share of what they earn.</li>
           <li>Convert tokens to USDT and withdraw to your wallet. Payouts are published publicly.</li>
         </ul>
-      </section>
-      <p className="mt-8 text-xs text-white/40">{msg}</p>
+        <p>{msg}</p>
+      </div>
     </main>
   );
 }

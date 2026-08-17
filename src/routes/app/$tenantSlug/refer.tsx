@@ -63,6 +63,11 @@ function Refer() {
       <div className="bg-white/5 rounded-xl p-4 space-y-3">
         <div className="text-xs uppercase text-white/50 tracking-wider">Your invite link</div>
         <div className="font-mono text-xs break-all text-white/90">{link}</div>
+        {botUsername && !shortName && (
+          <p className="text-[10px] text-white/50">
+            Tip for the owner: add the Mini App short name in Manage → Bot so invite links open the app directly.
+          </p>
+        )}
         <div className="flex gap-2">
           <Button className="flex-1" onClick={handleShare}>
             <Share2 className="h-4 w-4 mr-2" />Share
