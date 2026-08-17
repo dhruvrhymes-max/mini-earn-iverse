@@ -20,6 +20,8 @@ const DEFAULTS = {
   lifetime_pct: 20,
   require_activity: true,
   activity_types: ["mine", "task", "ad"] as string[],
+  daily_cap: 20,
+  weekly_cap: 200,
 };
 
 const ACTIVITIES = [
@@ -78,6 +80,17 @@ function Referrals() {
           <Input type="number" min={0} max={100} step={1} value={form.lifetime_pct}
             onChange={(e) => setForm({ ...form, lifetime_pct: Number(e.target.value) })} />
         </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Daily cap" hint="Max credited invites per inviter per 24h (0 = unlimited).">
+            <Input type="number" min={0} value={form.daily_cap}
+              onChange={(e) => setForm({ ...form, daily_cap: Number(e.target.value) })} />
+          </Field>
+          <Field label="Weekly cap" hint="Max credited invites per inviter per 7 days (0 = unlimited).">
+            <Input type="number" min={0} value={form.weekly_cap}
+              onChange={(e) => setForm({ ...form, weekly_cap: Number(e.target.value) })} />
+          </Field>
+        </div>
 
         <div className="border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">

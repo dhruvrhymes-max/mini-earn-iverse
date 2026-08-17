@@ -131,11 +131,19 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
       bonus_reward: Number(s.referral.bonus_reward) || 0,
       bonus_after_ads: Number(s.referral.bonus_after_ads) || 0,
       lifetime_pct: Number(s.referral.lifetime_pct) || 0,
+      daily_cap: Math.max(0, Math.round(Number(s.referral.daily_cap) || 0)),
+      weekly_cap: Math.max(0, Math.round(Number(s.referral.weekly_cap) || 0)),
     } })} pending={m.isPending}>
       <F label="Instant reward per invite"><Input type="number" value={s.referral.instant_reward} onChange={(e) => set("referral", "instant_reward", e.target.value)} /></F>
       <F label="Bonus reward"><Input type="number" value={s.referral.bonus_reward} onChange={(e) => set("referral", "bonus_reward", e.target.value)} /></F>
       <F label="Bonus after invitee watches N ads"><Input type="number" value={s.referral.bonus_after_ads} onChange={(e) => set("referral", "bonus_after_ads", e.target.value)} /></F>
       <F label="Lifetime earning cut (%)"><Input type="number" value={s.referral.lifetime_pct} onChange={(e) => set("referral", "lifetime_pct", e.target.value)} /></F>
+      <Section title="Abuse caps" />
+      <div className="grid grid-cols-2 gap-2">
+        <F label="Max credited invites / day"><Input type="number" value={s.referral.daily_cap} onChange={(e) => set("referral", "daily_cap", e.target.value)} /></F>
+        <F label="Max credited invites / week"><Input type="number" value={s.referral.weekly_cap} onChange={(e) => set("referral", "weekly_cap", e.target.value)} /></F>
+      </div>
+      <p className="text-[11px] text-white/40">Set 0 to disable a cap. Invites beyond the cap still count but pay no reward.</p>
     </Box>
   );
 }

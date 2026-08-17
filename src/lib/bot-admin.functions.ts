@@ -62,6 +62,8 @@ export const adminGetSettings = createServerFn({ method: "POST" })
         bonus_reward: (tenant.referral_config as any)?.bonus_reward ?? 5,
         bonus_after_ads: (tenant.referral_config as any)?.bonus_after_ads ?? 5,
         lifetime_pct: (tenant.referral_config as any)?.lifetime_pct ?? 20,
+        daily_cap: (tenant.referral_config as any)?.daily_cap ?? 20,
+        weekly_cap: (tenant.referral_config as any)?.weekly_cap ?? 200,
       },
     };
   });
@@ -115,6 +117,8 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
         bonus_reward: z.number().min(0),
         bonus_after_ads: z.number().int().min(0).max(100),
         lifetime_pct: z.number().min(0).max(100),
+        daily_cap: z.number().int().min(0).max(10000),
+        weekly_cap: z.number().int().min(0).max(100000),
       }).optional(),
     }).parse(i),
   )

@@ -8,24 +8,33 @@
  * as the rate-limit ledger and the audit trail.
  */
 
+export const REFERRAL_DAILY_CAP = 20;
+export const REFERRAL_WEEKLY_CAP = 200;
+
 export const DEFAULT_REFERRAL = {
   signup_reward: 0,
   inviter_reward: 50,
   lifetime_pct: 20,
   require_activity: true,
   activity_types: ["mine", "task", "ad"] as string[],
+  daily_cap: REFERRAL_DAILY_CAP,
+  weekly_cap: REFERRAL_WEEKLY_CAP,
 };
-
-export const REFERRAL_DAILY_CAP = 20;
-export const REFERRAL_WEEKLY_CAP = 200;
 
 async function loadReferralConfig(supabaseAdmin: any, tenantId: string) {
   const { data } = await supabaseAdmin.from("tenants").select("referral_config").eq("id", tenantId).maybeSingle();
   return { ...DEFAULT_REFERRAL, ...((data?.referral_config as any) || {}) };
 }
 
-/** True when the inviter is still under both the daily and weekly referral caps. */
+/**
+ * True when the inviter is still under both the daily and weekly referral caps.
+ * Caps come from the bot's referral_config (0 = unlimited).
+ */
 export async function withinReferralCaps(supabaseAdmin: any, tenantId: string, inviterId: string): Promise<boolean> {
+  const cfg = await loadReferralConfig(supabaseAdmin, tenantId);
+  const dailyCap = Number(cfg.daily_cap ?? REFERRAL_DAILY_CAP);
+  const weeklyCap = Number(cfg.weekly_cap ?? REFERRAL_WEEKLY_CAP);
+  if (dailyCap <= 0 && weeklyCap <= 0) return true;
   const dayAgo = new Date(Date.now() - 24 * 3_600_000).toISOString();
   const weekAgo = new Date(Date.now() - 7 * 24 * 3_600_000).toISOString();
   const [{ count: daily }, { count: weekly }] = await Promise.all([
@@ -34,7 +43,9 @@ export async function withinReferralCaps(supabaseAdmin: any, tenantId: string, i
     supabaseAdmin.from("referral_credits").select("id", { count: "exact", head: true })
       .eq("tenant_id", tenantId).eq("inviter_id", inviterId).gte("created_at", weekAgo),
   ]);
-  return (daily ?? 0) < REFERRAL_DAILY_CAP && (weekly ?? 0) < REFERRAL_WEEKLY_CAP;
+  if (dailyCap > 0 && (daily ?? 0) >= dailyCap) return false;
+  if (weeklyCap > 0 && (weekly ?? 0) >= weeklyCap) return false;
+  return true;
 }
 
 async function creditInviter(supabaseAdmin: any, tenantId: string, inviterId: string, amount: number) {
