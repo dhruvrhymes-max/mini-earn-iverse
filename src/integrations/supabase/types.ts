@@ -673,6 +673,7 @@ export type Database = {
           token_icon_url: string | null
           token_name: string
           token_symbol: string
+          welcome_config: Json
           welcome_cta_text: string | null
           welcome_image_url: string | null
           welcome_text: string | null
@@ -705,6 +706,7 @@ export type Database = {
           token_icon_url?: string | null
           token_name?: string
           token_symbol?: string
+          welcome_config?: Json
           welcome_cta_text?: string | null
           welcome_image_url?: string | null
           welcome_text?: string | null
@@ -737,6 +739,7 @@ export type Database = {
           token_icon_url?: string | null
           token_name?: string
           token_symbol?: string
+          welcome_config?: Json
           welcome_cta_text?: string | null
           welcome_image_url?: string | null
           welcome_text?: string | null
