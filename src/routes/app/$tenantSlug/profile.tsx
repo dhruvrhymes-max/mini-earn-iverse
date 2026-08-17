@@ -73,10 +73,7 @@ function Profile() {
       </Section>
 
       <Section skin={skin} primary={theme.primary} title="Settings">
-        <div className={`${skin.card} flex items-center gap-3`} style={skin.cardStyle(theme.primary, theme.accent)}>
-          <Globe className="h-5 w-5" /><span className="flex-1">Language</span>
-          <span className="text-white/60">{user.language?.toUpperCase() || "EN"}</span>
-        </div>
+        <LanguagePicker skin={skin} theme={theme} user={user} />
       </Section>
     </div>
   );
