@@ -1,7 +1,7 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminListMiners, adminSaveMiner, adminDeleteMiner } from "@/lib/miners.functions";
+import { ownerListMiners, ownerSaveMiner, ownerDeleteMiner } from "@/lib/miners.functions";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,19 +21,14 @@ const EMPTY = { id: null as string|null, name: "", emoji: "⛏️", image_url: "
 
 function MinersPage() {
   const { tenantId } = useParams({ from: "/_authenticated/admin/$tenantId/miners" });
-  // web admin uses TG-auth CRUD via previewTgId=null; we call ownerless flavor by re-using admin* fns which validate
-  // tenant ownership implicitly by requiring bot admin. For pure web owner, we hit adminSaveMiner without initData
-  // (server rejects unless global admin). Best path: rely on adminListMiners with previewTgId set to the owner's TG id
-  // is unreliable — so this page instead reads/writes via a dedicated owner-scoped path below.
-  const list = useServerFn(adminListMiners);
-  const save = useServerFn(adminSaveMiner);
-  const del = useServerFn(adminDeleteMiner);
+  const list = useServerFn(ownerListMiners);
+  const save = useServerFn(ownerSaveMiner);
+  const del = useServerFn(ownerDeleteMiner);
   const qc = useQueryClient();
 
-  // We need TG auth OR global admin — fall back to a hint in UI when unauthorised.
   const { data: rows = [], isLoading, error } = useQuery({
     queryKey: ["admin-miners", tenantId],
-    queryFn: () => list({ data: { tenantId, initData: null, previewTgId: null } }).catch((e) => { throw e; }),
+    queryFn: () => list({ data: { tenantId } }),
     retry: false,
   });
 
@@ -50,14 +45,14 @@ function MinersPage() {
         image_url: form.image_url?.trim() || null,
         description: form.description?.trim() || null,
       };
-      return save({ data: { tenantId, initData: null, previewTgId: null, miner: p } });
+      return save({ data: { tenantId, miner: p } });
     },
     onSuccess: () => { toast.success("Saved"); setOpen(false); setForm(EMPTY); qc.invalidateQueries({ queryKey: ["admin-miners", tenantId] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const dm = useMutation({
-    mutationFn: (id: string) => del({ data: { tenantId, initData: null, previewTgId: null, minerId: id } }),
+    mutationFn: (id: string) => del({ data: { tenantId, minerId: id } }),
     onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["admin-miners", tenantId] }); },
     onError: (e: any) => toast.error(e.message),
   });
