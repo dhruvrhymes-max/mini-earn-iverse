@@ -176,12 +176,14 @@ function BalanceCard({ tenant, user, usd, tag, variant = "card" }: { tenant: any
   );
 }
 
-function Header({ tenant, subtitle, Icon }: { tenant: any; subtitle: string; Icon?: any }) {
+function Header({ user, subtitle, Icon }: { tenant?: any; user?: any; subtitle: string; Icon?: any }) {
+  // Show the player, never the bot/tenant handle.
+  const name = user?.first_name || user?.username || "Player";
   return (
     <div className="pt-8 px-4 text-center flex flex-col items-center">
       {Icon && <Icon className="h-4 w-4 text-white/40 mb-1" />}
       <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">{subtitle}</p>
-      <h1 className="text-xl font-bold text-white mt-1 drop-shadow">{tenant.name}</h1>
+      <h1 className="text-xl font-bold text-white mt-1 drop-shadow">Hi, {name}</h1>
     </div>
   );
 }
