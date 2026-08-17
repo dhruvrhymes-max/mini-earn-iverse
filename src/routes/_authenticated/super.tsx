@@ -64,7 +64,7 @@ function SuperLayout() {
         </div>
       )}
 
-      <aside className="hidden md:block w-60 shrink-0 border-r p-4 space-y-1">{links}</aside>
+      <aside className="hidden md:block w-60 shrink-0 border-r p-4 space-y-1 md:sticky md:top-0 md:h-screen md:overflow-y-auto">{links}</aside>
 
       <main className="flex-1 min-w-0 p-4 md:p-8 overflow-x-hidden">
         <Outlet />
