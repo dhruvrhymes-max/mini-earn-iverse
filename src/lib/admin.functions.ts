@@ -31,6 +31,7 @@ export const createTenant = createServerFn({ method: "POST" })
         action_verb: z.string(),
         welcome_text: z.string(),
         welcome_cta_text: z.string(),
+        game_mode: z.enum(["mine", "tap", "spin", "idle"]).optional(),
       }).optional(),
     }).parse(input),
   )
@@ -54,6 +55,7 @@ export const createTenant = createServerFn({ method: "POST" })
       insert.welcome_text = data.preset.welcome_text;
       insert.welcome_cta_text = data.preset.welcome_cta_text;
       insert.theme_preset = data.preset_id ?? null;
+      insert.game_mode = data.preset.game_mode ?? "mine";
     }
     const { data: row, error } = await supabase
       .from("tenants")
