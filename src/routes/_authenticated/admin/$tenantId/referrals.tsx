@@ -17,12 +17,18 @@ export const Route = createFileRoute("/_authenticated/admin/$tenantId/referrals"
 const DEFAULTS = {
   signup_reward: 0,
   inviter_reward: 50,
+  instant_reward: 5,
+  bonus_reward: 50,
+  bonus_trigger: "tasks" as "ads" | "tasks" | "either" | "both",
+  bonus_after_ads: 0,
+  bonus_after_tasks: 5,
   lifetime_pct: 20,
   require_activity: true,
   activity_types: ["mine", "task", "ad"] as string[],
   daily_cap: 20,
   weekly_cap: 200,
 };
+
 
 const ACTIVITIES = [
   { key: "mine", label: "First mining claim" },
@@ -66,20 +72,63 @@ function Referrals() {
       <p className="text-sm text-muted-foreground mb-6">Control what users earn when they invite friends. Changes apply to new referrals immediately.</p>
 
       <div className="space-y-5">
-        <Field label={`Inviter reward (${tokenSymbol})`} hint="Tokens the inviter receives per referred friend.">
+        <Field label={`Instant reward per invite (${tokenSymbol})`} hint="Paid to the inviter the moment the friend opens the app.">
+          <Input type="number" min={0} value={form.instant_reward}
+            onChange={(e) => setForm({ ...form, instant_reward: Number(e.target.value) })} />
+        </Field>
+
+        <Field label={`Activity reward (${tokenSymbol})`} hint="Held until the friend performs a qualifying activity below.">
           <Input type="number" min={0} value={form.inviter_reward}
             onChange={(e) => setForm({ ...form, inviter_reward: Number(e.target.value) })} />
         </Field>
+
+        <div className="border rounded-lg p-4 space-y-3">
+          <Label className="text-base">Extra milestone bonus</Label>
+          <p className="text-xs text-muted-foreground">
+            Inviter gets <b>{form.bonus_reward} {tokenSymbol}</b> more once the invited friend
+            {form.bonus_trigger === "ads" && ` watches ${form.bonus_after_ads} ads`}
+            {form.bonus_trigger === "tasks" && ` completes ${form.bonus_after_tasks} tasks`}
+            {form.bonus_trigger === "either" && ` completes ${form.bonus_after_tasks} tasks or watches ${form.bonus_after_ads} ads`}
+            {form.bonus_trigger === "both" && ` completes ${form.bonus_after_tasks} tasks and watches ${form.bonus_after_ads} ads`}.
+          </p>
+          <Field label={`Bonus amount (${tokenSymbol})`}>
+            <Input type="number" min={0} value={form.bonus_reward}
+              onChange={(e) => setForm({ ...form, bonus_reward: Number(e.target.value) })} />
+          </Field>
+          <Field label="Unlock condition">
+            <select
+              value={form.bonus_trigger}
+              onChange={(e) => setForm({ ...form, bonus_trigger: e.target.value as typeof form.bonus_trigger })}
+              className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+            >
+              <option value="tasks">Completes N tasks</option>
+              <option value="ads">Watches N ads</option>
+              <option value="either">Tasks OR ads</option>
+              <option value="both">Tasks AND ads</option>
+            </select>
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Tasks required">
+              <Input type="number" min={0} value={form.bonus_after_tasks}
+                onChange={(e) => setForm({ ...form, bonus_after_tasks: Number(e.target.value) })} />
+            </Field>
+            <Field label="Ads required">
+              <Input type="number" min={0} value={form.bonus_after_ads}
+                onChange={(e) => setForm({ ...form, bonus_after_ads: Number(e.target.value) })} />
+            </Field>
+          </div>
+        </div>
 
         <Field label={`Newbie signup bonus (${tokenSymbol})`} hint="Tokens credited to a new user the moment they open the app via an invite link.">
           <Input type="number" min={0} value={form.signup_reward}
             onChange={(e) => setForm({ ...form, signup_reward: Number(e.target.value) })} />
         </Field>
 
-        <Field label="Lifetime earning share (%)" hint="Every time a referred friend earns, this % is also credited to the inviter — forever.">
+        <Field label="Lifetime earning share (%)" hint="Every time a referred friend earns, this % is also credited to the inviter — forever. Set 5, 10, 20… anything up to 100.">
           <Input type="number" min={0} max={100} step={1} value={form.lifetime_pct}
             onChange={(e) => setForm({ ...form, lifetime_pct: Number(e.target.value) })} />
         </Field>
+
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Daily cap" hint="Max credited invites per inviter per 24h (0 = unlimited).">

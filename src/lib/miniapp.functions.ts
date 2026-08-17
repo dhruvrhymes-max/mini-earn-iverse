@@ -324,7 +324,9 @@ export const completeTask = createServerFn({ method: "POST" })
     });
     await maybeReleasePendingInviterReward(supabaseAdmin, user, "task");
     await payLifetimeCut(supabaseAdmin, user, reward);
+    await (await import("./referral.server")).maybeReleaseInviteBonus(supabaseAdmin, user);
     return { reward, balance: Number(user.balance) + reward };
+
   });
 
 export const logAdReward = createServerFn({ method: "POST" })

@@ -129,15 +129,33 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
     <Box onSave={() => m.mutate({ referral: {
       instant_reward: Number(s.referral.instant_reward) || 0,
       bonus_reward: Number(s.referral.bonus_reward) || 0,
+      bonus_trigger: s.referral.bonus_trigger || "tasks",
       bonus_after_ads: Number(s.referral.bonus_after_ads) || 0,
+      bonus_after_tasks: Number(s.referral.bonus_after_tasks) || 0,
       lifetime_pct: Number(s.referral.lifetime_pct) || 0,
       daily_cap: Math.max(0, Math.round(Number(s.referral.daily_cap) || 0)),
       weekly_cap: Math.max(0, Math.round(Number(s.referral.weekly_cap) || 0)),
     } })} pending={m.isPending}>
       <F label="Instant reward per invite"><Input type="number" value={s.referral.instant_reward} onChange={(e) => set("referral", "instant_reward", e.target.value)} /></F>
-      <F label="Bonus reward"><Input type="number" value={s.referral.bonus_reward} onChange={(e) => set("referral", "bonus_reward", e.target.value)} /></F>
-      <F label="Bonus after invitee watches N ads"><Input type="number" value={s.referral.bonus_after_ads} onChange={(e) => set("referral", "bonus_after_ads", e.target.value)} /></F>
+      <F label="Extra bonus reward"><Input type="number" value={s.referral.bonus_reward} onChange={(e) => set("referral", "bonus_reward", e.target.value)} /></F>
+      <F label="Unlock bonus when invitee…">
+        <select
+          value={s.referral.bonus_trigger ?? "tasks"}
+          onChange={(e) => set("referral", "bonus_trigger", e.target.value)}
+          className="w-full rounded-md bg-white/10 px-3 py-2 text-sm"
+        >
+          <option value="tasks">completes N tasks</option>
+          <option value="ads">watches N ads</option>
+          <option value="either">completes tasks OR watches ads</option>
+          <option value="both">completes tasks AND watches ads</option>
+        </select>
+      </F>
+      <div className="grid grid-cols-2 gap-2">
+        <F label="Tasks required"><Input type="number" value={s.referral.bonus_after_tasks ?? 5} onChange={(e) => set("referral", "bonus_after_tasks", e.target.value)} /></F>
+        <F label="Ads required"><Input type="number" value={s.referral.bonus_after_ads} onChange={(e) => set("referral", "bonus_after_ads", e.target.value)} /></F>
+      </div>
       <F label="Lifetime earning cut (%)"><Input type="number" value={s.referral.lifetime_pct} onChange={(e) => set("referral", "lifetime_pct", e.target.value)} /></F>
+
       <Section title="Abuse caps" />
       <div className="grid grid-cols-2 gap-2">
         <F label="Max credited invites / day"><Input type="number" value={s.referral.daily_cap} onChange={(e) => set("referral", "daily_cap", e.target.value)} /></F>
