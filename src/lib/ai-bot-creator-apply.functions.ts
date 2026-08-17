@@ -24,6 +24,7 @@ const ApplySchema = z.object({
       motion_style: z.string().optional(),
     }),
     scene: z.string(),
+    game_mode: z.enum(["mine", "tap", "spin", "idle"]).optional(),
     tasks: z.array(z.any()),
     miners: z.array(z.any()),
   }),
@@ -46,6 +47,7 @@ export const applyAiBotConfig = createServerFn({ method: "POST" })
       action_verb: data.config.action_verb,
       welcome_text: data.config.welcome_text,
       welcome_cta_text: data.config.welcome_cta_text,
+      game_mode: data.config.game_mode ?? "mine",
       theme: {
         ...data.config.theme,
         scene: data.config.scene,
