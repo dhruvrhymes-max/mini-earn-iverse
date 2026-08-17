@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function getSupabaseAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -147,6 +148,64 @@ export const adminDeleteMiner = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await validateTgAdmin(data.tenantId, data.initData, data.previewTgId);
     const { error } = await supabaseAdmin.from("miners").delete().eq("id", data.minerId).eq("tenant_id", data.tenantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ─── Owner CRUD (web admin panel, Supabase auth) ──────────────────
+const MinerFields = z.object({
+  id: z.string().uuid().nullable().optional(),
+  name: z.string().min(1).max(60),
+  emoji: z.string().max(4).optional().nullable(),
+  image_url: z.string().url().nullable().optional(),
+  description: z.string().max(200).nullable().optional(),
+  rarity: z.enum(["common", "rare", "epic", "legendary"]).default("common"),
+  price_tokens: z.number().min(0),
+  rate_boost_per_hour: z.number().min(0),
+  duration_hours: z.number().int().min(0),
+  is_free: z.boolean().default(false),
+  active: z.boolean().default(true),
+  sort_order: z.number().int().default(0),
+});
+
+async function assertOwner(supabase: any, userId: string, tenantId: string) {
+  const { data } = await supabase.from("tenants").select("id").eq("id", tenantId).eq("owner_user_id", userId).maybeSingle();
+  if (!data) throw new Error("Not authorised for this bot");
+}
+
+export const ownerListMiners = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ tenantId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOwner(context.supabase, context.userId, data.tenantId);
+    const { data: rows, error } = await context.supabase.from("miners")
+      .select("*").eq("tenant_id", data.tenantId).order("sort_order").order("created_at");
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const ownerSaveMiner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ tenantId: z.string().uuid(), miner: MinerFields }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOwner(context.supabase, context.userId, data.tenantId);
+    const { id, ...fields } = data.miner;
+    if (id) {
+      const { error } = await context.supabase.from("miners").update(fields).eq("id", id).eq("tenant_id", data.tenantId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await context.supabase.from("miners").insert({ ...fields, tenant_id: data.tenantId });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const ownerDeleteMiner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ tenantId: z.string().uuid(), minerId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOwner(context.supabase, context.userId, data.tenantId);
+    const { error } = await context.supabase.from("miners").delete().eq("id", data.minerId).eq("tenant_id", data.tenantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
