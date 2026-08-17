@@ -80,6 +80,10 @@ function MiniAdmin() {
       lifetime_pct: ref.lifetime_pct ?? 20,
       daily_watch_limit: ad.daily_watch_limit ?? 20,
       startup_ad_enabled: ad.startup_ad_enabled ?? true,
+      tab_social: ad.task_tabs?.social !== false,
+      tab_partner: ad.task_tabs?.partner !== false,
+      tab_watch: ad.task_tabs?.watch !== false,
+      tab_refer: ad.task_tabs?.refer !== false,
       admin_telegram_ids: Array.isArray(t.admin_telegram_ids) ? t.admin_telegram_ids.join(", ") : "",
     });
   }, [t?.id]);
