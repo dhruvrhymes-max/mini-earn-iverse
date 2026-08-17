@@ -90,3 +90,29 @@ export async function payLifetimeCut(supabaseAdmin: any, user: any, earnedAmount
     .update({ lifetime_earned_for_inviter: Number(user.lifetime_earned_for_inviter || 0) + cut })
     .eq("id", user.id);
 }
+
+/**
+ * Release the "watch N ads" invite bonus to the inviter once the invited
+ * member has watched the configured number of ads. Amount and threshold are
+ * set per bot in referral_config (bonus_reward / bonus_after_ads).
+ */
+export async function maybeReleaseInviteBonus(supabaseAdmin: any, user: any): Promise<number> {
+  if (!user?.referrer_id) return 0;
+  if (user.invite_bonus_paid) return 0;
+  const cfg = await loadReferralConfig(supabaseAdmin, user.tenant_id);
+  const threshold = Number((cfg as any).bonus_after_ads ?? 0);
+  const amount = Number((cfg as any).bonus_reward ?? 0);
+  if (threshold <= 0 || amount <= 0) return 0;
+  if (Number(user.ads_watched || 0) < threshold) return 0;
+
+  // Ledger row doubles as the "already paid" marker for this invitee.
+  const { data: already } = await supabaseAdmin.from("referral_credits")
+    .select("id").eq("invitee_id", user.id).eq("amount", amount).maybeSingle();
+  if (already) return 0;
+  if (!(await withinReferralCaps(supabaseAdmin, user.tenant_id, user.referrer_id))) return 0;
+  if (!(await creditInviter(supabaseAdmin, user.tenant_id, user.referrer_id, amount))) return 0;
+  await supabaseAdmin.from("referral_credits").insert({
+    tenant_id: user.tenant_id, inviter_id: user.referrer_id, invitee_id: user.id, amount,
+  });
+  return amount;
+}

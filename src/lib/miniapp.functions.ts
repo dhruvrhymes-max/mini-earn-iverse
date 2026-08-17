@@ -51,7 +51,7 @@ async function getSupabaseAdmin() {
 
 function normalizeTenant(row: any) {
   if (!row || row.status !== "active") return null;
-  const { bot_token: _botToken, ...safeRow } = row;
+  const { bot_token: _botToken, payout_config: _payout, ...safeRow } = row;
   return {
     ...safeRow,
     theme: { ...DEFAULT_THEME, ...((row.theme as any) || {}) },
@@ -59,12 +59,15 @@ function normalizeTenant(row: any) {
     ad_config: { ...DEFAULT_AD, ...((row.ad_config as any) || {}) },
     community: { ...DEFAULT_COMMUNITY, ...((row.community as any) || {}) },
     referral_config: { ...DEFAULT_REFERRAL, ...((row.referral_config as any) || {}) },
+    onboarding: (row.onboarding as any) || {},
+    deposit_config: (row.deposit_config as any) || {},
     token_name: row.token_name || "Token",
     token_symbol: row.token_symbol || "TKN",
     action_verb: row.action_verb || "Mine",
     game_mode: row.game_mode || "mine",
   };
 }
+
 
 // Public — no auth required (mini-app boot)
 export const getTenantBySlug = createServerFn({ method: "GET" })
@@ -220,18 +223,34 @@ export const bootMiniApp = createServerFn({ method: "POST" })
       }
       if (referrerId) {
         const { data: r } = await supabaseAdmin.from("app_users").select("referral_count,balance").eq("id", referrerId).single();
+        const instant = Number((cfg as any).instant_reward ?? 0);
         const refPatch: any = { referral_count: (r?.referral_count ?? 0) + 1 };
-        if (releaseImmediately) refPatch.balance = Number(r?.balance ?? 0) + inviterReward;
+        const credit = (releaseImmediately ? inviterReward : 0) + instant;
+        if (credit > 0) refPatch.balance = Number(r?.balance ?? 0) + credit;
         await supabaseAdmin.from("app_users").update(refPatch).eq("id", referrerId);
-        if (releaseImmediately) {
+        if (credit > 0) {
           await supabaseAdmin.from("transactions").insert({
-            tenant_id: tenantRow.id, user_id: referrerId, type: "referral", amount: inviterReward, status: "approved",
+            tenant_id: tenantRow.id, user_id: referrerId, type: "referral", amount: credit, status: "approved",
           });
         }
       }
     }
-    return { tenant, user };
+
+    // Moderation: banned members and multi-account screening
+    const { screenJoin, clientIpFromHeaders } = await import("./moderation.server");
+    let ip: string | null = null;
+    try {
+      const { getRequest } = await import("@tanstack/react-start/server");
+      ip = clientIpFromHeaders(getRequest().headers);
+    } catch { /* no request context */ }
+    const screen = await screenJoin(supabaseAdmin, tenantRow, user, ip);
+    if (screen.banned) {
+      return { tenant, user: null, blocked: { reason: screen.reason, originalUsername: screen.originalUsername } };
+    }
+
+    return { tenant, user, blocked: null };
   });
+
 
 export const claimMining = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
@@ -354,6 +373,10 @@ export const logAdReward = createServerFn({ method: "POST" })
       tenant_id: user.tenant_id, user_id: user.id, type: "ad", amount: reward, status: "approved",
     });
     await maybeReleasePendingInviterReward(supabaseAdmin, user, "ad");
+    const watched = Number((user as any).ads_watched || 0) + 1;
+    await supabaseAdmin.from("app_users").update({ ads_watched: watched }).eq("id", user.id);
+    await (await import("./referral.server")).maybeReleaseInviteBonus(supabaseAdmin, { ...user, ads_watched: watched });
+
     await payLifetimeCut(supabaseAdmin, user, reward);
     return { reward, balance: Number(user.balance) + reward, used: (count ?? 0) + 1, limit };
   });
