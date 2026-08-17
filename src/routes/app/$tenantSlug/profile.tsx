@@ -171,3 +171,46 @@ function Section({ title, children, skin, primary }: any) {
     </div>
   );
 }
+
+function LanguagePicker({ skin, theme, user }: any) {
+  const { refetchUser } = useMini();
+  const save = useServerFn(setLanguage);
+  const [lang, setLang] = useState<string>(user.language || "en");
+  const pick = async (code: string) => {
+    const prev = lang;
+    setLang(code);
+    try {
+      await save({ data: { userId: user.id, language: code as any } });
+      refetchUser();
+    } catch (e: any) {
+      setLang(prev);
+      toast.error(e?.message ?? "Couldn't change language");
+    }
+  };
+  return (
+    <div className={skin.card} style={skin.cardStyle(theme.primary, theme.accent)}>
+      <div className="flex items-center gap-3">
+        <Globe className="h-5 w-5" /><span className="flex-1 font-semibold">Language</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        {LANGUAGES.map((l) => {
+          const active = lang === l.code;
+          return (
+            <button
+              key={l.code}
+              onClick={() => pick(l.code)}
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-left"
+              style={{
+                background: active ? `${theme.primary}22` : "rgba(255,255,255,0.05)",
+                border: `1px solid ${active ? theme.primary : "rgba(255,255,255,0.1)"}`,
+              }}
+            >
+              <span>{l.flag}</span>
+              <span className="truncate">{l.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
