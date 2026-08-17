@@ -89,6 +89,7 @@ export const updateTenant = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("tenants").update(data.patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
+    (await import("./tenant-cache.server")).invalidateTenant(data.id);
     return { ok: true };
   });
 
@@ -109,6 +110,7 @@ export const deleteTenant = createServerFn({ method: "POST" })
       } catch { /* ignore */ }
     }
     const { error } = await supabase.from("tenants").delete().eq("id", data.id);
+    (await import("./tenant-cache.server")).invalidateTenant(data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

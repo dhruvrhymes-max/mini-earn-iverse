@@ -71,12 +71,8 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ slug: z.string().min(1) }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
-    const { data: row, error } = await supabaseAdmin
-      .from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids,game_mode,payout_channel_url")
-      .eq("slug", data.slug)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
+    const { loadTenantRow } = await import("./tenant-cache.server");
+    const row = await loadTenantRow(supabaseAdmin, data.slug);
     return normalizeTenant(row);
   });
 
@@ -172,10 +168,8 @@ export const bootMiniApp = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
-    const { data: tenantRow, error: tenantError } = await supabaseAdmin.from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids,game_mode,payout_channel_url,bot_token")
-      .eq("slug", data.tenantSlug).maybeSingle();
-    if (tenantError) throw new Error(tenantError.message);
+    const { loadTenantRow } = await import("./tenant-cache.server");
+    const tenantRow = await loadTenantRow(supabaseAdmin, data.tenantSlug);
     const tenant = normalizeTenant(tenantRow);
     if (!tenant || !tenantRow) return { tenant: null, user: null };
 
@@ -598,6 +592,7 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
     }
 
     const { error } = await supabaseAdmin.from("tenants").update(dbPatch as any).eq("id", data.tenantId);
+    (await import("./tenant-cache.server")).invalidateTenant(data.tenantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
