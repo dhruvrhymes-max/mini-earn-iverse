@@ -102,19 +102,40 @@ export async function payLifetimeCut(supabaseAdmin: any, user: any, earnedAmount
     .eq("id", user.id);
 }
 
+/** How many tasks (tenant + global) the member has completed in total. */
+async function countTasksDone(supabaseAdmin: any, userId: string): Promise<number> {
+  const [a, b] = await Promise.all([
+    supabaseAdmin.from("user_tasks").select("count").eq("user_id", userId),
+    supabaseAdmin.from("user_global_tasks").select("count").eq("user_id", userId),
+  ]);
+  const sum = (rows: any[] | null) => (rows ?? []).reduce((s, r) => s + Number(r.count || 0), 0);
+  return sum(a.data) + sum(b.data);
+}
+
 /**
- * Release the "watch N ads" invite bonus to the inviter once the invited
- * member has watched the configured number of ads. Amount and threshold are
- * set per bot in referral_config (bonus_reward / bonus_after_ads).
+ * Release the "extra bonus" invite reward to the inviter once the invited
+ * member hits the configured milestone. Amount, milestone type (ads / tasks /
+ * either / both) and thresholds are set per bot in referral_config
+ * (bonus_reward, bonus_trigger, bonus_after_ads, bonus_after_tasks).
  */
 export async function maybeReleaseInviteBonus(supabaseAdmin: any, user: any): Promise<number> {
   if (!user?.referrer_id) return 0;
-  if (user.invite_bonus_paid) return 0;
   const cfg = await loadReferralConfig(supabaseAdmin, user.tenant_id);
-  const threshold = Number((cfg as any).bonus_after_ads ?? 0);
   const amount = Number((cfg as any).bonus_reward ?? 0);
-  if (threshold <= 0 || amount <= 0) return 0;
-  if (Number(user.ads_watched || 0) < threshold) return 0;
+  if (amount <= 0) return 0;
+
+  const trigger = String((cfg as any).bonus_trigger ?? "ads");
+  const adNeed = Number((cfg as any).bonus_after_ads ?? 0);
+  const taskNeed = Number((cfg as any).bonus_after_tasks ?? 0);
+  const adsOk = adNeed > 0 && Number(user.ads_watched || 0) >= adNeed;
+  const tasksOk = taskNeed > 0 && (await countTasksDone(supabaseAdmin, user.id)) >= taskNeed;
+
+  let unlocked = false;
+  if (trigger === "tasks") unlocked = tasksOk;
+  else if (trigger === "either") unlocked = adsOk || tasksOk;
+  else if (trigger === "both") unlocked = adsOk && tasksOk;
+  else unlocked = adsOk;
+  if (!unlocked) return 0;
 
   // Ledger row doubles as the "already paid" marker for this invitee.
   const { data: already } = await supabaseAdmin.from("referral_credits")
@@ -127,3 +148,4 @@ export async function maybeReleaseInviteBonus(supabaseAdmin: any, user: any): Pr
   });
   return amount;
 }
+
