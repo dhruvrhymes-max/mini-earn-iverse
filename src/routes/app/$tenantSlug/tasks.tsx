@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMini } from "@/lib/miniapp-context";
+import { skinOf } from "@/lib/theme-family";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyTasks, completeTask, logAdReward } from "@/lib/miniapp.functions";
 import { listAdProviders } from "@/lib/ad-providers.functions";
@@ -17,6 +18,8 @@ export const Route = createFileRoute("/app/$tenantSlug/tasks")({
 
 function TaskHub() {
   const { tenant, user, refetchUser } = useMini();
+  const skin = skinOf(tenant);
+  const th = tenant.theme as any;
   const qc = useQueryClient();
   const getT = useServerFn(getMyTasks);
   const comp = useServerFn(completeTask);
@@ -51,8 +54,8 @@ function TaskHub() {
   const adLimit = (tenant.ad_config as any).daily_watch_limit ?? 20;
 
   return (
-    <div className="p-4 pt-8">
-      <h1 className="text-2xl font-bold mb-4">Task Hub</h1>
+    <div className={`${skin.page} pb-28`}>
+      <h1 className={`${skin.title} mb-4`}>Task Hub</h1>
       <Tabs defaultValue="social">
         <TabsList className="grid grid-cols-4 w-full bg-white/10">
           <TabsTrigger value="social">Social</TabsTrigger>
@@ -61,11 +64,11 @@ function TaskHub() {
           <TabsTrigger value="refer">Refer</TabsTrigger>
         </TabsList>
         <TabsContent value="social" className="space-y-2 mt-4">
-          {social.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
+          {social.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
           {social.length === 0 && <Empty />}
         </TabsContent>
         <TabsContent value="partner" className="space-y-2 mt-4">
-          {partner.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
+          {partner.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
           {partner.length === 0 && <Empty />}
         </TabsContent>
         <TabsContent value="watch" className="space-y-3 mt-4">
@@ -83,7 +86,7 @@ function TaskHub() {
               />
             ))
           )}
-          {watch.map((t: any) => <TaskRow key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
+          {watch.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
         </TabsContent>
 
         <TabsContent value="refer" className="space-y-2 mt-4">
@@ -94,9 +97,9 @@ function TaskHub() {
   );
 }
 
-function TaskRow({ t, done, onClaim, symbol }: any) {
+function TaskRow({ t, done, onClaim, symbol, skin, th }: any) {
   return (
-    <div className="bg-white/5 rounded-lg p-3 flex items-center gap-3">
+    <div className={`${skin.card} flex items-center gap-3`} style={skin.cardStyle(th.primary, th.accent)}>
       <div className="flex-1">
         <p className="font-medium">{t.title}</p>
         <p className="text-xs text-white/60">+{t.reward} {symbol}</p>
