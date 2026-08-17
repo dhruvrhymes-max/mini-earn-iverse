@@ -215,7 +215,7 @@ function MiniLayout() {
 
   if (loading && (!tenant || !user)) return (
     <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
-      <Splash msg="Starting…" />
+      <Splash msg="Starting…" seo={seo} />
     </MiniCtx.Provider>
   );
   if (error && (!tenant || !user)) return (
