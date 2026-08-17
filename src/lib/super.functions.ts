@@ -39,6 +39,7 @@ export const setTenantStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("tenants").update({ status: data.status }).eq("id", data.id);
+    (await import("./tenant-cache.server")).invalidateTenant(data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -49,6 +50,7 @@ export const deleteTenant = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("tenants").delete().eq("id", data.id);
+    (await import("./tenant-cache.server")).invalidateTenant(data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

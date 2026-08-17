@@ -592,6 +592,7 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
     }
 
     const { error } = await supabaseAdmin.from("tenants").update(dbPatch as any).eq("id", data.tenantId);
+    (await import("./tenant-cache.server")).invalidateTenant(data.tenantId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
