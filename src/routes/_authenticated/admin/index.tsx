@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listMyTenants, createTenant } from "@/lib/admin.functions";
-import { THEME_PRESETS, type ThemePreset } from "@/lib/theme-presets";
+import { THEME_PRESETS, GAME_MODES, type ThemePreset } from "@/lib/theme-presets";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -31,11 +31,12 @@ function AdminIndex() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [preset, setPreset] = useState<ThemePreset>(THEME_PRESETS[0]);
+  const [modeFilter, setModeFilter] = useState<string>("all");
   const [botToken, setBotToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   function reset() {
-    setStep(1); setBotToken(""); setPreset(THEME_PRESETS[0]); setSubmitting(false);
+    setStep(1); setBotToken(""); setPreset(THEME_PRESETS[0]); setModeFilter("all"); setSubmitting(false);
   }
 
   async function registerWebhook(token: string, tenantId: string) {
@@ -120,14 +121,29 @@ function AdminIndex() {
                 <DialogTitle>{step === 1 ? "Choose a theme & token" : "Connect your Telegram bot"}</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   {step === 1
-                    ? "Pick a preset — colors, token name, and welcome message. You can fine-tune everything later in Manage Bot."
+                    ? `${THEME_PRESETS.length} themes across mine, tap, spin and idle gameplay. Pick one — colors, token, gameplay and welcome message are set for you and stay editable in Manage Bot.`
                     : `Preset: ${preset.emoji} ${preset.label}. Paste your bot token from @BotFather.`}
                 </p>
               </DialogHeader>
               {step === 1 ? (
                 <div className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {THEME_PRESETS.map((p) => {
+                  <div className="flex flex-wrap gap-2">
+                    {[{ id: "all", label: `All (${THEME_PRESETS.length})` }, ...GAME_MODES.map((g) => ({
+                      id: g.id,
+                      label: `${g.label} (${THEME_PRESETS.filter((p) => p.game_mode === g.id).length})`,
+                    }))].map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setModeFilter(f.id)}
+                        className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${modeFilter === f.id ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3 max-h-[52vh] overflow-y-auto pr-1">
+                    {THEME_PRESETS.filter((p) => modeFilter === "all" || p.game_mode === modeFilter).map((p) => {
                       const selected = preset.id === p.id;
                       return (
                         <button
@@ -140,6 +156,7 @@ function AdminIndex() {
                           {selected && <Check className="absolute top-2 right-2 h-5 w-5" style={{ color: p.theme.primary }} />}
                           <div className="text-2xl">{p.emoji}</div>
                           <div className="font-semibold mt-1">{p.label}</div>
+                          <div className="text-[10px] uppercase tracking-wide opacity-60 mt-0.5">{p.game_mode} to earn · {p.layout_family}</div>
                           <div className="text-xs opacity-70 mt-0.5">{p.description}</div>
                           <div className="flex gap-1 mt-3">
                             <span className="w-5 h-5 rounded-full border border-white/20" style={{ background: p.theme.primary }} />
