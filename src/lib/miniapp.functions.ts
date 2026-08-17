@@ -234,6 +234,12 @@ export const bootMiniApp = createServerFn({ method: "POST" })
           });
         }
       }
+      // Launching from a direct Mini App link does not run /start, so send the
+      // bot's welcome message once for brand-new members.
+      if (data.initData) {
+        const { sendBotWelcome } = await import("./tg-welcome.server");
+        await sendBotWelcome(tenantRow, tg.id, startRef ? `ref_${startRef}` : null);
+      }
     }
 
     // Moderation: banned members and multi-account screening
