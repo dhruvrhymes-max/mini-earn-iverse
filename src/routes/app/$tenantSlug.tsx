@@ -266,8 +266,42 @@ function MiniLayout() {
   );
 }
 
-function Splash({ msg }: { msg: string }) {
-  return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white">{msg}</div>;
+/**
+ * Rendered on the server for the very first paint, so the initial HTML always
+ * contains real, readable content instead of an empty JS-only shell.
+ */
+function Splash({ msg, seo }: { msg: string; seo: any }) {
+  const bg = seo?.background ?? "#0a0a0a";
+  const primary = seo?.primary ?? "#f59e0b";
+  const verb = seo?.action_verb ?? "Earn";
+  const modeCopy: Record<string, string> = {
+    mine: "Start a cycle, come back and claim your tokens.",
+    tap: "Tap to earn instantly — energy refills over time.",
+    spin: "Spin the free wheel and win token prizes.",
+    idle: "Production runs while you're away — collect on return.",
+  };
+  return (
+    <main className="min-h-screen px-6 py-10 text-white" style={{ background: bg }}>
+      <h1 className="text-3xl font-black" style={{ color: primary }}>
+        {seo ? seo.name : "Telegram earning mini app"}
+      </h1>
+      <p className="mt-3 text-white/75 max-w-md">
+        {seo
+          ? `${verb} to earn ${seo.token_name} (${seo.token_symbol}). ${modeCopy[seo.game_mode] ?? modeCopy.mine}`
+          : "Play, complete quests and withdraw your rewards."}
+      </p>
+      <section className="mt-8 space-y-3 max-w-md">
+        <h2 className="text-lg font-bold">How it works</h2>
+        <ul className="space-y-2 text-sm text-white/70 list-disc pl-5">
+          <li>{verb} in the app to collect {seo?.token_symbol ?? "tokens"} — always free, never behind an ad.</li>
+          <li>Complete quests and optional "Watch ad &amp; earn" offers for bonus tokens.</li>
+          <li>Invite friends and receive a share of what they earn.</li>
+          <li>Convert tokens to USDT and withdraw to your wallet. Payouts are published publicly.</li>
+        </ul>
+      </section>
+      <p className="mt-8 text-xs text-white/40">{msg}</p>
+    </main>
+  );
 }
 function Centered({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">{children}</div>;
