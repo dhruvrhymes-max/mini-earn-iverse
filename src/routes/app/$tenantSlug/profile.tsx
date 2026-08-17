@@ -6,6 +6,7 @@ import { useMini } from "@/lib/miniapp-context";
 import { isMiniAdmin } from "@/lib/mini-admin";
 import { setLanguage } from "@/lib/miniapp.functions";
 import { LANGUAGES } from "@/lib/languages";
+import { useTelegramPhoto } from "@/lib/tg-photo";
 import { familyOf, skinOf, hexA } from "@/lib/theme-family";
 import { ChevronRight, Wallet, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck, Pickaxe, ShoppingBag } from "lucide-react";
 
