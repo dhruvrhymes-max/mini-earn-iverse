@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 import { sanitizeShortName } from "@/lib/mini-admin";
 
+import { MiniAppLinks } from "@/components/admin/MiniAppLinks";
+
 const WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/telegram-webhook`;
 
 export const Route = createFileRoute("/_authenticated/admin/$tenantId/branding")({
@@ -127,6 +129,9 @@ function Branding() {
   return (
     <div className="max-w-xl pb-12">
       <h1 className="text-2xl font-bold mb-6">Manage Bot</h1>
+      <div className="mb-6">
+        <MiniAppLinks slug={(t as any).slug} botUsername={form.bot_username} shortName={sanitizeShortName(form.mini_app_short_name)} />
+      </div>
       <div className="space-y-4">
         <Field label="Token name"><Input value={form.token_name ?? ""} onChange={(e) => setForm({ ...form, token_name: e.target.value })} /></Field>
         <Field label="Token symbol"><Input value={form.token_symbol ?? ""} onChange={(e) => setForm({ ...form, token_symbol: e.target.value })} /></Field>
