@@ -158,7 +158,108 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_text: "🥛 Welcome to Milk Rush\nPour MILK, stack rewards, cash out USDT.\n\n🍯 Earn more:\n• Daily tasks\n• Watch ads\n• Refer friends",
     welcome_cta_text: "🥛 Start Pouring",
   },
+  // ── tap to earn ────────────────────────────────────────────────
+  {
+    id: "fruit", label: "Fruit Press", emoji: "🍊", scene: "candy", game_mode: "tap", layout_family: "playful",
+    description: "Citrus orange — squeeze fruit for instant juice",
+    theme: { primary: "#fb923c", background: "#1b0c04", accent: "#facc15" },
+    token_name: "Juice", token_symbol: "JUICE", token_icon_url: null, action_verb: "Squeeze",
+    welcome_text: "🍊 Welcome to Fruit Press\nSqueeze fruit, stack JUICE, cash out USDT.\n\n🧃 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🍊 Start Squeezing",
+  },
+  {
+    id: "volt", label: "Volt Tap", emoji: "⚡", scene: "neon", game_mode: "tap", layout_family: "cosmic",
+    description: "Electric blue — energy bar tap-to-earn",
+    theme: { primary: "#38bdf8", background: "#020617", accent: "#facc15" },
+    token_name: "Volt", token_symbol: "VOLT", token_icon_url: null, action_verb: "Zap",
+    welcome_text: "⚡ Welcome to Volt Tap\nZap the core, drain your energy, refill and repeat.\n\n🔋 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "⚡ Start Zapping",
+  },
+  {
+    id: "arcade", label: "Pixel Arcade", emoji: "🕹️", scene: "crypto", game_mode: "tap", layout_family: "playful",
+    description: "Retro magenta — 8-bit arcade tapping",
+    theme: { primary: "#e879f9", background: "#12021c", accent: "#4ade80" },
+    token_name: "Credit", token_symbol: "CRDT", token_icon_url: null, action_verb: "Play",
+    welcome_text: "🕹️ Welcome to Pixel Arcade\nInsert credits, tap to score, withdraw USDT.\n\n👾 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🕹️ Insert Credit",
+  },
+  // ── spin to earn ───────────────────────────────────────────────
+  {
+    id: "orbit", label: "Lucky Orbit", emoji: "🎯", scene: "galaxy", game_mode: "spin", layout_family: "cosmic",
+    description: "Deep violet — orbital prize wheel",
+    theme: { primary: "#8b5cf6", background: "#08041a", accent: "#22d3ee" },
+    token_name: "Orbit", token_symbol: "ORB", token_icon_url: null, action_verb: "Spin",
+    welcome_text: "🎯 Welcome to Lucky Orbit\nOne free spin daily, more spins from tasks.\n\n🌌 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🎯 Spin the Orbit",
+  },
+  {
+    id: "rune", label: "Rune Wheel", emoji: "🔮", scene: "ghost", game_mode: "spin", layout_family: "crystal",
+    description: "Arcane teal — mystical rune spinner",
+    theme: { primary: "#2dd4bf", background: "#04121a", accent: "#c084fc" },
+    token_name: "Rune", token_symbol: "RUNE", token_icon_url: null, action_verb: "Cast",
+    welcome_text: "🔮 Welcome to Rune Wheel\nCast the wheel, collect RUNE, withdraw USDT.\n\n✨ Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🔮 Cast a Spin",
+  },
+  {
+    id: "comet", label: "Comet Wheel", emoji: "☄️", scene: "ice", game_mode: "spin", layout_family: "cosmic",
+    description: "Frozen indigo — comet trail jackpot wheel",
+    theme: { primary: "#818cf8", background: "#050a1c", accent: "#7dd3fc" },
+    token_name: "Comet", token_symbol: "CMT", token_icon_url: null, action_verb: "Launch",
+    welcome_text: "☄️ Welcome to Comet Wheel\nLaunch a spin, chase the jackpot, cash out USDT.\n\n🌠 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "☄️ Launch Spin",
+  },
+  // ── idle / farm to earn ────────────────────────────────────────
+  {
+    id: "coffee", label: "Coffee Roastery", emoji: "☕", scene: "wood", game_mode: "idle", layout_family: "forge",
+    description: "Roasted brown — beans roast while you're away",
+    theme: { primary: "#b45309", background: "#150c05", accent: "#fcd34d" },
+    token_name: "Bean", token_symbol: "BEAN", token_icon_url: null, action_verb: "Roast",
+    welcome_text: "☕ Welcome to Coffee Roastery\nYour roaster works offline — come back and collect.\n\n🫘 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "☕ Start Roasting",
+  },
+  {
+    id: "sky", label: "Sky Harvest", emoji: "🌾", scene: "forest", game_mode: "idle", layout_family: "nature",
+    description: "Sunlit lime — floating farm islands",
+    theme: { primary: "#84cc16", background: "#07140a", accent: "#fde047" },
+    token_name: "Grain", token_symbol: "GRAIN", token_icon_url: null, action_verb: "Harvest",
+    welcome_text: "🌾 Welcome to Sky Harvest\nCrops grow while you're away. Harvest and cash out USDT.\n\n🌤️ Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🌾 Start Harvesting",
+  },
+  {
+    id: "bakery", label: "Bakery Rush", emoji: "🥐", scene: "milk", game_mode: "idle", layout_family: "playful",
+    description: "Buttery gold — ovens bake around the clock",
+    theme: { primary: "#f59e0b", background: "#1a1207", accent: "#fef3c7" },
+    token_name: "Crumb", token_symbol: "CRMB", token_icon_url: null, action_verb: "Bake",
+    welcome_text: "🥐 Welcome to Bakery Rush\nOvens keep baking offline — collect your tray.\n\n🍞 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🥐 Start Baking",
+  },
+  {
+    id: "caravan", label: "Nomad Caravan", emoji: "🐫", scene: "gold", game_mode: "idle", layout_family: "forge",
+    description: "Desert sand — trade routes running overnight",
+    theme: { primary: "#d97706", background: "#140d04", accent: "#fbbf24" },
+    token_name: "Spice", token_symbol: "SPICE", token_icon_url: null, action_verb: "Trade",
+    welcome_text: "🐫 Welcome to Nomad Caravan\nYour caravan trades while you sleep. Collect SPICE.\n\n🏜️ Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🐫 Send Caravan",
+  },
+  // ── extra mine variants ────────────────────────────────────────
+  {
+    id: "reef", label: "Reef Dive", emoji: "🐚", scene: "ocean", game_mode: "mine", layout_family: "crystal",
+    description: "Turquoise reef — deep dive salvage runs",
+    theme: { primary: "#14b8a6", background: "#03121a", accent: "#a7f3d0" },
+    token_name: "Coral", token_symbol: "CORAL", token_icon_url: null, action_verb: "Dive",
+    welcome_text: "🐚 Welcome to Reef Dive\nRun dives, surface with CORAL, withdraw USDT.\n\n🪸 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🐚 Start Diving",
+  },
+  {
+    id: "cavern", label: "Crystal Cavern", emoji: "🔷", scene: "diamond", game_mode: "mine", layout_family: "crystal",
+    description: "Glacial indigo — deep cavern crystal seams",
+    theme: { primary: "#6366f1", background: "#04061a", accent: "#67e8f9" },
+    token_name: "Shard", token_symbol: "SHARD", token_icon_url: null, action_verb: "Cleave",
+    welcome_text: "🔷 Welcome to Crystal Cavern\nCleave seams, bank SHARD, cash out USDT.\n\n💠 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
+    welcome_cta_text: "🔷 Start Cleaving",
+  },
 ];
+
 
 export const getPreset = (id?: string | null) =>
   THEME_PRESETS.find((p) => p.id === id) ?? null;
