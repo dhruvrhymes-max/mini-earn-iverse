@@ -124,13 +124,18 @@ function ProfileHeader({ family, tenant, user }: { family: string; tenant: any; 
   }
   if (family === "crystal") {
     return (
-      <div className="mb-6 p-4 [clip-path:polygon(18px_0,100%_0,100%_calc(100%-18px),calc(100%-18px)_100%,0_100%,0_18px)]"
+      <div className="mb-6 p-4 flex items-center gap-4 [clip-path:polygon(18px_0,100%_0,100%_calc(100%-18px),calc(100%-18px)_100%,0_100%,0_18px)]"
         style={{ background: `linear-gradient(135deg, ${hexA(theme.primary, 0.25)}, ${hexA(theme.accent, 0.12)})`, border: "1px solid rgba(255,255,255,0.18)" }}>
-        <p className="text-xs uppercase tracking-[0.3em] text-white/50">Explorer</p>
-        <p className="text-xl font-extrabold mt-1">{name}</p>
-        <div className="flex gap-4 mt-3 text-sm">
-          <span className="font-bold" style={{ color: theme.primary }}>{bal}</span>
-          <span className="text-white/60">{usd}</span>
+        <Pfp photo={photo} initial={initial} alt={name}
+          className="w-14 h-14 flex items-center justify-center font-black text-black text-xl [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]"
+          style={{ background: theme.primary }} />
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-white/50">Explorer</p>
+          <p className="text-xl font-extrabold mt-1">{name}</p>
+          <div className="flex gap-4 mt-2 text-sm">
+            <span className="font-bold" style={{ color: theme.primary }}>{bal}</span>
+            <span className="text-white/60">{usd}</span>
+          </div>
         </div>
       </div>
     );
@@ -139,8 +144,9 @@ function ProfileHeader({ family, tenant, user }: { family: string; tenant: any; 
     return (
       <div className="mb-6 rounded-md overflow-hidden" style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.1),rgba(0,0,0,0.4))", borderBottom: `4px solid ${theme.primary}` }}>
         <div className="flex items-center gap-3 p-4">
-          <div className="w-14 h-14 flex items-center justify-center font-black text-black text-xl"
-            style={{ background: theme.primary, clipPath: "polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)" }}>{initial}</div>
+          <Pfp photo={photo} initial={initial} alt={name}
+            className="w-14 h-14 flex items-center justify-center font-black text-black text-xl"
+            style={{ background: theme.primary, clipPath: "polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)" }} />
           <div>
             <p className="font-black uppercase tracking-wider">{name}</p>
             <p className="text-xs text-white/60 uppercase tracking-widest mt-0.5">{bal} · {usd}</p>
@@ -153,7 +159,9 @@ function ProfileHeader({ family, tenant, user }: { family: string; tenant: any; 
     return (
       <div className="mb-6 rounded-[24px] rounded-tl-[6px] p-4 flex items-center gap-3"
         style={{ background: "rgba(255,255,255,0.06)", borderLeft: `4px solid ${theme.primary}` }}>
-        <div className="w-12 h-12 rounded-[18px] rounded-tl-[4px] flex items-center justify-center font-bold text-black" style={{ background: theme.primary }}>{initial}</div>
+        <Pfp photo={photo} initial={initial} alt={name}
+          className="w-12 h-12 rounded-[18px] rounded-tl-[4px] flex items-center justify-center font-bold text-black"
+          style={{ background: theme.primary }} />
         <div>
           <p className="font-bold">{name}</p>
           <p className="text-xs text-white/60">{bal} · {usd}</p>
@@ -165,7 +173,9 @@ function ProfileHeader({ family, tenant, user }: { family: string; tenant: any; 
   return (
     <div className="mb-6 rounded-[30px] p-5 text-center"
       style={{ background: `linear-gradient(160deg, ${hexA(theme.primary, 0.3)}, ${hexA(theme.accent, 0.14)})`, border: "2px solid rgba(255,255,255,0.2)", boxShadow: "0 8px 0 rgba(0,0,0,0.3)" }}>
-      <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black text-black" style={{ background: theme.primary }}>{initial}</div>
+      <Pfp photo={photo} initial={initial} alt={name}
+        className="mx-auto w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black text-black"
+        style={{ background: theme.primary }} />
       <p className="mt-3 text-lg font-black">{name}</p>
       <p className="text-sm text-white/70 font-semibold">{bal} · {usd}</p>
     </div>
