@@ -38,7 +38,7 @@ export type ThemePreset = {
 export const THEME_PRESETS: ThemePreset[] = [
 
   {
-    id: "fish", label: "FishVerse", emoji: "🐟", scene: "fish",
+    id: "fish", label: "FishVerse", emoji: "🐟", scene: "fish", game_mode: "mine", layout_family: "crystal",
     description: "Aqua neon — fishing-themed earning app",
     theme: { primary: "#22d3ee", background: "#06121f", accent: "#06b6d4" },
     token_name: "Fish", token_symbol: "FISH", token_icon_url: null, action_verb: "Fish",
@@ -46,7 +46,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "🎣 Start Fishing",
   },
   {
-    id: "wood", label: "Wood Rush", emoji: "🪵", scene: "wood",
+    id: "wood", label: "Wood Rush", emoji: "🪵", scene: "wood", game_mode: "mine", layout_family: "forge",
     description: "Warm amber — lumberjack mining vibe",
     theme: { primary: "#f59e0b", background: "#1a0f05", accent: "#fbbf24" },
     token_name: "Wood", token_symbol: "WOOD", token_icon_url: null, action_verb: "Chop",
@@ -54,7 +54,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "🪵 Start Wood Mining",
   },
   {
-    id: "gold", label: "Gold Rush", emoji: "🏆", scene: "gold",
+    id: "gold", label: "Gold Rush", emoji: "🏆", scene: "gold", game_mode: "mine", layout_family: "forge",
     description: "Luxe gold on black — premium feel",
     theme: { primary: "#eab308", background: "#0a0a0a", accent: "#fde047" },
     token_name: "Gold", token_symbol: "GOLD", token_icon_url: null, action_verb: "Mine",
@@ -62,7 +62,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "⛏️ Start Mining",
   },
   {
-    id: "diamond", label: "Diamond Hunt", emoji: "💎", scene: "diamond",
+    id: "diamond", label: "Diamond Hunt", emoji: "💎", scene: "diamond", game_mode: "mine", layout_family: "crystal",
     description: "Icy cyan — crystal/diamond hunt",
     theme: { primary: "#60a5fa", background: "#020617", accent: "#a5f3fc" },
     token_name: "Diamond", token_symbol: "DMND", token_icon_url: null, action_verb: "Hunt",
@@ -70,7 +70,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "💎 Start Hunting",
   },
   {
-    id: "crypto", label: "Crypto Tap", emoji: "🪙", scene: "crypto",
+    id: "crypto", label: "Crypto Tap", emoji: "🪙", scene: "crypto", game_mode: "tap", layout_family: "cosmic",
     description: "Electric purple — Web3 tap-to-earn",
     theme: { primary: "#a855f7", background: "#0b0612", accent: "#c084fc" },
     token_name: "Coin", token_symbol: "COIN", token_icon_url: null, action_verb: "Tap",
@@ -78,7 +78,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "🪙 Start Tapping",
   },
   {
-    id: "galaxy", label: "Galaxy Miner", emoji: "🚀", scene: "galaxy",
+    id: "galaxy", label: "Galaxy Miner", emoji: "🚀", scene: "galaxy", game_mode: "mine", layout_family: "cosmic",
     description: "Deep space — stars, moon, planets",
     theme: { primary: "#f472b6", background: "#0b0421", accent: "#818cf8" },
     token_name: "Star", token_symbol: "STAR", token_icon_url: null, action_verb: "Mine",
@@ -86,7 +86,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "🚀 Launch Miner",
   },
   {
-    id: "forest", label: "Forest Quest", emoji: "🍃", scene: "forest",
+    id: "forest", label: "Forest Quest", emoji: "🍃", scene: "forest", game_mode: "idle", layout_family: "nature",
     description: "Emerald nature — falling leaves",
     theme: { primary: "#10b981", background: "#04130d", accent: "#6ee7b7" },
     token_name: "Leaf", token_symbol: "LEAF", token_icon_url: null, action_verb: "Gather",
@@ -95,7 +95,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   },
   // ── 6 new themes ───────────────────────────────────────────────
   {
-    id: "lava", label: "Lava Forge", emoji: "🌋", scene: "lava",
+    id: "lava", label: "Lava Forge", emoji: "🌋", scene: "lava", game_mode: "mine", layout_family: "forge",
     description: "Molten red — volcano forge mining",
     theme: { primary: "#ef4444", background: "#170707", accent: "#fb923c" },
     token_name: "Ember", token_symbol: "EMBR", token_icon_url: null, action_verb: "Forge",
@@ -103,7 +103,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "🔥 Start Forging",
   },
   {
-    id: "ocean", label: "Ocean Drift", emoji: "🌊", scene: "ocean",
+    id: "ocean", label: "Ocean Drift", emoji: "🌊", scene: "ocean", game_mode: "idle", layout_family: "crystal",
     description: "Deep blue — pearls, waves, bubbles",
     theme: { primary: "#0ea5e9", background: "#020a1a", accent: "#67e8f9" },
     token_name: "Pearl", token_symbol: "PRL", token_icon_url: null, action_verb: "Dive",
@@ -111,7 +111,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "🐚 Start Diving",
   },
   {
-    id: "candy", label: "Candy Pop", emoji: "🍭", scene: "candy",
+    id: "candy", label: "Candy Pop", emoji: "🍭", scene: "candy", game_mode: "tap", layout_family: "playful",
     description: "Bubblegum pink — sweet tap-to-earn",
     theme: { primary: "#ec4899", background: "#1a0820", accent: "#fbcfe8" },
     token_name: "Candy", token_symbol: "CNDY", token_icon_url: null, action_verb: "Pop",
@@ -119,7 +119,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "🍬 Start Popping",
   },
   {
-    id: "neon", label: "Neon City", emoji: "🌆", scene: "neon",
+    id: "neon", label: "Neon City", emoji: "🌆", scene: "neon", game_mode: "tap", layout_family: "cosmic",
     description: "Cyberpunk neon — synthwave grid",
     theme: { primary: "#22d3ee", background: "#0a0014", accent: "#f0abfc" },
     token_name: "Volt", token_symbol: "VLT", token_icon_url: null, action_verb: "Charge",
@@ -127,7 +127,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "⚡ Start Charging",
   },
   {
-    id: "ice", label: "Frost Peak", emoji: "❄️", scene: "ice",
+    id: "ice", label: "Frost Peak", emoji: "❄️", scene: "ice", game_mode: "mine", layout_family: "crystal",
     description: "Arctic white — snowflakes, aurora",
     theme: { primary: "#7dd3fc", background: "#04101a", accent: "#e0f2fe" },
     token_name: "Frost", token_symbol: "FRST", token_icon_url: null, action_verb: "Mine",
@@ -135,7 +135,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "❄️ Start Mining",
   },
   {
-    id: "dragon", label: "Dragon Hoard", emoji: "🐉", scene: "dragon",
+    id: "dragon", label: "Dragon Hoard", emoji: "🐉", scene: "dragon", game_mode: "mine", layout_family: "forge",
     description: "Mythic crimson — dragon scales & fire",
     theme: { primary: "#dc2626", background: "#0f0008", accent: "#fbbf24" },
     token_name: "Scale", token_symbol: "SCL", token_icon_url: null, action_verb: "Hoard",
@@ -143,7 +143,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "🐉 Start Hoarding",
   },
   {
-    id: "ghost", label: "Ghostly", emoji: "👻", scene: "ghost",
+    id: "ghost", label: "Ghostly", emoji: "👻", scene: "ghost", game_mode: "tap", layout_family: "playful",
     description: "Neon purple — spooky ghost tap-to-earn",
     theme: { primary: "#a855f7", background: "#0d0620", accent: "#ec4899" },
     token_name: "Ghost", token_symbol: "GHOST", token_icon_url: null, action_verb: "Haunt",
@@ -151,7 +151,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_cta_text: "👻 Start Haunting",
   },
   {
-    id: "milk", label: "Milk Rush", emoji: "🥛", scene: "milk",
+    id: "milk", label: "Milk Rush", emoji: "🥛", scene: "milk", game_mode: "idle", layout_family: "playful",
     description: "Warm cream & orange — cozy dairy vibes",
     theme: { primary: "#f97316", background: "#1a1108", accent: "#fde68a" },
     token_name: "Milk", token_symbol: "MILK", token_icon_url: null, action_verb: "Pour",
