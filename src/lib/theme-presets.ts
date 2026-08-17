@@ -1,10 +1,22 @@
 // Curated visual/economy presets shown to creators when setting up a bot.
-// Each preset bundles a theme, token identity, action verb, and welcome message.
-// `scene` selects the animated mining backdrop rendered by <ThemeScene />.
+// Each preset bundles a theme, token identity, action verb, welcome message,
+// a `game_mode` (how players earn) and a `layout_family` (how the home screen looks).
+// `scene` selects the animated backdrop rendered by <ThemeScene /> / <Theme3D />.
 export type SceneKind =
   | "wood" | "gold" | "diamond" | "crypto" | "galaxy" | "forest" | "fish"
   | "lava" | "ocean" | "candy" | "neon" | "ice" | "dragon" | "ghost" | "milk";
 
+/** How players earn in this bot. Tasks + "watch ads & earn" exist in every mode. */
+export type GameMode = "mine" | "tap" | "spin" | "idle";
+
+export type LayoutFamily = "cosmic" | "crystal" | "forge" | "playful" | "nature";
+
+export const GAME_MODES: Array<{ id: GameMode; label: string; hint: string }> = [
+  { id: "mine", label: "Mine to earn", hint: "Start a cycle, come back and claim" },
+  { id: "tap", label: "Tap to earn", hint: "Tap for instant tokens, energy refills over time" },
+  { id: "spin", label: "Spin to earn", hint: "Free daily spin plus spins earned from tasks" },
+  { id: "idle", label: "Idle / farm to earn", hint: "Production accrues offline, collect on return" },
+];
 
 export type ThemePreset = {
   id: string;
@@ -19,9 +31,12 @@ export type ThemePreset = {
   welcome_text: string;
   welcome_cta_text: string;
   scene: SceneKind;
+  game_mode: GameMode;
+  layout_family: LayoutFamily;
 };
 
 export const THEME_PRESETS: ThemePreset[] = [
+
   {
     id: "fish", label: "FishVerse", emoji: "🐟", scene: "fish",
     description: "Aqua neon — fishing-themed earning app",
