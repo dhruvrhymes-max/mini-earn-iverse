@@ -15,60 +15,22 @@ const DEFAULT_REFERRAL = {
 };
 
 /**
- * Award the inviter when the new user performs a qualifying activity (mine/task/ad).
- * Releases the pending_inviter_reward queued at signup time.
- * Returns the released amount (0 if none).
+ * Award the inviter when the invited user performs a qualifying activity.
+ * Delegates to referral.server which enforces the 20/day, 200/week caps.
  */
 async function maybeReleasePendingInviterReward(
   supabaseAdmin: any,
   user: any,
   activityType: "mine" | "task" | "ad",
 ): Promise<number> {
-  if (user.has_activity) return 0;
-  // load tenant referral config + activity_types
-  const { data: tenantRow } = await supabaseAdmin
-    .from("tenants").select("referral_config").eq("id", user.tenant_id).maybeSingle();
-  const cfg = { ...DEFAULT_REFERRAL, ...((tenantRow?.referral_config as any) || {}) };
-  const activityCounts = Array.isArray(cfg.activity_types) && cfg.activity_types.includes(activityType);
-  // mark first activity regardless of whether THIS one counts (idempotent)
-  await supabaseAdmin.from("app_users").update({ has_activity: true }).eq("id", user.id);
-  if (!activityCounts) return 0;
-  const pending = Number(user.pending_inviter_reward || 0);
-  if (!user.referrer_id || pending <= 0) return 0;
-  // credit inviter
-  const { data: inv } = await supabaseAdmin.from("app_users").select("balance").eq("id", user.referrer_id).single();
-  if (!inv) return 0;
-  await supabaseAdmin.from("app_users").update({ balance: Number(inv.balance) + pending }).eq("id", user.referrer_id);
-  await supabaseAdmin.from("app_users").update({ pending_inviter_reward: 0 }).eq("id", user.id);
-  await supabaseAdmin.from("transactions").insert({
-    tenant_id: user.tenant_id, user_id: user.referrer_id, type: "referral", amount: pending, status: "approved",
-  });
-  return pending;
+  const ref = await import("./referral.server");
+  return ref.releasePendingInviterReward(supabaseAdmin, user, activityType);
 }
 
 /** Pay the inviter a lifetime % cut of this user's earning event. */
-async function payLifetimeCut(
-  supabaseAdmin: any,
-  user: any,
-  earnedAmount: number,
-): Promise<void> {
-  if (!user.referrer_id || earnedAmount <= 0) return;
-  const { data: tenantRow } = await supabaseAdmin
-    .from("tenants").select("referral_config").eq("id", user.tenant_id).maybeSingle();
-  const cfg = { ...DEFAULT_REFERRAL, ...((tenantRow?.referral_config as any) || {}) };
-  const pct = Number(cfg.lifetime_pct || 0);
-  if (pct <= 0) return;
-  const cut = earnedAmount * (pct / 100);
-  if (cut <= 0) return;
-  const { data: inv } = await supabaseAdmin.from("app_users").select("balance").eq("id", user.referrer_id).single();
-  if (!inv) return;
-  await supabaseAdmin.from("app_users").update({ balance: Number(inv.balance) + cut }).eq("id", user.referrer_id);
-  await supabaseAdmin.from("app_users")
-    .update({ lifetime_earned_for_inviter: Number(user.lifetime_earned_for_inviter || 0) + cut })
-    .eq("id", user.id);
-  await supabaseAdmin.from("transactions").insert({
-    tenant_id: user.tenant_id, user_id: user.referrer_id, type: "referral", amount: cut, status: "approved",
-  });
+async function payLifetimeCut(supabaseAdmin: any, user: any, earnedAmount: number): Promise<void> {
+  const ref = await import("./referral.server");
+  await ref.payLifetimeCut(supabaseAdmin, user, earnedAmount);
 }
 
 /** Parse start_param from Telegram initData. Returns ref tg id if formatted as ref_NNN. */
@@ -100,6 +62,7 @@ function normalizeTenant(row: any) {
     token_name: row.token_name || "Token",
     token_symbol: row.token_symbol || "TKN",
     action_verb: row.action_verb || "Mine",
+    game_mode: row.game_mode || "mine",
   };
 }
 
@@ -110,7 +73,7 @@ export const getTenantBySlug = createServerFn({ method: "GET" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: row, error } = await supabaseAdmin
       .from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids,game_mode,payout_channel_url")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -210,7 +173,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenantRow, error: tenantError } = await supabaseAdmin.from("tenants")
-      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids,bot_token")
+      .select("id,slug,name,status,token_name,token_symbol,token_icon_url,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids,game_mode,payout_channel_url,bot_token")
       .eq("slug", data.tenantSlug).maybeSingle();
     if (tenantError) throw new Error(tenantError.message);
     const tenant = normalizeTenant(tenantRow);

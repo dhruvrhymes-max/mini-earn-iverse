@@ -73,6 +73,7 @@ function AdminIndex() {
           action_verb: preset.action_verb,
           welcome_text: preset.welcome_text,
           welcome_cta_text: preset.welcome_cta_text,
+          game_mode: preset.game_mode,
         },
       }});
       try {

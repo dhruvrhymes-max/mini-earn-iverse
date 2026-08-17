@@ -17,6 +17,7 @@ function Profile() {
     { to: "/app/$tenantSlug/convert", label: "Convert to USDT", icon: ArrowLeftRight },
     { to: "/app/$tenantSlug/wallets", label: "Wallet addresses", icon: Wallet },
     { to: "/app/$tenantSlug/history", label: "Transaction history", icon: History },
+    { to: "/app/$tenantSlug/payouts", label: "Payout proof", icon: ShieldCheck },
   ] as const;
   const c = tenant.community as any;
   const go = (to: any) => nav({ to, params: { tenantSlug: tenant.slug } as any });

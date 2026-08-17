@@ -23,6 +23,7 @@ import { Route as AppTenantSlugWalletsRouteImport } from './routes/app/$tenantSl
 import { Route as AppTenantSlugTasksRouteImport } from './routes/app/$tenantSlug/tasks'
 import { Route as AppTenantSlugReferRouteImport } from './routes/app/$tenantSlug/refer'
 import { Route as AppTenantSlugProfileRouteImport } from './routes/app/$tenantSlug/profile'
+import { Route as AppTenantSlugPayoutsRouteImport } from './routes/app/$tenantSlug/payouts'
 import { Route as AppTenantSlugMinersRouteImport } from './routes/app/$tenantSlug/miners'
 import { Route as AppTenantSlugMineRouteImport } from './routes/app/$tenantSlug/mine'
 import { Route as AppTenantSlugHistoryRouteImport } from './routes/app/$tenantSlug/history'
@@ -112,6 +113,11 @@ const AppTenantSlugReferRoute = AppTenantSlugReferRouteImport.update({
 const AppTenantSlugProfileRoute = AppTenantSlugProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppTenantSlugRoute,
+} as any)
+const AppTenantSlugPayoutsRoute = AppTenantSlugPayoutsRouteImport.update({
+  id: '/payouts',
+  path: '/payouts',
   getParentRoute: () => AppTenantSlugRoute,
 } as any)
 const AppTenantSlugMinersRoute = AppTenantSlugMinersRouteImport.update({
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
   '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
   '/app/$tenantSlug/miners': typeof AppTenantSlugMinersRoute
+  '/app/$tenantSlug/payouts': typeof AppTenantSlugPayoutsRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
   '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
   '/app/$tenantSlug/miners': typeof AppTenantSlugMinersRoute
+  '/app/$tenantSlug/payouts': typeof AppTenantSlugPayoutsRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/app/$tenantSlug/history': typeof AppTenantSlugHistoryRoute
   '/app/$tenantSlug/mine': typeof AppTenantSlugMineRoute
   '/app/$tenantSlug/miners': typeof AppTenantSlugMinersRoute
+  '/app/$tenantSlug/payouts': typeof AppTenantSlugPayoutsRoute
   '/app/$tenantSlug/profile': typeof AppTenantSlugProfileRoute
   '/app/$tenantSlug/refer': typeof AppTenantSlugReferRoute
   '/app/$tenantSlug/tasks': typeof AppTenantSlugTasksRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/history'
     | '/app/$tenantSlug/mine'
     | '/app/$tenantSlug/miners'
+    | '/app/$tenantSlug/payouts'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
     | '/app/$tenantSlug/tasks'
@@ -392,6 +402,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/history'
     | '/app/$tenantSlug/mine'
     | '/app/$tenantSlug/miners'
+    | '/app/$tenantSlug/payouts'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
     | '/app/$tenantSlug/tasks'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/history'
     | '/app/$tenantSlug/mine'
     | '/app/$tenantSlug/miners'
+    | '/app/$tenantSlug/payouts'
     | '/app/$tenantSlug/profile'
     | '/app/$tenantSlug/refer'
     | '/app/$tenantSlug/tasks'
@@ -555,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/app/$tenantSlug/profile'
       preLoaderRoute: typeof AppTenantSlugProfileRouteImport
+      parentRoute: typeof AppTenantSlugRoute
+    }
+    '/app/$tenantSlug/payouts': {
+      id: '/app/$tenantSlug/payouts'
+      path: '/payouts'
+      fullPath: '/app/$tenantSlug/payouts'
+      preLoaderRoute: typeof AppTenantSlugPayoutsRouteImport
       parentRoute: typeof AppTenantSlugRoute
     }
     '/app/$tenantSlug/miners': {
@@ -785,6 +804,7 @@ interface AppTenantSlugRouteChildren {
   AppTenantSlugHistoryRoute: typeof AppTenantSlugHistoryRoute
   AppTenantSlugMineRoute: typeof AppTenantSlugMineRoute
   AppTenantSlugMinersRoute: typeof AppTenantSlugMinersRoute
+  AppTenantSlugPayoutsRoute: typeof AppTenantSlugPayoutsRoute
   AppTenantSlugProfileRoute: typeof AppTenantSlugProfileRoute
   AppTenantSlugReferRoute: typeof AppTenantSlugReferRoute
   AppTenantSlugTasksRoute: typeof AppTenantSlugTasksRoute
@@ -800,6 +820,7 @@ const AppTenantSlugRouteChildren: AppTenantSlugRouteChildren = {
   AppTenantSlugHistoryRoute: AppTenantSlugHistoryRoute,
   AppTenantSlugMineRoute: AppTenantSlugMineRoute,
   AppTenantSlugMinersRoute: AppTenantSlugMinersRoute,
+  AppTenantSlugPayoutsRoute: AppTenantSlugPayoutsRoute,
   AppTenantSlugProfileRoute: AppTenantSlugProfileRoute,
   AppTenantSlugReferRoute: AppTenantSlugReferRoute,
   AppTenantSlugTasksRoute: AppTenantSlugTasksRoute,

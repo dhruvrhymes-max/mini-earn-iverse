@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useParams, useLocation, useNavigate, useMatchRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { bootMiniApp, getUser, markOnboarded } from "@/lib/miniapp.functions";
+import { bootMiniApp, getTenantBySlug, getUser, markOnboarded } from "@/lib/miniapp.functions";
 import { EMPTY_MINI_TENANT, EMPTY_MINI_USER, MiniCtx } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User } from "lucide-react";
@@ -72,11 +72,50 @@ function getSearchKey(search: unknown): string {
 }
 
 export const Route = createFileRoute("/app/$tenantSlug")({
+  // Server-rendered so the very first HTML response contains real, readable
+  // content (name, token, how it works) for moderation crawlers and previews.
+  loader: async ({ params }) => {
+    try {
+      const tenant: any = await getTenantBySlug({ data: { slug: params.tenantSlug } });
+      if (!tenant) return { seo: null };
+      return {
+        seo: {
+          name: tenant.name as string,
+          token_name: tenant.token_name as string,
+          token_symbol: tenant.token_symbol as string,
+          action_verb: tenant.action_verb as string,
+          game_mode: (tenant.game_mode ?? "mine") as string,
+          background: (tenant.theme?.background ?? "#0a0a0a") as string,
+          primary: (tenant.theme?.primary ?? "#f59e0b") as string,
+        },
+      };
+    } catch {
+      return { seo: null };
+    }
+  },
+  head: ({ loaderData }) => {
+    const seo = (loaderData as any)?.seo;
+    const title = seo ? `${seo.name} — earn ${seo.token_symbol} on Telegram` : "Telegram earning mini app";
+    const description = seo
+      ? `${seo.action_verb} to earn ${seo.token_name} (${seo.token_symbol}), complete quests, watch optional rewarded ads, invite friends and withdraw USDT.`
+      : "Play, complete quests and withdraw rewards from this Telegram mini app.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+    };
+  },
   component: MiniLayout,
 });
 
 function MiniLayout() {
   const { tenantSlug } = useParams({ from: "/app/$tenantSlug" });
+  const seo = (Route.useLoaderData() as any)?.seo ?? null;
   const loc = useLocation();
   const searchKey = getSearchKey(loc.search);
   const boot = useServerFn(bootMiniApp);
@@ -176,7 +215,7 @@ function MiniLayout() {
 
   if (loading && (!tenant || !user)) return (
     <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
-      <Splash msg="Starting…" />
+      <Splash msg="Starting…" seo={seo} />
     </MiniCtx.Provider>
   );
   if (error && (!tenant || !user)) return (
@@ -227,8 +266,42 @@ function MiniLayout() {
   );
 }
 
-function Splash({ msg }: { msg: string }) {
-  return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-white">{msg}</div>;
+/**
+ * Rendered on the server for the very first paint, so the initial HTML always
+ * contains real, readable content instead of an empty JS-only shell.
+ */
+function Splash({ msg, seo }: { msg: string; seo: any }) {
+  const bg = seo?.background ?? "#0a0a0a";
+  const primary = seo?.primary ?? "#f59e0b";
+  const verb = seo?.action_verb ?? "Earn";
+  const modeCopy: Record<string, string> = {
+    mine: "Start a cycle, come back and claim your tokens.",
+    tap: "Tap to earn instantly — energy refills over time.",
+    spin: "Spin the free wheel and win token prizes.",
+    idle: "Production runs while you're away — collect on return.",
+  };
+  return (
+    <main className="min-h-screen px-6 py-10 text-white" style={{ background: bg }}>
+      <h1 className="text-3xl font-black" style={{ color: primary }}>
+        {seo ? seo.name : "Telegram earning mini app"}
+      </h1>
+      <p className="mt-3 text-white/75 max-w-md">
+        {seo
+          ? `${verb} to earn ${seo.token_name} (${seo.token_symbol}). ${modeCopy[seo.game_mode] ?? modeCopy.mine}`
+          : "Play, complete quests and withdraw your rewards."}
+      </p>
+      <section className="mt-8 space-y-3 max-w-md">
+        <h2 className="text-lg font-bold">How it works</h2>
+        <ul className="space-y-2 text-sm text-white/70 list-disc pl-5">
+          <li>{verb} in the app to collect {seo?.token_symbol ?? "tokens"} — always free, never behind an ad.</li>
+          <li>Complete quests and optional "Watch ad &amp; earn" offers for bonus tokens.</li>
+          <li>Invite friends and receive a share of what they earn.</li>
+          <li>Convert tokens to USDT and withdraw to your wallet. Payouts are published publicly.</li>
+        </ul>
+      </section>
+      <p className="mt-8 text-xs text-white/40">{msg}</p>
+    </main>
+  );
 }
 function Centered({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">{children}</div>;
