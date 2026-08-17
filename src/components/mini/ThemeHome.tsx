@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ThemeScene } from "./ThemeScene";
 import type { SceneKind } from "@/lib/theme-presets";
-import { Pickaxe, Users, ListChecks, Wallet, Sparkles, Flame, Snowflake, Leaf, Rocket, Gem } from "lucide-react";
+import { Pickaxe, Users, ListChecks, Wallet, Sparkles, Flame, Snowflake, Leaf, Rocket, Gem, Repeat, ArrowDownToLine, History } from "lucide-react";
 
 export type HomeLayoutProps = {
   tenant: any;
