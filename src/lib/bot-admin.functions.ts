@@ -58,13 +58,16 @@ export const adminGetSettings = createServerFn({ method: "POST" })
         footer: (tenant.proof_config as any)?.footer ?? "",
       },
       referral: {
-        instant_reward: (tenant.referral_config as any)?.instant_reward ?? 1,
-        bonus_reward: (tenant.referral_config as any)?.bonus_reward ?? 5,
-        bonus_after_ads: (tenant.referral_config as any)?.bonus_after_ads ?? 5,
+        instant_reward: (tenant.referral_config as any)?.instant_reward ?? 5,
+        bonus_reward: (tenant.referral_config as any)?.bonus_reward ?? 50,
+        bonus_trigger: (tenant.referral_config as any)?.bonus_trigger ?? "tasks",
+        bonus_after_ads: (tenant.referral_config as any)?.bonus_after_ads ?? 0,
+        bonus_after_tasks: (tenant.referral_config as any)?.bonus_after_tasks ?? 5,
         lifetime_pct: (tenant.referral_config as any)?.lifetime_pct ?? 20,
         daily_cap: (tenant.referral_config as any)?.daily_cap ?? 20,
         weekly_cap: (tenant.referral_config as any)?.weekly_cap ?? 200,
       },
+
     };
   });
 
