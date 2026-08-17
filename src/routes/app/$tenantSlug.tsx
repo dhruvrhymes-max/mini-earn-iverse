@@ -329,8 +329,9 @@ function Splash({ msg, seo }: { msg: string; seo: any }) {
       />
       <p className="mt-4 text-sm font-semibold" style={{ color: primary }}>{seo ? seo.name : ""}</p>
 
-      {/* Kept in the HTML for crawlers/moderation review, hidden from members. */}
-      <div className="sr-only">
+      {/* Kept in the HTML for crawlers/moderation review, hidden from members.
+          Inline style (not a class) so it stays hidden before CSS loads. */}
+      <div style={{ display: "none" }} aria-hidden>
         <h1>{seo ? seo.name : "Telegram earning mini app"}</h1>
         <p>
           {seo
