@@ -80,6 +80,10 @@ function MiniAdmin() {
       lifetime_pct: ref.lifetime_pct ?? 20,
       daily_watch_limit: ad.daily_watch_limit ?? 20,
       startup_ad_enabled: ad.startup_ad_enabled ?? true,
+      tab_social: ad.task_tabs?.social !== false,
+      tab_partner: ad.task_tabs?.partner !== false,
+      tab_watch: ad.task_tabs?.watch !== false,
+      tab_refer: ad.task_tabs?.refer !== false,
       admin_telegram_ids: Array.isArray(t.admin_telegram_ids) ? t.admin_telegram_ids.join(", ") : "",
     });
   }, [t?.id]);
@@ -116,6 +120,12 @@ function MiniAdmin() {
         ad_config: {
           daily_watch_limit: Number(form.daily_watch_limit) || 0,
           startup_ad_enabled: !!form.startup_ad_enabled,
+          task_tabs: {
+            social: !!form.tab_social,
+            partner: !!form.tab_partner,
+            watch: !!form.tab_watch,
+            refer: !!form.tab_refer,
+          },
         },
         admin_telegram_ids: String(form.admin_telegram_ids || "")
           .split(/[\s,]+/).map((s: string) => s.trim()).filter(Boolean)
@@ -231,6 +241,16 @@ function MiniAdmin() {
           <input type="checkbox" checked={!!form.startup_ad_enabled} onChange={(e) => setForm({ ...form, startup_ad_enabled: e.target.checked })} />
           Show ad on app open
         </label>
+        <p className="text-xs text-white/50">Daily counters reset at 2:00 AM.</p>
+      </Section>
+
+      <Section title="Task Hub tabs">
+        {([["tab_watch", "Watch & earn"], ["tab_social", "Social"], ["tab_partner", "Partners"], ["tab_refer", "Refer"]] as const).map(([k, label]) => (
+          <label key={k} className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={!!form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.checked })} />
+            Show {label}
+          </label>
+        ))}
       </Section>
 
       <Section title="Ad providers">

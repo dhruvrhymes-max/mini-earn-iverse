@@ -343,7 +343,7 @@ export const logAdReward = createServerFn({ method: "POST" })
     const econ = (user as any).tenants.economics as any;
     const adCfg = (user as any).tenants.ad_config as any;
     const limit = Number(adCfg.daily_watch_limit || 20);
-    const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+    const today = new Date((await import("./day-window")).dayStartISO());
     const { count } = await supabaseAdmin.from("ad_logs")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id).gte("created_at", today.toISOString());
@@ -464,15 +464,21 @@ export const getMyTasks = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ userId: z.string().uuid(), tenantId: z.string().uuid() }).parse(i))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
-    const [tasks, completed, milestones, ads, globalTasks, globalCompleted] = await Promise.all([
+    const since = (await import("./day-window")).dayStartISO();
+    const [tasks, completed, milestones, ads, globalTasks, globalCompleted, adRows] = await Promise.all([
       supabaseAdmin.from("tasks").select("*").eq("tenant_id", data.tenantId).eq("active", true).order("sort_order"),
       supabaseAdmin.from("user_tasks").select("*").eq("user_id", data.userId),
       supabaseAdmin.from("referral_milestones").select("*").eq("tenant_id", data.tenantId).order("threshold"),
       supabaseAdmin.from("ad_logs").select("id", { count: "exact", head: true }).eq("user_id", data.userId)
-        .gte("created_at", new Date(new Date().setUTCHours(0,0,0,0)).toISOString()),
+        .gte("created_at", since),
       supabaseAdmin.from("global_tasks").select("*").eq("active", true).order("sort_order"),
       supabaseAdmin.from("user_global_tasks").select("*").eq("user_id", data.userId),
+      supabaseAdmin.from("ad_logs").select("provider_id").eq("user_id", data.userId).gte("created_at", since),
     ]);
+    const byProvider: Record<string, number> = {};
+    for (const r of adRows.data ?? []) {
+      if (r.provider_id) byProvider[r.provider_id] = (byProvider[r.provider_id] ?? 0) + 1;
+    }
     // Merge global tasks in — mark with is_global so client can route completion correctly.
     const merged = [
       ...(tasks.data ?? []),
@@ -487,8 +493,11 @@ export const getMyTasks = createServerFn({ method: "GET" })
       completed: mergedCompleted,
       milestones: milestones.data ?? [],
       adsToday: ads.count ?? 0,
+      adsByProvider: byProvider,
+      resetsAt: since,
     };
   });
+
 
 export const markOnboarded = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
@@ -548,6 +557,12 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
         ad_config: z.object({
           daily_watch_limit: z.number().min(0).optional(),
           startup_ad_enabled: z.boolean().optional(),
+          task_tabs: z.object({
+            social: z.boolean(),
+            partner: z.boolean(),
+            watch: z.boolean(),
+            refer: z.boolean(),
+          }).partial().optional(),
         }).partial().optional(),
         admin_telegram_ids: z.array(z.number().int().positive()).optional(),
       }),
