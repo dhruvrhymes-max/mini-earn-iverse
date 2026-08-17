@@ -158,17 +158,22 @@ export type Database = {
         Row: {
           balance: number
           created_at: string
+          energy: number
+          energy_updated_at: string
           first_name: string | null
           has_activity: boolean
           id: string
+          idle_collected_at: string | null
           language: string
           last_claim_at: string | null
+          last_spin_at: string | null
           lifetime_earned_for_inviter: number
           mining_started_at: string | null
           onboarded: boolean
           pending_inviter_reward: number
           referral_count: number
           referrer_id: string | null
+          spin_credits: number
           startup_ad_shown_at: string | null
           telegram_id: number
           tenant_id: string
@@ -181,17 +186,22 @@ export type Database = {
         Insert: {
           balance?: number
           created_at?: string
+          energy?: number
+          energy_updated_at?: string
           first_name?: string | null
           has_activity?: boolean
           id?: string
+          idle_collected_at?: string | null
           language?: string
           last_claim_at?: string | null
+          last_spin_at?: string | null
           lifetime_earned_for_inviter?: number
           mining_started_at?: string | null
           onboarded?: boolean
           pending_inviter_reward?: number
           referral_count?: number
           referrer_id?: string | null
+          spin_credits?: number
           startup_ad_shown_at?: string | null
           telegram_id: number
           tenant_id: string
@@ -204,17 +214,22 @@ export type Database = {
         Update: {
           balance?: number
           created_at?: string
+          energy?: number
+          energy_updated_at?: string
           first_name?: string | null
           has_activity?: boolean
           id?: string
+          idle_collected_at?: string | null
           language?: string
           last_claim_at?: string | null
+          last_spin_at?: string | null
           lifetime_earned_for_inviter?: number
           mining_started_at?: string | null
           onboarded?: boolean
           pending_inviter_reward?: number
           referral_count?: number
           referrer_id?: string | null
+          spin_credits?: number
           startup_ad_shown_at?: string | null
           telegram_id?: number
           tenant_id?: string
@@ -350,6 +365,62 @@ export type Database = {
           },
         ]
       }
+      referral_credits: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invitee_id: string
+          inviter_id: string
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invitee_id: string
+          inviter_id: string
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invitee_id?: string
+          inviter_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_credits_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_milestones: {
         Row: {
           created_at: string
@@ -456,10 +527,12 @@ export type Database = {
           community: Json
           created_at: string
           economics: Json
+          game_mode: string
           id: string
           mini_app_short_name: string | null
           name: string
           owner_user_id: string
+          payout_channel_url: string | null
           referral_config: Json
           slug: string
           status: Database["public"]["Enums"]["tenant_status"]
@@ -481,10 +554,12 @@ export type Database = {
           community?: Json
           created_at?: string
           economics?: Json
+          game_mode?: string
           id?: string
           mini_app_short_name?: string | null
           name: string
           owner_user_id: string
+          payout_channel_url?: string | null
           referral_config?: Json
           slug: string
           status?: Database["public"]["Enums"]["tenant_status"]
@@ -506,10 +581,12 @@ export type Database = {
           community?: Json
           created_at?: string
           economics?: Json
+          game_mode?: string
           id?: string
           mini_app_short_name?: string | null
           name?: string
           owner_user_id?: string
+          payout_channel_url?: string | null
           referral_config?: Json
           slug?: string
           status?: Database["public"]["Enums"]["tenant_status"]
