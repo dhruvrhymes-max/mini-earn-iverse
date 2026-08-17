@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User, Wallet } from "lucide-react";
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
 
-type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null };
+type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null; blocked?: { reason: string | null; originalUsername: string | null } | null };
 const BOOT_TIMEOUT_MS = 12_000;
 
 async function readTelegramInitData(): Promise<string | null> {
@@ -191,6 +191,12 @@ function MiniLayout() {
     setBootState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await boot({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null } });
+      if ((result as any).blocked) {
+        localStorage.removeItem(`mini_boot_${tenantSlug}`);
+        localStorage.removeItem(`uid_${tenantSlug}`);
+        setBootState({ tenant: result.tenant, user: null, loading: false, error: null, blocked: (result as any).blocked });
+        return;
+      }
       if (!result.tenant || !result.user) {
         localStorage.removeItem(`mini_boot_${tenantSlug}`);
         localStorage.removeItem(`uid_${tenantSlug}`);
@@ -221,7 +227,7 @@ function MiniLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchKey, tenantSlug]);
 
-  const { tenant, user, loading, error } = bootState;
+  const { tenant, user, loading, error, blocked } = bootState;
   const safeState = normalizeBootState(bootState);
   const refetch = useCallback(async () => {
     if (!user?.id) return;
@@ -249,6 +255,17 @@ function MiniLayout() {
       <h1 className="text-xl font-bold mb-2">Couldn't start</h1>
       <p className="text-sm text-white/60 mb-4">{error}</p>
       <Button onClick={doBoot}>Try again</Button>
+      </Centered>
+    </MiniCtx.Provider>
+  );
+  if (blocked) return (
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
+      <Centered>
+        <h1 className="text-xl font-bold mb-2">Account blocked</h1>
+        <p className="text-sm text-white/70 mb-2">{blocked.reason ?? "Multiple accounts are not allowed."}</p>
+        {blocked.originalUsername && (
+          <p className="text-sm text-white/50">Please continue with your original account {blocked.originalUsername}.</p>
+        )}
       </Centered>
     </MiniCtx.Provider>
   );
@@ -280,7 +297,7 @@ function MiniLayout() {
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       >
-        {!user.onboarded && <Onboarding tenantSlug={tenantSlug} userId={user.id} refetch={refetch} />}
+        {!user.onboarded && <Onboarding tenant={tenant} userId={user.id} refetch={refetch} />}
         <div className="relative z-10"><Outlet /></div>
         <BottomNav slug={tenantSlug} verb={tenant.action_verb} primary={theme.primary} tenant={tenant} />
       </div>
@@ -329,9 +346,46 @@ function Centered({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">{children}</div>;
 }
 
-function Onboarding({ userId, refetch }: { tenantSlug: string; userId: string; refetch: () => void }) {
+function Onboarding({ tenant, userId, refetch }: { tenant: any; userId: string; refetch: () => void }) {
   const mark = useServerFn(markOnboarded);
   const [i, setI] = useState(0);
+  const ob: any = tenant?.onboarding || {};
+  const channels: any[] = Array.isArray(ob.channels) ? ob.channels.filter((c: any) => c?.url) : [];
+  const [joined, setJoined] = useState<Record<number, boolean>>({});
+  const allJoined = !ob.require_join || channels.every((_, n) => joined[n]);
+
+  if (ob.enabled) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-6 text-center text-white">
+        {ob.image_url && <img src={ob.image_url} alt="" className="h-28 w-28 object-contain mb-4 rounded-2xl" />}
+        <h2 className="text-2xl font-bold mb-2">{ob.title || "Welcome!"}</h2>
+        <p className="text-sm text-white/80 max-w-xs whitespace-pre-line">{ob.text || ""}</p>
+        <div className="w-full max-w-xs mt-6 space-y-2">
+          {channels.map((c, n) => (
+            <a
+              key={n}
+              href={c.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setJoined((prev) => ({ ...prev, [n]: true }))}
+              className="flex items-center justify-between bg-white/10 rounded-xl px-4 py-3 text-sm"
+            >
+              <span>{c.title || "Join channel"}</span>
+              <span className="text-xs text-white/60">{joined[n] ? "Joined" : "Join"}</span>
+            </a>
+          ))}
+        </div>
+        <Button
+          className="mt-8"
+          disabled={!allJoined}
+          onClick={async () => { await mark({ data: { userId } }); refetch(); }}
+        >
+          {allJoined ? (tenant?.welcome_cta_text || "Start") : "Join to continue"}
+        </Button>
+      </div>
+    );
+  }
+
   const slides = [
     { title: "Welcome!", body: "Earn tokens by mining, completing tasks, and inviting friends." },
     { title: "Tap to mine", body: "Start your mining cycle and claim rewards every few hours." },
