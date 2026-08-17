@@ -73,6 +73,15 @@ export const buyMiner = createServerFn({ method: "POST" })
       const { data: existing } = await supabaseAdmin.from("user_miners")
         .select("id").eq("user_id", user.id).eq("miner_id", miner.id).maybeSingle();
       if (existing) throw new Error("Already claimed");
+    } else if ((miner as any).currency === "ton") {
+      const price = Number((miner as any).price_ton || 0);
+      const funded = Number((user as any).ton_deposited || 0);
+      if (funded < price) throw new Error(`Not enough TON — deposit ${(price - funded).toFixed(2)} TON first`);
+      await supabaseAdmin.from("app_users").update({ ton_deposited: funded - price } as any).eq("id", user.id);
+      await supabaseAdmin.from("transactions").insert({
+        tenant_id: user.tenant_id, user_id: user.id, type: "convert" as any, amount: -price,
+        currency: "TON", status: "approved",
+      });
     } else {
       const price = Number(miner.price_tokens);
       if (Number(user.balance) < price) throw new Error("Insufficient balance");
@@ -118,6 +127,8 @@ export const adminSaveMiner = createServerFn({ method: "POST" })
       description: z.string().max(200).nullable().optional(),
       rarity: z.enum(["common","rare","epic","legendary"]).default("common"),
       price_tokens: z.number().min(0),
+      currency: z.enum(["token", "ton"]).default("token"),
+      price_ton: z.number().min(0).default(0),
       rate_boost_per_hour: z.number().min(0),
       duration_hours: z.number().int().min(0),
       is_free: z.boolean().default(false),
@@ -161,6 +172,8 @@ const MinerFields = z.object({
   description: z.string().max(200).nullable().optional(),
   rarity: z.enum(["common", "rare", "epic", "legendary"]).default("common"),
   price_tokens: z.number().min(0),
+  currency: z.enum(["token", "ton"]).default("token"),
+  price_ton: z.number().min(0).default(0),
   rate_boost_per_hour: z.number().min(0),
   duration_hours: z.number().int().min(0),
   is_free: z.boolean().default(false),

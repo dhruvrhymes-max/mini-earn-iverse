@@ -156,7 +156,12 @@ export type Database = {
       }
       app_users: {
         Row: {
+          ads_watched: number
           balance: number
+          ban_kind: string | null
+          ban_reason: string | null
+          banned: boolean
+          banned_at: string | null
           created_at: string
           energy: number
           energy_updated_at: string
@@ -166,6 +171,7 @@ export type Database = {
           idle_collected_at: string | null
           language: string
           last_claim_at: string | null
+          last_ip: string | null
           last_spin_at: string | null
           lifetime_earned_for_inviter: number
           mining_started_at: string | null
@@ -177,14 +183,21 @@ export type Database = {
           startup_ad_shown_at: string | null
           telegram_id: number
           tenant_id: string
+          ton_deposited: number
           usd_balance: number
           username: string | null
           wallet_bep20: string | null
           wallet_polygon: string | null
           wallet_ton: string | null
+          welcome_seen: boolean
         }
         Insert: {
+          ads_watched?: number
           balance?: number
+          ban_kind?: string | null
+          ban_reason?: string | null
+          banned?: boolean
+          banned_at?: string | null
           created_at?: string
           energy?: number
           energy_updated_at?: string
@@ -194,6 +207,7 @@ export type Database = {
           idle_collected_at?: string | null
           language?: string
           last_claim_at?: string | null
+          last_ip?: string | null
           last_spin_at?: string | null
           lifetime_earned_for_inviter?: number
           mining_started_at?: string | null
@@ -205,14 +219,21 @@ export type Database = {
           startup_ad_shown_at?: string | null
           telegram_id: number
           tenant_id: string
+          ton_deposited?: number
           usd_balance?: number
           username?: string | null
           wallet_bep20?: string | null
           wallet_polygon?: string | null
           wallet_ton?: string | null
+          welcome_seen?: boolean
         }
         Update: {
+          ads_watched?: number
           balance?: number
+          ban_kind?: string | null
+          ban_reason?: string | null
+          banned?: boolean
+          banned_at?: string | null
           created_at?: string
           energy?: number
           energy_updated_at?: string
@@ -222,6 +243,7 @@ export type Database = {
           idle_collected_at?: string | null
           language?: string
           last_claim_at?: string | null
+          last_ip?: string | null
           last_spin_at?: string | null
           lifetime_earned_for_inviter?: number
           mining_started_at?: string | null
@@ -233,11 +255,13 @@ export type Database = {
           startup_ad_shown_at?: string | null
           telegram_id?: number
           tenant_id?: string
+          ton_deposited?: number
           usd_balance?: number
           username?: string | null
           wallet_bep20?: string | null
           wallet_polygon?: string | null
           wallet_ton?: string | null
+          welcome_seen?: boolean
         }
         Relationships: [
           {
@@ -256,6 +280,57 @@ export type Database = {
           },
           {
             foreignKeyName: "app_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      check_bots: {
+        Row: {
+          active: boolean
+          bot_token: string
+          bot_username: string | null
+          channels: Json
+          created_at: string
+          id: string
+          label: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          bot_token: string
+          bot_username?: string | null
+          channels?: Json
+          created_at?: string
+          id?: string
+          label: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          bot_token?: string
+          bot_username?: string | null
+          channels?: Json
+          created_at?: string
+          id?: string
+          label?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_bots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_bots_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants_public"
@@ -299,10 +374,57 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_logs: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ip_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ip_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ip_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       miners: {
         Row: {
           active: boolean
           created_at: string
+          currency: string
           description: string | null
           duration_hours: number
           emoji: string | null
@@ -311,6 +433,7 @@ export type Database = {
           is_free: boolean
           name: string
           price_tokens: number
+          price_ton: number
           rarity: string
           rate_boost_per_hour: number
           sort_order: number
@@ -319,6 +442,7 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          currency?: string
           description?: string | null
           duration_hours?: number
           emoji?: string | null
@@ -327,6 +451,7 @@ export type Database = {
           is_free?: boolean
           name: string
           price_tokens?: number
+          price_ton?: number
           rarity?: string
           rate_boost_per_hour?: number
           sort_order?: number
@@ -335,6 +460,7 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          currency?: string
           description?: string | null
           duration_hours?: number
           emoji?: string | null
@@ -343,6 +469,7 @@ export type Database = {
           is_free?: boolean
           name?: string
           price_tokens?: number
+          price_ton?: number
           rarity?: string
           rate_boost_per_hour?: number
           sort_order?: number
@@ -526,14 +653,19 @@ export type Database = {
           bot_username: string | null
           community: Json
           created_at: string
+          deposit_config: Json
           economics: Json
           game_mode: string
           id: string
           mini_app_short_name: string | null
           name: string
+          onboarding: Json
           owner_user_id: string
           payout_channel_url: string | null
+          payout_config: Json
+          proof_config: Json
           referral_config: Json
+          security: Json
           slug: string
           status: Database["public"]["Enums"]["tenant_status"]
           theme: Json
@@ -553,14 +685,19 @@ export type Database = {
           bot_username?: string | null
           community?: Json
           created_at?: string
+          deposit_config?: Json
           economics?: Json
           game_mode?: string
           id?: string
           mini_app_short_name?: string | null
           name: string
+          onboarding?: Json
           owner_user_id: string
           payout_channel_url?: string | null
+          payout_config?: Json
+          proof_config?: Json
           referral_config?: Json
+          security?: Json
           slug: string
           status?: Database["public"]["Enums"]["tenant_status"]
           theme?: Json
@@ -580,14 +717,19 @@ export type Database = {
           bot_username?: string | null
           community?: Json
           created_at?: string
+          deposit_config?: Json
           economics?: Json
           game_mode?: string
           id?: string
           mini_app_short_name?: string | null
           name?: string
+          onboarding?: Json
           owner_user_id?: string
           payout_channel_url?: string | null
+          payout_config?: Json
+          proof_config?: Json
           referral_config?: Json
+          security?: Json
           slug?: string
           status?: Database["public"]["Enums"]["tenant_status"]
           theme?: Json
@@ -608,6 +750,7 @@ export type Database = {
           currency: string
           id: string
           network: string | null
+          reject_reason: string | null
           status: Database["public"]["Enums"]["tx_status"]
           tenant_id: string
           tx_hash: string | null
@@ -621,6 +764,7 @@ export type Database = {
           currency?: string
           id?: string
           network?: string | null
+          reject_reason?: string | null
           status?: Database["public"]["Enums"]["tx_status"]
           tenant_id: string
           tx_hash?: string | null
@@ -634,6 +778,7 @@ export type Database = {
           currency?: string
           id?: string
           network?: string | null
+          reject_reason?: string | null
           status?: Database["public"]["Enums"]["tx_status"]
           tenant_id?: string
           tx_hash?: string | null

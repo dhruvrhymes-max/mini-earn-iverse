@@ -6,12 +6,29 @@ import { miniAdminUpdateTenant } from "@/lib/miniapp.functions";
 import { useMini } from "@/lib/miniapp-context";
 import { isMiniAdmin } from "@/lib/mini-admin";
 import { AdProvidersAdmin } from "@/components/mini/AdProvidersAdmin";
+import { BakesAdmin } from "@/components/mini/BakesAdmin";
+import { MembersAdmin } from "@/components/mini/MembersAdmin";
+import { WithdrawalsAdmin } from "@/components/mini/WithdrawalsAdmin";
+import { BotSettingsAdmin } from "@/components/mini/BotSettingsAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ShieldCheck, ArrowLeft } from "lucide-react";
+
+const TABS = [
+  { id: "bot", label: "Bot" },
+  { id: "bakes", label: "Bakes" },
+  { id: "members", label: "Members" },
+  { id: "withdrawals", label: "Withdrawals" },
+  { id: "invites", label: "Invites" },
+  { id: "welcome", label: "Welcome" },
+  { id: "security", label: "Security" },
+  { id: "payouts", label: "Payouts" },
+  { id: "deposits", label: "Deposits" },
+  { id: "proof", label: "Proof" },
+] as const;
 
 export const Route = createFileRoute("/app/$tenantSlug/admin")({
   component: MiniAdmin,
@@ -31,6 +48,7 @@ function MiniAdmin() {
   const upd = useServerFn(miniAdminUpdateTenant);
   const [form, setForm] = useState<any>({});
   const [initData, setInitData] = useState<string | null>(null);
+  const [tab, setTab] = useState<string>("bot");
 
   useEffect(() => { setInitData(readInitData()); }, []);
 
@@ -117,12 +135,40 @@ function MiniAdmin() {
     </div>
   );
 
+  const tabProps = { tenantId: t.id, initData, previewTgId: user?.telegram_id ?? null };
+
   return (
     <div className="p-4 pt-8 pb-24 space-y-6 text-white">
       <div className="flex items-center gap-2">
         <button onClick={() => nav({ to: "/app/$tenantSlug/profile", params: { tenantSlug: t.slug } })} className="p-2 -ml-2"><ArrowLeft className="h-5 w-5" /></button>
         <h1 className="text-xl font-bold">Admin panel</h1>
       </div>
+
+      <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1">
+        {TABS.map((x) => (
+          <button
+            key={x.id}
+            onClick={() => setTab(x.id)}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold ${tab === x.id ? "bg-white text-black" : "bg-white/10 text-white/70"}`}
+          >
+            {x.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "bakes" && <Section title="Bakes / miners"><BakesAdmin {...tabProps} tokenSymbol={t.token_symbol || "TKN"} /></Section>}
+      {tab === "members" && <Section title="Members"><MembersAdmin {...tabProps} tokenSymbol={t.token_symbol || "TKN"} /></Section>}
+      {tab === "withdrawals" && <Section title="Withdrawal requests"><WithdrawalsAdmin {...tabProps} /></Section>}
+      {tab === "payouts" && <Section title="Payout wallets"><BotSettingsAdmin {...tabProps} section="payouts" /></Section>}
+      {tab === "deposits" && <Section title="TON deposits"><BotSettingsAdmin {...tabProps} section="deposits" /></Section>}
+      {tab === "welcome" && <Section title="Welcome & required joins"><BotSettingsAdmin {...tabProps} section="welcome" /></Section>}
+      {tab === "security" && <Section title="Security"><BotSettingsAdmin {...tabProps} section="security" /></Section>}
+      {tab === "proof" && <Section title="Payment proof channel"><BotSettingsAdmin {...tabProps} section="proof" /></Section>}
+      {tab === "invites" && <Section title="Invite rewards"><BotSettingsAdmin {...tabProps} section="referral" /></Section>}
+
+      {tab !== "bot" ? null : (
+      <>
+
 
       <Section title="Brand">
         <Row><Label>Bot / app name</Label><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Row>
@@ -204,7 +250,10 @@ function MiniAdmin() {
       <Button className="w-full" size="lg" onClick={() => m.mutate()} disabled={m.isPending}>
         {m.isPending ? "Saving…" : "Save changes"}
       </Button>
+      </>
+      )}
     </div>
+
   );
 }
 

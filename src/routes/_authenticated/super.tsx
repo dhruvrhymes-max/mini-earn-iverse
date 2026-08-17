@@ -18,6 +18,7 @@ function SuperLayout() {
         <Link to="/admin" className="flex items-center gap-2 text-sm text-muted-foreground mb-4"><ArrowLeft className="h-4 w-4" />Exit super admin</Link>
         <Link to="/super" activeOptions={{ exact: true }} activeProps={{ className: "bg-accent" }} className="flex items-center gap-2 px-3 py-2 rounded text-sm hover:bg-accent"><Shield className="h-4 w-4" />Overview</Link>
         <Link to="/super/tenants" activeProps={{ className: "bg-accent" }} className="flex items-center gap-2 px-3 py-2 rounded text-sm hover:bg-accent"><Building2 className="h-4 w-4" />Tenants</Link>
+        <Link to="/super/check-bots" activeProps={{ className: "bg-accent" }} className="flex items-center gap-2 px-3 py-2 rounded text-sm hover:bg-accent"><ListChecks className="h-4 w-4" />Check bots</Link>
         <Link to="/super/tasks" activeProps={{ className: "bg-accent" }} className="flex items-center gap-2 px-3 py-2 rounded text-sm hover:bg-accent"><ListChecks className="h-4 w-4" />Global tasks</Link>
         <Link to="/super/announcements" activeProps={{ className: "bg-accent" }} className="flex items-center gap-2 px-3 py-2 rounded text-sm hover:bg-accent"><Megaphone className="h-4 w-4" />Announcements</Link>
       </aside>
