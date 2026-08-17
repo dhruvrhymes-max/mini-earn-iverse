@@ -317,7 +317,7 @@ function NatureButton({ tenant, mining, idle, ready, remaining, onMine, formatTi
 function CosmicLayout(p: HomeLayoutProps) {
   return (
     <>
-      <Header tenant={p.tenant} subtitle="Cosmic Rig · Orbital" Icon={Rocket} />
+      <Header tenant={p.tenant} user={p.user} subtitle="Cosmic Rig · Orbital" Icon={Rocket} />
       <BalanceCard tenant={p.tenant} user={p.user} usd={p.usd} tag="Star Vault" variant="card" />
       <StatRow tenant={p.tenant} user={p.user} />
       <div className="mt-6 flex justify-center"><CosmicButton {...p} /></div>
@@ -329,7 +329,7 @@ function CosmicLayout(p: HomeLayoutProps) {
 function CrystalLayout(p: HomeLayoutProps) {
   return (
     <>
-      <Header tenant={p.tenant} subtitle="Crystal Depths · Vein 7" Icon={Gem} />
+      <Header tenant={p.tenant} user={p.user} subtitle="Crystal Depths · Vein 7" Icon={Gem} />
       <BalanceCard tenant={p.tenant} user={p.user} usd={p.usd} tag="Vault" variant="shard" />
       <StatRow tenant={p.tenant} user={p.user} />
       <div className="mt-6 flex justify-center"><CrystalButton {...p} /></div>
@@ -341,7 +341,7 @@ function CrystalLayout(p: HomeLayoutProps) {
 function ForgeLayout(p: HomeLayoutProps) {
   return (
     <>
-      <Header tenant={p.tenant} subtitle="The Forge · Molten Core" Icon={Flame} />
+      <Header tenant={p.tenant} user={p.user} subtitle="The Forge · Molten Core" Icon={Flame} />
       <BalanceCard tenant={p.tenant} user={p.user} usd={p.usd} tag="Hoard" variant="hex" />
       <StatRow tenant={p.tenant} user={p.user} />
       <div className="mt-6 flex justify-center"><ForgeButton {...p} /></div>
@@ -353,7 +353,7 @@ function ForgeLayout(p: HomeLayoutProps) {
 function PlayfulLayout(p: HomeLayoutProps) {
   return (
     <>
-      <Header tenant={p.tenant} subtitle="Tap Zone · Sweet" Icon={Snowflake} />
+      <Header tenant={p.tenant} user={p.user} subtitle="Tap Zone · Sweet" Icon={Snowflake} />
       <BalanceCard tenant={p.tenant} user={p.user} usd={p.usd} tag="Sweet Stash" variant="cloud" />
       <StatRow tenant={p.tenant} user={p.user} />
       <div className="mt-6 flex justify-center"><PlayfulButton {...p} /></div>
@@ -365,7 +365,7 @@ function PlayfulLayout(p: HomeLayoutProps) {
 function NatureLayout(p: HomeLayoutProps) {
   return (
     <>
-      <Header tenant={p.tenant} subtitle="Wildwoods · Grove" Icon={Leaf} />
+      <Header tenant={p.tenant} user={p.user} subtitle="Wildwoods · Grove" Icon={Leaf} />
       <BalanceCard tenant={p.tenant} user={p.user} usd={p.usd} tag="Basket" variant="trunk" />
       <StatRow tenant={p.tenant} user={p.user} />
       <div className="mt-4 flex justify-center"><NatureButton {...p} /></div>
