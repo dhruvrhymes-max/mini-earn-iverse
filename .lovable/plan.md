@@ -1,40 +1,62 @@
-## Phase A — Miner admin (web + in-app) + pluggable ad providers
+# Themes expansion + moderation-compliance pass
 
-**Miner admin (backend already has `miners` CRUD server fns)**
-- Web: new tab in `/admin/$tenantId/miners.tsx` — table + create/edit dialog (name, emoji/image url, price, rate/hr, duration, rarity chip, sort).
-- In-app: extend `/app/$tenantSlug/admin.tsx` with a Miners section reusing `adminListMiners` / `adminSaveMiner` / `adminDeleteMiner`.
-- Add optional `image_url` and `rarity` columns to `miners` (migration) so cards match the MilkyFarm screenshot.
-- Rework `/app/$tenantSlug/miners.tsx` into the Marketplace / My Bottles two-tab layout from the reference.
+## 1. New earning modes and 12 new themes
 
-**Ad providers**
-- Migration: `ad_providers` table (tenant_id, kind: monetag|adsgram|onclicka|custom, config jsonb, active, sort). Keep existing `tenants.ads` as fallback.
-- Server fns: list/save/delete + `listActiveAdSlots` for the mini app.
-- Web admin `/admin/$tenantId/ads.tsx`: replace with provider list + per-provider fields (Monetag zone id, Adsgram block id, Onclicka zone, Custom script URL + zone).
-- In-app admin panel: mirror. Runtime `AdRunner` component dispatches by kind.
+Today every bot is "mine to earn" with the same tap loop. Add a `game_mode` to each
+theme and tenant:
 
-## Phase B — AI Bot Creator (Gemini + Lovable Claude-equivalent)
+- `mine` — hold/tap a rig, cycle accumulates, claim at the end (existing)
+- `tap` — instant tap-to-earn with an energy bar that regenerates
+- `spin` — a wheel with a free daily spin + spins earned from tasks
+- `idle` — a farm/factory that accrues while away, collect on return
 
-- Secret: prompt for `GEMINI_API_KEY` via add_secret. For "Claude" option use Lovable AI Gateway with `openai/gpt-5.5` (labelled "Claude Pro (via Lovable)" in UI since real Claude isn't in the gateway catalog).
-- New page `/admin/new-ai.tsx`: textarea ("Describe your bot — e.g. orange fruit theme"), provider dropdown (Gemini / Claude Pro), generate button.
-- Server fn `generateBotConfig`: builds structured prompt → returns JSON `{name, theme{primary,bg,accent}, scene, token_name, token_symbol, action_verb, welcome_text, welcome_cta_text, mascot_emoji, tasks:[…], miners:[…]}`. Uses Zod `Output` schema.
-- Preview screen (live theme card) → "Looks good, add bot token" → creates tenant + tasks + miners in one call, hooks bot token, sets webhook.
+12 new themes spread across those modes, each with its own palette, token identity,
+action verb, animated backdrop and home layout family. Examples: Fruit Press (tap),
+Lucky Orbit (spin), Coffee Roastery (idle), Sky Harvest (idle), Volt Tap (tap),
+Rune Wheel (spin), Reef Dive (mine), Bakery Rush (idle), Pixel Arcade (tap),
+Comet Wheel (spin), Nomad Caravan (idle), Crystal Cavern (mine).
 
-## Phase C — 3D animations on every page
+Quest/Task section stays identical across all themes, always including
+"Watch ads & earn" so Adsgram works everywhere.
 
-- `bun add three @react-three/fiber @react-three/drei`.
-- New `src/components/mini/Theme3D.tsx`: R3F Canvas with per-theme scene (galaxy = particle starfield + planet; diamond = rotating crystal; lava = ember particles + glowing rock; ghost = floating ghost meshes; milk = liquid bottles bobbing; forest = trees + leaves; etc.). Lazy-loaded per theme, `Suspense` fallback = current CSS `ThemeScene`.
-- Wrap in `<Suspense>` + `React.lazy` so bundle only loads active theme.
-- Render as fixed background layer inside `$tenantSlug.tsx` so every page (home, mine, tasks, invite, profile) shares the 3D backdrop. Home + Mine also get a foreground 3D hero object.
-- Perf: `dpr=[1,1.5]`, `frameloop="demand"` where possible, disable on `prefers-reduced-motion`.
+The AI bot creator gets `game_mode` in its schema so generated bots pick a mode.
 
-## Data / files touched
+## 2. Moderation rules — how each is handled
 
-**New**: `supabase/migrations/*_miners_images_ad_providers.sql`, `src/lib/ad-providers.functions.ts`, `src/lib/ai-bot-creator.functions.ts`, `src/components/mini/Theme3D.tsx`, `src/components/mini/AdRunner.tsx`, `src/routes/_authenticated/admin/$tenantId/miners.tsx`, `src/routes/_authenticated/admin/new-ai.tsx`.
-**Edit**: `src/routes/_authenticated/admin/$tenantId/ads.tsx`, `src/routes/_authenticated/admin/$tenantId.tsx` (nav), `src/routes/app/$tenantSlug/admin.tsx` (miners + ads sections), `src/routes/app/$tenantSlug/miners.tsx` (marketplace UI), `src/routes/app/$tenantSlug.tsx` (mount Theme3D), `src/lib/miners.functions.ts` (image_url/rarity).
+1. **Server-rendered content** — the mini app shell and landing page render real
+   title/description/how-it-works HTML on the server, so crawlers see content
+   without JS. A static `<noscript>`-safe fallback block is added to the mini app route.
+2. **No forced ads** — remove any auto-ad trigger on navigation/startup; ads only
+   fire from an explicit "Watch Ad" button. The tenant `startup_ad_enabled` flag is
+   removed from the runtime path.
+3. **No ad-gated core actions** — Collect/Claim, Spin, Convert, Withdraw never
+   require an ad. Audit and remove any such gating.
+4. **Balance rounding** — one shared `formatAmount()` helper used by every balance
+   and reward render; token amounts to 2 decimals, USDT to 4.
+5. **Iframe headers** — verify no `X-Frame-Options` / `frame-ancestors` is emitted.
+6. **Bot protection** — nothing in the app blocks crawlers; Cloudflare Bot Fight Mode
+   is a hosting-side setting outside the code (noted below).
+7. **Payout proof** — a public "Payouts" section in the mini app listing recent paid
+   withdrawals (masked user handles), plus an optional payout-channel link per bot.
+8. **Referral abuse limits** — enforced server-side: max 20 credited referrals/day and
+   200/week per user, and the invitee must complete one action (watch 1 ad or a task)
+   before the inviter is credited. Backed by a DB migration.
+9. **Correct deep links** — every "Open in Telegram" link, including the static
+   fallback, is built from the tenant's real bot username + mini app short name.
+10. **Custom domain** — a code change can't do this; instructions provided at the end.
 
-## Assumptions
-- "Claude Pro" in your UI = Lovable AI Gateway routed to `openai/gpt-5.5` (real Anthropic isn't in the Lovable catalog). If you want true Claude, you'd need to add an Anthropic key later — I'll leave a code slot for that.
-- 3D bundle can exceed 1 MB per your ok; only the active theme's scene chunk loads.
-- Gemini image generation for mascots is out of scope for this batch (can add in a follow-up).
+## Technical notes
 
-Approve and I'll start Phase A immediately.
+- New DB columns: `tenants.game_mode`, `tenants.payout_channel_url`;
+  new `referral_credits` ledger table (with GRANTs + RLS) for daily/weekly caps.
+- `theme-presets.ts` grows to 27 presets; presets carry `game_mode` + `layout_family`.
+- `ThemeHome.tsx` splits into per-mode home components (`MineHome`, `TapHome`,
+  `SpinHome`, `IdleHome`) sharing theme tokens — also reduces the current file size.
+- New server fns: `tapEarn`, `spinWheel`, `collectIdle`, `listPayoutProofs`.
+- Optimization: shared formatting/theme utils, lazy-loaded 3D backdrops kept
+  behind a single loader, dead preset/scene code removed.
+
+## Out of scope for code
+
+Cloudflare Bot Fight Mode and the custom domain must be configured in hosting
+settings; I'll give exact steps once the build lands.
