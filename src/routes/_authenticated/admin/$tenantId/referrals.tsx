@@ -17,12 +17,18 @@ export const Route = createFileRoute("/_authenticated/admin/$tenantId/referrals"
 const DEFAULTS = {
   signup_reward: 0,
   inviter_reward: 50,
+  instant_reward: 5,
+  bonus_reward: 50,
+  bonus_trigger: "tasks" as "ads" | "tasks" | "either" | "both",
+  bonus_after_ads: 0,
+  bonus_after_tasks: 5,
   lifetime_pct: 20,
   require_activity: true,
   activity_types: ["mine", "task", "ad"] as string[],
   daily_cap: 20,
   weekly_cap: 200,
 };
+
 
 const ACTIVITIES = [
   { key: "mine", label: "First mining claim" },
