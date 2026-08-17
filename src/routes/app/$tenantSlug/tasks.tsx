@@ -51,51 +51,88 @@ function TaskHub() {
   const partner = tasks.filter((t: any) => t.kind === "partner");
   const watch = tasks.filter((t: any) => t.kind === "watch");
   const adsToday = data?.adsToday ?? 0;
-  const adLimit = (tenant.ad_config as any).daily_watch_limit ?? 20;
+  const byProvider: Record<string, number> = (data as any)?.adsByProvider ?? {};
+  const tenantLimit = (tenant.ad_config as any).daily_watch_limit ?? 20;
+  const capsTotal = adProviders.reduce((s, p) => s + (Number(p.daily_cap) > 0 ? Number(p.daily_cap) : tenantLimit), 0);
+  const adLimit = adProviders.length ? Math.min(tenantLimit, capsTotal) : tenantLimit;
+
+  const tabsCfg = (tenant.ad_config as any).task_tabs ?? {};
+  const show = {
+    social: tabsCfg.social !== false,
+    partner: tabsCfg.partner !== false,
+    watch: tabsCfg.watch !== false,
+    refer: tabsCfg.refer !== false,
+  };
+  const visible = (["watch", "social", "partner", "refer"] as const).filter((k) => show[k]);
+  const defaultTab = visible[0] ?? "watch";
+  if (visible.length === 0) {
+    return (
+      <div className={`${skin.page} pb-28`}>
+        <h1 className={`${skin.title} mb-4`}>Task Hub</h1>
+        <Empty />
+      </div>
+    );
+  }
 
   return (
     <div className={`${skin.page} pb-28`}>
       <h1 className={`${skin.title} mb-4`}>Task Hub</h1>
-      <Tabs defaultValue="social">
-        <TabsList className="grid grid-cols-4 w-full bg-white/10">
-          <TabsTrigger value="social">Social</TabsTrigger>
-          <TabsTrigger value="partner">Partners</TabsTrigger>
-          <TabsTrigger value="watch">Watch</TabsTrigger>
-          <TabsTrigger value="refer">Refer</TabsTrigger>
+      <Tabs defaultValue={defaultTab}>
+        <TabsList className="grid w-full bg-white/10" style={{ gridTemplateColumns: `repeat(${visible.length}, minmax(0,1fr))` }}>
+          {show.watch && <TabsTrigger value="watch">Watch</TabsTrigger>}
+          {show.social && <TabsTrigger value="social">Social</TabsTrigger>}
+          {show.partner && <TabsTrigger value="partner">Partners</TabsTrigger>}
+          {show.refer && <TabsTrigger value="refer">Refer</TabsTrigger>}
         </TabsList>
-        <TabsContent value="social" className="space-y-2 mt-4">
-          {social.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
-          {social.length === 0 && <Empty />}
-        </TabsContent>
-        <TabsContent value="partner" className="space-y-2 mt-4">
-          {partner.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
-          {partner.length === 0 && <Empty />}
-        </TabsContent>
-        <TabsContent value="watch" className="space-y-3 mt-4">
-          <p className="text-sm text-white/60 text-center">{Math.max(0, adLimit - adsToday)}/{adLimit} ads left today</p>
-          {adProviders.length === 0 ? (
-            <p className="text-center text-white/50 py-8">No ads available right now.</p>
-          ) : (
-            adProviders.map((p) => (
-              <AdSlot
-                key={p.id}
-                provider={p}
-                symbol={tenant.token_symbol}
-                disabled={am.isPending || adsToday >= adLimit}
-                onWatched={async (prov) => { await am.mutateAsync({ network: prov.kind, providerId: prov.id }); }}
-              />
-            ))
-          )}
-          {watch.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
-        </TabsContent>
-
-        <TabsContent value="refer" className="space-y-2 mt-4">
-          <ReferMilestones milestones={data?.milestones ?? []} count={user.referral_count} />
-        </TabsContent>
+        {show.social && (
+          <TabsContent value="social" className="space-y-2 mt-4">
+            {social.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
+            {social.length === 0 && <Empty />}
+          </TabsContent>
+        )}
+        {show.partner && (
+          <TabsContent value="partner" className="space-y-2 mt-4">
+            {partner.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
+            {partner.length === 0 && <Empty />}
+          </TabsContent>
+        )}
+        {show.watch && (
+          <TabsContent value="watch" className="space-y-3 mt-4">
+            <p className="text-sm text-white/60 text-center">
+              {Math.max(0, adLimit - adsToday)}/{adLimit} ads left today · resets 2:00 AM
+            </p>
+            {adProviders.length === 0 ? (
+              <p className="text-center text-white/50 py-8">No ads available right now.</p>
+            ) : (
+              adProviders.map((p) => {
+                const cap = Number(p.daily_cap) > 0 ? Number(p.daily_cap) : adLimit;
+                const used = byProvider[p.id] ?? 0;
+                return (
+                  <div key={p.id} className="space-y-1">
+                    <AdSlot
+                      provider={p}
+                      symbol={tenant.token_symbol}
+                      disabled={am.isPending || adsToday >= adLimit || used >= cap}
+                      onWatched={async (prov) => { await am.mutateAsync({ network: prov.kind, providerId: prov.id }); }}
+                    />
+                    <p className="text-[11px] text-white/40 text-center">{Math.max(0, cap - used)}/{cap} left on this ad</p>
+                  </div>
+                );
+              })
+            )}
+            {watch.map((t: any) => <TaskRow skin={skin} th={th} key={t.id} t={t} done={completed.has(t.id)} onClaim={() => m.mutate({ taskId: t.id, isGlobal: !!t.is_global })} symbol={tenant.token_symbol} />)}
+          </TabsContent>
+        )}
+        {show.refer && (
+          <TabsContent value="refer" className="space-y-2 mt-4">
+            <ReferMilestones milestones={data?.milestones ?? []} count={user.referral_count} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
 }
+
 
 function TaskRow({ t, done, onClaim, symbol, skin, th }: any) {
   return (
