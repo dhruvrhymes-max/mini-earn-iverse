@@ -343,7 +343,7 @@ export const logAdReward = createServerFn({ method: "POST" })
     const econ = (user as any).tenants.economics as any;
     const adCfg = (user as any).tenants.ad_config as any;
     const limit = Number(adCfg.daily_watch_limit || 20);
-    const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+    const today = new Date((await import("./day-window")).dayStartISO());
     const { count } = await supabaseAdmin.from("ad_logs")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id).gte("created_at", today.toISOString());
