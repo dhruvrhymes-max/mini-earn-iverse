@@ -47,12 +47,14 @@ export function ThemeHome(props: HomeLayoutProps) {
 function QuickTiles({ tenantSlug, primary, accent, variant = "chips" }: { tenantSlug: string; primary: string; accent: string; variant?: "chips" | "orbs" | "shards" | "bubbles" | "leaves" }) {
   const nav = useNavigate();
   const go = (to: any) => nav({ to, params: { tenantSlug } as any });
+  // Bottom nav already has Home / Tasks / Bake / Refer / Profile — keep these unique.
   const tiles = [
-    { to: "/app/$tenantSlug/miners", label: "Boost", Icon: Pickaxe },
-    { to: "/app/$tenantSlug/tasks", label: "Tasks", Icon: ListChecks },
-    { to: "/app/$tenantSlug/refer", label: "Invite", Icon: Users },
-    { to: "/app/$tenantSlug/withdraw", label: "Cash", Icon: Wallet },
+    { to: "/app/$tenantSlug/withdraw", label: "Cash out", Icon: Wallet },
+    { to: "/app/$tenantSlug/convert", label: "Convert", Icon: Repeat },
+    { to: "/app/$tenantSlug/deposit", label: "Deposit", Icon: ArrowDownToLine },
+    { to: "/app/$tenantSlug/history", label: "History", Icon: History },
   ];
+
   if (variant === "orbs") {
     return (
       <div className="flex justify-around px-6 mt-8">
