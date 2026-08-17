@@ -72,11 +72,50 @@ function getSearchKey(search: unknown): string {
 }
 
 export const Route = createFileRoute("/app/$tenantSlug")({
+  // Server-rendered so the very first HTML response contains real, readable
+  // content (name, token, how it works) for moderation crawlers and previews.
+  loader: async ({ params }) => {
+    try {
+      const tenant: any = await getTenantBySlug({ data: { slug: params.tenantSlug } });
+      if (!tenant) return { seo: null };
+      return {
+        seo: {
+          name: tenant.name as string,
+          token_name: tenant.token_name as string,
+          token_symbol: tenant.token_symbol as string,
+          action_verb: tenant.action_verb as string,
+          game_mode: (tenant.game_mode ?? "mine") as string,
+          background: (tenant.theme?.background ?? "#0a0a0a") as string,
+          primary: (tenant.theme?.primary ?? "#f59e0b") as string,
+        },
+      };
+    } catch {
+      return { seo: null };
+    }
+  },
+  head: ({ loaderData }) => {
+    const seo = (loaderData as any)?.seo;
+    const title = seo ? `${seo.name} — earn ${seo.token_symbol} on Telegram` : "Telegram earning mini app";
+    const description = seo
+      ? `${seo.action_verb} to earn ${seo.token_name} (${seo.token_symbol}), complete quests, watch optional rewarded ads, invite friends and withdraw USDT.`
+      : "Play, complete quests and withdraw rewards from this Telegram mini app.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+    };
+  },
   component: MiniLayout,
 });
 
 function MiniLayout() {
   const { tenantSlug } = useParams({ from: "/app/$tenantSlug" });
+  const seo = (Route.useLoaderData() as any)?.seo ?? null;
   const loc = useLocation();
   const searchKey = getSearchKey(loc.search);
   const boot = useServerFn(bootMiniApp);

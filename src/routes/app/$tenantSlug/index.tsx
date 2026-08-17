@@ -6,12 +6,22 @@ import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ThemeHome } from "@/components/mini/ThemeHome";
+import { IdleHome, SpinHome, TapHome } from "@/components/mini/GameModes";
 
 export const Route = createFileRoute("/app/$tenantSlug/")({
   component: Home,
 });
 
 function Home() {
+  const { tenant, user, refetchUser } = useMini();
+  const mode = tenant?.game_mode ?? "mine";
+  if (mode === "tap") return <TapHome tenant={tenant} user={user} refetchUser={refetchUser} />;
+  if (mode === "spin") return <SpinHome tenant={tenant} user={user} refetchUser={refetchUser} />;
+  if (mode === "idle") return <IdleHome tenant={tenant} user={user} refetchUser={refetchUser} />;
+  return <MineHome />;
+}
+
+function MineHome() {
   const { tenant, user, refetchUser } = useMini();
   const claim = useServerFn(claimMining);
   const m = useMutation({
