@@ -7,7 +7,26 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Create account — ZeroLabNetwork" }] }),
+  head: () => ({
+    meta: [
+      { title: "Create account — ZeroLabNetwork" },
+      {
+        name: "description",
+        content:
+          "Create a ZeroLabNetwork bot creator account to launch and manage gamified Telegram Mini Apps. For ZeroLabNetwork project members only.",
+      },
+      { property: "og:title", content: "Create account — ZeroLabNetwork" },
+      {
+        property: "og:description",
+        content:
+          "Create a ZeroLabNetwork bot creator account to launch and manage gamified Telegram Mini Apps.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://zerolabnetwork.xyz/signup" },
+      { name: "twitter:card", content: "summary" },
+    ],
+    links: [{ rel: "canonical", href: "https://zerolabnetwork.xyz/signup" }],
+  }),
   component: Signup,
 });
 
