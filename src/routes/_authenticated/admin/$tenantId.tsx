@@ -21,6 +21,7 @@ function TenantLayout() {
     { to: "/admin/$tenantId/referrals", label: "Referral rewards", icon: Users },
     { to: "/admin/$tenantId/milestones", label: "Milestones", icon: Users },
     { to: "/admin/$tenantId/withdrawals", label: "Withdrawals", icon: Wallet },
+    { to: "/admin/$tenantId/payout-settings", label: "Payout settings", icon: Settings },
   ];
   const nav = (
     <>
