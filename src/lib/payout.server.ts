@@ -102,11 +102,6 @@ async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResul
     const value = toUnits(amount, decimals);
     if (value <= 0n) throw new Error("Computed payout amount is zero — check the amount and token decimals.");
 
-    const minimumExpectedUnits = toUnits(amount, decimals);
-    if (value !== minimumExpectedUnits) {
-      throw new Error("Payout amount encoding failed. Nothing was sent.");
-    }
-
 
     const [tokenBal, gasBal] = await Promise.all([
       publicClient.readContract({ address: token as `0x${string}`, abi: TOKEN_META_ABI, functionName: "balanceOf", args: [account.address] }).catch(() => null),
