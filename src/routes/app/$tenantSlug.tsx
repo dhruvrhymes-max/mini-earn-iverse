@@ -153,8 +153,13 @@ function MiniLayout() {
 
   // Hard-block long-press URL previews at the document level for all routes
   useEffect(() => {
-    const stop = (e: Event) => { e.preventDefault(); };
-    const stopContext = (e: MouseEvent) => { e.preventDefault(); return false; };
+    // Never block editable fields — that kills the paste/select menu.
+    const isEditable = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      return !!el?.closest?.('input, textarea, select, [contenteditable="true"]');
+    };
+    const stop = (e: Event) => { if (!isEditable(e.target)) e.preventDefault(); };
+    const stopContext = (e: MouseEvent) => { if (isEditable(e.target)) return; e.preventDefault(); return false; };
     let pressTimer: number | null = null;
     const onTouchStart = () => {
       if (pressTimer) window.clearTimeout(pressTimer);
