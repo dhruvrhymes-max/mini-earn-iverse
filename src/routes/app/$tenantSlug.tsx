@@ -1,11 +1,12 @@
 import { createFileRoute, Outlet, useParams, useLocation, useNavigate, useMatchRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { bootMiniApp, getTenantBySlug, getUser, markOnboarded } from "@/lib/miniapp.functions";
+import { bootMiniApp, getTenantBySlug, getUser, markOnboarded, checkChannelJoin } from "@/lib/miniapp.functions";
 import { EMPTY_MINI_TENANT, EMPTY_MINI_USER, MiniCtx } from "@/lib/miniapp-context";
 import { skinOf, familyOf } from "@/lib/theme-family";
 import { Button } from "@/components/ui/button";
-import { Home, ListChecks, Pickaxe, Users, User, Wallet } from "lucide-react";
+import { Home, ListChecks, Pickaxe, Users, User, Wallet, ShieldCheck, Send, Check, AlertCircle } from "lucide-react";
+
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null; blocked?: { reason: string | null; originalUsername: string | null } | null };
