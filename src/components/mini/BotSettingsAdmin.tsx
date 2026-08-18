@@ -35,7 +35,7 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
 
   if (section === "payouts") {
     const bep20 = s.payout.bep20, polygon = s.payout.polygon, ton = s.payout.ton;
-    const evmPayload = (v: any) => ({ chain_label: v.chain_label, chain_id: Number(v.chain_id), rpc_url: v.rpc_url, contract: v.contract, explorer: v.explorer, decimals: Number(v.decimals) || 18, private_key: v.private_key || null });
+    const evmPayload = (v: any) => ({ chain_label: v.chain_label, chain_id: Number(v.chain_id), rpc_url: v.rpc_url, contract: v.contract, explorer: v.explorer, decimals: Number(v.decimals) || 18, enabled: v.enabled !== false, private_key: v.private_key || null });
     const setNetwork = (key: "bep20" | "polygon", field: string, value: any) => setS({ ...s, payout: { ...s.payout, [key]: { ...s.payout[key], [field]: value } } });
     return (
       <Box onSave={() => m.mutate({ payout: {
