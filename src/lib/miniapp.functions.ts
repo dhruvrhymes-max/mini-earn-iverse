@@ -483,7 +483,7 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
       _amount: data.amount_usdt,
       _currency: "USDT",
       _network: data.token,
-      _wallet: data.wallet,
+      _wallet: destination,
     });
     if (error) throw new Error(error.message);
     const tx = { ...reserved, app_users: user };
