@@ -136,48 +136,114 @@ async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResul
   return { hash, explorer: cfg.explorer || null };
 }
 
-async function payTon(payout: any, to: string, amount: number): Promise<PayoutResult> {
+/** Split "address|memo" (or "address:memo" for non-raw addresses) into parts. */
+export function splitTonDestination(raw: string): { address: string; memo: string | null } {
+  const value = (raw || "").trim();
+  const idx = value.indexOf("|");
+  if (idx === -1) return { address: value, memo: null };
+  const memo = value.slice(idx + 1).trim();
+  return { address: value.slice(0, idx).trim(), memo: memo || null };
+}
+
+async function payTon(payout: any, toRaw: string, amount: number): Promise<PayoutResult> {
   const cfg = payout?.ton || {};
   const enc = cfg.phrase_enc;
   if (!enc) throw new Error("TON wallet phrase is not configured in payout settings");
 
   const { mnemonicToPrivateKey } = await import("@ton/crypto");
   const { TonClient, WalletContractV4, internal, JettonMaster } = await import("@ton/ton");
-  const { Address, beginCell, toNano } = await import("@ton/core");
+  const { Address, beginCell, toNano, fromNano } = await import("@ton/core");
 
   const words = decryptSecret(enc).trim().split(/\s+/);
   if (words.length < 12) throw new Error("Stored TON phrase is malformed");
   const key = await mnemonicToPrivateKey(words);
 
+  const { address: toAddress, memo } = splitTonDestination(toRaw);
+  let dest: InstanceType<typeof Address>;
+  try {
+    dest = Address.parse(toAddress);
+  } catch {
+    throw new Error("Destination TON address is invalid");
+  }
+
   const endpoint = cfg.endpoint || "https://toncenter.com/api/v2/jsonRPC";
   const client = new TonClient({ endpoint, apiKey: cfg.api_key || undefined });
   const wallet = WalletContractV4.create({ workchain: 0, publicKey: key.publicKey });
   const contract = client.open(wallet);
-  const seqno = await contract.getSeqno();
-  const dest = Address.parse(to);
+  const from = wallet.address.toString({ bounceable: false });
+
+  // Balance preflight — an unfunded wallet must fail with a readable reason,
+  // not a silent "not confirmed" timeout.
+  let nativeBalance: bigint;
+  try {
+    nativeBalance = await client.getBalance(wallet.address);
+  } catch (e: any) {
+    throw new Error(`TON RPC error while reading the payout wallet balance: ${String(e?.message || e)}`);
+  }
+
+  let seqno = 0;
+  try {
+    seqno = await contract.getSeqno();
+  } catch {
+    if (nativeBalance === 0n) {
+      throw new Error(`TON payout wallet ${from} is empty and not yet deployed. Fund it with TON before approving payouts.`);
+    }
+    throw new Error("Could not read the TON payout wallet state from the RPC endpoint");
+  }
 
   let messages;
   if (cfg.jetton_master) {
     // Jetton (e.g. USDT on TON) transfer from our jetton wallet.
+    const gasNeeded = toNano("0.08");
+    if (nativeBalance < gasNeeded) {
+      throw new Error(`TON payout wallet ${from} has only ${fromNano(nativeBalance)} TON — at least 0.08 TON is required for gas on a jetton transfer.`);
+    }
     const master = client.open(JettonMaster.create(Address.parse(cfg.jetton_master)));
     const jettonWallet = await master.getWalletAddress(wallet.address);
     const decimals = Number(cfg.jetton_decimals ?? 6);
-    const body = beginCell()
+    const value = toUnits(amount, decimals);
+    if (value <= 0n) throw new Error("Computed payout amount is zero — check the amount and jetton decimals.");
+
+    let jettonBalance: bigint | null = null;
+    try {
+      const res = await client.runMethod(jettonWallet, "get_wallet_data");
+      jettonBalance = res.stack.readBigNumber();
+    } catch {
+      jettonBalance = 0n;
+    }
+    if (jettonBalance !== null && jettonBalance < value) {
+      throw new Error(`TON payout wallet holds only ${Number(jettonBalance) / 10 ** decimals} tokens but ${amount} is required. Top up ${from}.`);
+    }
+
+    let body = beginCell()
       .storeUint(0xf8a7ea5, 32) // op::transfer
       .storeUint(0, 64)
-      .storeCoins(toUnits(amount, decimals))
+      .storeCoins(value)
       .storeAddress(dest)
       .storeAddress(wallet.address) // response destination
       .storeBit(0)
-      .storeCoins(toNano("0.01")) // forward amount
-      .storeBit(0)
-      .endCell();
-    messages = [internal({ to: jettonWallet, value: toNano("0.05"), bounce: true, body })];
+      .storeCoins(toNano("0.02")); // forward amount
+    if (memo) {
+      const forward = beginCell().storeUint(0, 32).storeStringTail(memo).endCell();
+      body = body.storeBit(1).storeRef(forward) as typeof body;
+    } else {
+      body = body.storeBit(0) as typeof body;
+    }
+    messages = [internal({ to: jettonWallet, value: toNano("0.08"), bounce: true, body: body.endCell() })];
   } else {
-    messages = [internal({ to: dest, value: toNano(amount.toFixed(9)), bounce: false, body: cfg.comment || "" })];
+    const value = toNano(amount.toFixed(9));
+    const needed = value + toNano("0.01");
+    if (nativeBalance < needed) {
+      throw new Error(`TON payout wallet ${from} has only ${fromNano(nativeBalance)} TON but ${amount} TON plus network fees are required. Top up the wallet and try again.`);
+    }
+    messages = [internal({ to: dest, value, bounce: false, body: memo || cfg.comment || "" })];
   }
 
-  await contract.sendTransfer({ seqno, secretKey: key.secretKey, messages });
+  try {
+    await contract.sendTransfer({ seqno, secretKey: key.secretKey, messages });
+  } catch (e: any) {
+    throw new Error(`TON transfer was rejected by the network: ${String(e?.message || e)}`);
+  }
 
   // Wait for seqno advancement; never report a fake hash as a successful payment.
   let accepted = false;
@@ -199,6 +265,7 @@ async function payTon(payout: any, to: string, amount: number): Promise<PayoutRe
   if (!hash) throw new Error("TON transfer was accepted but its transaction hash could not be resolved");
   return { hash, explorer: cfg.explorer || "https://tonviewer.com/transaction/" };
 }
+
 
 /** Send a withdrawal on-chain. Throws with a readable message on failure. */
 export async function sendPayout(
