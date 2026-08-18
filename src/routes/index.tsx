@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Home — MineCraft SaaS" }] }), component: IndexPage, });
+export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Home — ZeroLabNetwork" }] }), component: IndexPage, });
 
 function IndexPage() {
   const { session, loading } = useAuth();

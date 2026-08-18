@@ -13,10 +13,10 @@ import { Sparkles, ArrowLeft, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/new-ai")({
   head: () => ({ meta: [
-    { title: "AI Bot Creator | Mine-to-Earn" },
-    { name: "description", content: "Create a unique Telegram earning bot concept, theme, token, tasks, and miners with AI." },
-    { property: "og:title", content: "AI Bot Creator | Mine-to-Earn" },
-    { property: "og:description", content: "Create a unique Telegram earning bot concept, theme, token, tasks, and miners with AI." },
+    { title: "AI Bot Creator | ZeroLabNetwork" },
+    { name: "description", content: "ZeroLabNetwork is an amazing project working in webapps / saas / tma etc..." },
+    { property: "og:title", content: "AI Bot Creator | ZeroLabNetwork" },
+    { property: "og:description", content: "ZeroLabNetwork is an amazing project working in webapps / saas / tma etc..." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
