@@ -64,3 +64,84 @@ export function spinReadyAt(user: any, cfg: ReturnType<typeof gameConfig>): numb
   if (!user.last_spin_at) return 0;
   return new Date(user.last_spin_at).getTime() + (Number(cfg.spin_cooldown_hours) || 4) * 3_600_000;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * New earn loops (2026): scratch, quiz, streak check-in and price forecast.
+ * They all live off the same `economics` blob so a bot owner can retune them.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export const NEW_MODE_DEFAULTS = {
+  // scratch to earn
+  scratch_cooldown_hours: 6,
+  scratch_prizes: [10, 25, 50, 100, 250, 500] as number[],
+  // quiz to earn
+  quiz_cooldown_hours: 24,
+  quiz_reward: 150,
+  quiz_streak_bonus: 25,
+  // check-in / streak to earn
+  checkin_base: 100,
+  checkin_step: 60,
+  checkin_max_days: 7,
+  // forecast (predict) to earn
+  forecast_cooldown_minutes: 15,
+  forecast_reward: 120,
+  forecast_consolation: 15,
+};
+
+export function modeConfig(economics: any) {
+  return { ...GAME_DEFAULTS, ...NEW_MODE_DEFAULTS, ...((economics as any) || {}) };
+}
+
+export function readyAt(iso: string | null | undefined, hours: number): number {
+  if (!iso) return 0;
+  return new Date(iso).getTime() + Math.max(0, hours) * 3_600_000;
+}
+
+/** Was `iso` inside the current streak window (yesterday..now)? */
+export function streakStatus(iso: string | null | undefined, hours = 24) {
+  if (!iso) return { canClaim: true, continues: false, nextAt: 0 };
+  const last = new Date(iso).getTime();
+  const nextAt = last + hours * 3_600_000;
+  const expiresAt = last + hours * 2 * 3_600_000;
+  const now = Date.now();
+  return { canClaim: now >= nextAt, continues: now < expiresAt, nextAt };
+}
+
+export type QuizQuestion = { q: string; options: string[]; answer: number };
+
+export const DEFAULT_QUIZ_BANK: QuizQuestion[] = [
+  { q: "What does a crypto 'wallet address' identify?", options: ["A bank branch", "A destination for funds", "A password", "A mining rig"], answer: 1 },
+  { q: "Which network is TON built for?", options: ["Telegram", "Discord", "Slack", "WeChat"], answer: 0 },
+  { q: "What is a stablecoin pegged to?", options: ["Gold only", "Nothing", "A stable asset like USD", "Mining power"], answer: 2 },
+  { q: "Never share which of these?", options: ["Your username", "Your seed phrase", "Your public address", "Your profile photo"], answer: 1 },
+  { q: "What does 'HODL' mean in crypto slang?", options: ["Sell fast", "Hold long term", "Hack a ledger", "Halve difficulty"], answer: 1 },
+  { q: "A blockchain block mainly stores…", options: ["Videos", "Transactions", "Emails", "Passwords"], answer: 1 },
+  { q: "What is a 'gas fee'?", options: ["A network transaction fee", "A withdrawal tax", "A mining reward", "An airdrop"], answer: 0 },
+  { q: "Which is the smallest unit of Bitcoin?", options: ["Wei", "Gwei", "Satoshi", "Nano"], answer: 2 },
+  { q: "An airdrop usually means…", options: ["Free token distribution", "A hard fork", "A price crash", "A wallet hack"], answer: 0 },
+  { q: "What secures a proof-of-work chain?", options: ["Staking", "Computing power", "Votes", "Servers"], answer: 1 },
+  { q: "What is a DEX?", options: ["A hardware wallet", "A decentralised exchange", "A token standard", "A mining pool"], answer: 1 },
+  { q: "What does KYC stand for?", options: ["Keep Your Coins", "Know Your Customer", "Key Yield Contract", "Kilo Yotta Chain"], answer: 1 },
+];
+
+export function quizBank(cfg: any): QuizQuestion[] {
+  const custom = Array.isArray(cfg?.quiz_questions) ? cfg.quiz_questions : null;
+  const valid = (custom ?? []).filter(
+    (q: any) => q && typeof q.q === "string" && Array.isArray(q.options) && q.options.length >= 2 && Number.isInteger(q.answer),
+  );
+  return valid.length ? valid : DEFAULT_QUIZ_BANK;
+}
+
+/** Deterministic per-user, per-window question so the answer never ships early. */
+export function pickQuestion(bank: QuizQuestion[], userId: string, windowKey: number) {
+  let h = 2166136261;
+  const seed = `${userId}:${windowKey}`;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
+  const index = Math.abs(h) % bank.length;
+  return { index, question: bank[index] };
+}
+
+/** Window bucket used for quiz seeding (changes each cooldown period). */
+export function quizWindow(cooldownHours: number): number {
+  return Math.floor(Date.now() / (Math.max(1, cooldownHours) * 3_600_000));
+}
