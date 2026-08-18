@@ -15,9 +15,10 @@ async function notifyUser(tenant: any, tx: any, status: "requested" | "paid" | "
   if (!tenant?.bot_token || !tx?.app_users?.telegram_id) return { ok: false, skipped: true };
   const label = TOKEN_LABELS[String(tx.network)] ?? String(tx.network || "Token").toUpperCase();
   const title = status === "paid" ? "✅ <b>Withdrawal approved</b>" : status === "rejected" ? "❌ <b>Withdrawal rejected</b>" : "🕓 <b>Withdrawal requested</b>";
-  const lines = [title, "", `Amount: <b>${Number(tx.amount).toFixed(4)} USDT</b>`, `Token: <b>${esc(label)}</b>`, `Address: <code>${esc(tx.wallet)}</code>`];
-  if (hash) lines.push(`Transaction: <code>${esc(hash)}</code>`);
-  if (reason) lines.push(`Reason: ${esc(reason)}`);
+  const lines = [title, "", `<b>Amount:</b> <b>${Number(tx.amount).toFixed(4)} USDT</b>`, `<b>Token:</b> <b>${esc(label)}</b>`, `<b>Address:</b> <b><code>${esc(tx.wallet)}</code></b>`];
+  if (hash) lines.push(`<b>Transaction:</b> <b><code>${esc(hash)}</code></b>`);
+  if (reason) lines.push(`<b>Reason:</b> <b>${esc(reason)}</b>`);
+
   try {
     const response = await fetch(`https://api.telegram.org/bot${tenant.bot_token}/sendMessage`, {
       method: "POST",
