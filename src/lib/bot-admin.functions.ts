@@ -211,7 +211,7 @@ export const adminFindUser = createServerFn({ method: "POST" })
     if (!row) throw new Error("No member found");
 
     const [{ data: referredUsers }, { data: txs }, { data: ips }] = await Promise.all([
-      supabaseAdmin.from("app_users").select("id", { count: "exact", head: true })
+      supabaseAdmin.from("app_users").select("id")
         .eq("tenant_id", data.tenantId).eq("referrer_id", row.id),
       supabaseAdmin.from("transactions").select("type,amount,status,created_at")
         .eq("user_id", row.id).order("created_at", { ascending: false }).limit(10),
