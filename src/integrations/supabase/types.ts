@@ -567,6 +567,113 @@ export type Database = {
           },
         ]
       }
+      promo_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          max_uses: number
+          reward: number
+          tenant_id: string
+          uses: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          reward?: number
+          tenant_id: string
+          uses?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          reward?: number
+          tenant_id?: string
+          uses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_codes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_codes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_redemptions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          promo_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          promo_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          promo_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_redemptions_promo_id_fkey"
+            columns: ["promo_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_redemptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_redemptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_credits: {
         Row: {
           amount: number
@@ -823,6 +930,83 @@ export type Database = {
           welcome_text?: string | null
         }
         Relationships: []
+      }
+      ton_invoices: {
+        Row: {
+          address: string
+          amount_ton: number
+          created_at: string
+          id: string
+          kind: string
+          memo: string
+          miner_id: string | null
+          paid_at: string | null
+          status: string
+          tenant_id: string
+          tokens: number
+          tx_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          address: string
+          amount_ton: number
+          created_at?: string
+          id?: string
+          kind: string
+          memo: string
+          miner_id?: string | null
+          paid_at?: string | null
+          status?: string
+          tenant_id: string
+          tokens?: number
+          tx_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string
+          amount_ton?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          memo?: string
+          miner_id?: string | null
+          paid_at?: string | null
+          status?: string
+          tenant_id?: string
+          tokens?: number
+          tx_hash?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ton_invoices_miner_id_fkey"
+            columns: ["miner_id"]
+            isOneToOne: false
+            referencedRelation: "miners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ton_invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ton_invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ton_invoices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
