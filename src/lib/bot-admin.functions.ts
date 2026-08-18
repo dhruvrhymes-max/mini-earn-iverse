@@ -27,8 +27,12 @@ export const adminGetSettings = createServerFn({ method: "POST" })
         ton: {
           api_key: payout?.ton?.api_key ?? "",
           explorer: payout?.ton?.explorer ?? "https://tonviewer.com/transaction/",
+          endpoint: payout?.ton?.endpoint ?? "https://toncenter.com/api/v2/jsonRPC",
+          jetton_master: payout?.ton?.jetton_master ?? "",
+          jetton_decimals: payout?.ton?.jetton_decimals ?? 6,
           phrase_preview: maskSecret(payout?.ton?.phrase_enc),
         },
+
         auto_pay: !!payout?.auto_pay,
       },
       deposit: {
