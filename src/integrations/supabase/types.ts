@@ -162,21 +162,28 @@ export type Database = {
           ban_reason: string | null
           banned: boolean
           banned_at: string | null
+          checkin_streak: number
           created_at: string
           energy: number
           energy_updated_at: string
           first_name: string | null
+          forecast_state: Json
           has_activity: boolean
           id: string
           idle_collected_at: string | null
           language: string
+          last_checkin_at: string | null
           last_claim_at: string | null
+          last_forecast_at: string | null
           last_ip: string | null
+          last_quiz_at: string | null
+          last_scratch_at: string | null
           last_spin_at: string | null
           lifetime_earned_for_inviter: number
           mining_started_at: string | null
           onboarded: boolean
           pending_inviter_reward: number
+          quiz_streak: number
           referral_count: number
           referrer_id: string | null
           spin_credits: number
@@ -198,21 +205,28 @@ export type Database = {
           ban_reason?: string | null
           banned?: boolean
           banned_at?: string | null
+          checkin_streak?: number
           created_at?: string
           energy?: number
           energy_updated_at?: string
           first_name?: string | null
+          forecast_state?: Json
           has_activity?: boolean
           id?: string
           idle_collected_at?: string | null
           language?: string
+          last_checkin_at?: string | null
           last_claim_at?: string | null
+          last_forecast_at?: string | null
           last_ip?: string | null
+          last_quiz_at?: string | null
+          last_scratch_at?: string | null
           last_spin_at?: string | null
           lifetime_earned_for_inviter?: number
           mining_started_at?: string | null
           onboarded?: boolean
           pending_inviter_reward?: number
+          quiz_streak?: number
           referral_count?: number
           referrer_id?: string | null
           spin_credits?: number
@@ -234,21 +248,28 @@ export type Database = {
           ban_reason?: string | null
           banned?: boolean
           banned_at?: string | null
+          checkin_streak?: number
           created_at?: string
           energy?: number
           energy_updated_at?: string
           first_name?: string | null
+          forecast_state?: Json
           has_activity?: boolean
           id?: string
           idle_collected_at?: string | null
           language?: string
+          last_checkin_at?: string | null
           last_claim_at?: string | null
+          last_forecast_at?: string | null
           last_ip?: string | null
+          last_quiz_at?: string | null
+          last_scratch_at?: string | null
           last_spin_at?: string | null
           lifetime_earned_for_inviter?: number
           mining_started_at?: string | null
           onboarded?: boolean
           pending_inviter_reward?: number
+          quiz_streak?: number
           referral_count?: number
           referrer_id?: string | null
           spin_credits?: number
