@@ -40,7 +40,7 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
     return (
       <Box onSave={() => m.mutate({ payout: {
         bep20: evmPayload(bep20), polygon: evmPayload(polygon),
-        ton: { api_key: ton.api_key, explorer: ton.explorer, endpoint: ton.endpoint || null, phrase: ton.phrase || null },
+        ton: { api_key: ton.api_key, explorer: ton.explorer, endpoint: ton.endpoint || null, phrase: ton.phrase || null, enabled: ton.enabled !== false },
         auto_pay: !!s.payout.auto_pay,
       } })} pending={m.isPending}>
         {(["bep20", "polygon"] as const).map((key) => {
