@@ -4,6 +4,8 @@ export type MiniAppContextValue = {
   tenant: any;
   user: any;
   refetchUser: () => void;
+  initData: string | null;
+  previewTgId: number | null;
 };
 
 export const EMPTY_MINI_TENANT = {
@@ -40,6 +42,8 @@ export const MiniCtx = createContext<MiniAppContextValue>({
   tenant: EMPTY_MINI_TENANT,
   user: EMPTY_MINI_USER,
   refetchUser: () => {},
+  initData: null,
+  previewTgId: null,
 });
 
 export const useMini = () => {
@@ -48,5 +52,7 @@ export const useMini = () => {
     tenant: ctx.tenant ?? EMPTY_MINI_TENANT,
     user: ctx.user ?? EMPTY_MINI_USER,
     refetchUser: ctx.refetchUser ?? (() => {}),
+    initData: ctx.initData ?? null,
+    previewTgId: ctx.previewTgId ?? null,
   };
 };

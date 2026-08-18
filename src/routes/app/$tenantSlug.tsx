@@ -128,6 +128,7 @@ function MiniLayout() {
   const getU = useServerFn(getUser);
   const bootRunKey = useRef("");
   const [bootState, setBootState] = useState<MiniBootState>(() => readBootCache(tenantSlug));
+  const [miniAuth, setMiniAuth] = useState<{ initData: string | null; previewTgId: number | null }>({ initData: null, previewTgId: null });
 
   useEffect(() => { installClientErrorReporter(); setTenantContext(tenantSlug); }, [tenantSlug]);
 
@@ -187,6 +188,7 @@ function MiniLayout() {
       tgId = stored ? Number(stored) : Math.floor(100000 + Math.random() * 900000);
       localStorage.setItem(`tgid_${tenantSlug}`, String(tgId));
     }
+    setMiniAuth({ initData, previewTgId: initData ? null : tgId });
     const refTg = getSearchValue(loc.search, "ref");
     setBootState((prev) => ({ ...prev, loading: true, error: null }));
     try {
@@ -245,12 +247,12 @@ function MiniLayout() {
   }, [doBoot, getU, tenantSlug, user?.id]);
 
   if (loading && (!tenant || !user)) return (
-    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch, ...miniAuth }}>
       <Splash msg="Starting…" seo={seo} />
     </MiniCtx.Provider>
   );
   if (error && (!tenant || !user)) return (
-    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch, ...miniAuth }}>
       <Centered>
       <h1 className="text-xl font-bold mb-2">Couldn't start</h1>
       <p className="text-sm text-white/60 mb-4">{error}</p>
@@ -259,7 +261,7 @@ function MiniLayout() {
     </MiniCtx.Provider>
   );
   if (blocked) return (
-    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch, ...miniAuth }}>
       <Centered>
         <h1 className="text-xl font-bold mb-2">Account blocked</h1>
         <p className="text-sm text-white/70 mb-2">{blocked.reason ?? "Multiple accounts are not allowed."}</p>
@@ -270,7 +272,7 @@ function MiniLayout() {
     </MiniCtx.Provider>
   );
   if (!tenant) return (
-    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch, ...miniAuth }}>
       <Centered>
         <h1 className="text-xl font-bold mb-2">Bot not available</h1>
         <p className="text-sm text-white/60">This mini app isn't active. Ask the bot owner to check setup.</p>
@@ -278,7 +280,7 @@ function MiniLayout() {
     </MiniCtx.Provider>
   );
   if (!user) return (
-    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch }}>
+    <MiniCtx.Provider value={{ tenant: safeState.tenant, user: safeState.user, refetchUser: refetch, ...miniAuth }}>
       <Centered>
         <p className="text-sm text-white/70 mb-4">Setting things up…</p>
         <Button variant="secondary" onClick={doBoot}>Retry</Button>
@@ -290,7 +292,7 @@ function MiniLayout() {
   const themeStyle: React.CSSProperties = { "--primary": theme.primary, "--background": theme.background, "--accent": theme.accent } as any;
 
   return (
-    <MiniCtx.Provider value={{ tenant, user, refetchUser: refetch }}>
+    <MiniCtx.Provider value={{ tenant, user, refetchUser: refetch, ...miniAuth }}>
       <div
         style={{ background: theme.background, color: "white", ...themeStyle }}
         className="tg-mini min-h-screen pb-20 max-w-md mx-auto relative"
