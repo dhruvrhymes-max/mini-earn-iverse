@@ -49,11 +49,21 @@ async function getSupabaseAdmin() {
   return supabaseAdmin;
 }
 
+export function withdrawNetworks(payout: any) {
+  const on = (v: any) => v !== false;
+  return {
+    usdt_bep20: on(payout?.bep20?.enabled),
+    usdt_polygon: on(payout?.polygon?.enabled),
+    gram_ton: on(payout?.ton?.enabled),
+  };
+}
+
 function normalizeTenant(row: any) {
   if (!row || row.status !== "active") return null;
-  const { bot_token: _botToken, payout_config: _payout, ...safeRow } = row;
+  const { bot_token: _botToken, payout_config: payout, ...safeRow } = row;
   return {
     ...safeRow,
+    withdraw_networks: withdrawNetworks(payout),
     theme: { ...DEFAULT_THEME, ...((row.theme as any) || {}) },
     economics: { ...DEFAULT_ECON, ...((row.economics as any) || {}) },
     ad_config: { ...DEFAULT_AD, ...((row.ad_config as any) || {}) },
