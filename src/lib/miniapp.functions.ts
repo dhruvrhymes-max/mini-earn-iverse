@@ -446,6 +446,7 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
       amount_usdt: z.number().positive(),
       token: z.enum(["usdt_bep20", "usdt_polygon", "gram_ton"]),
       wallet: z.string().trim().min(10).max(120),
+      memo: z.string().trim().max(120).optional().nullable(),
     }).parse(i),
   )
   .handler(async ({ data }) => {
@@ -462,13 +463,17 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     const nets = withdrawNetworks(tenant.payout_config as any);
     if (!nets[data.token]) throw new Error("This withdrawal token is currently disabled");
 
+    let destination = data.wallet;
     if ((data.token === "usdt_bep20" || data.token === "usdt_polygon") && !/^0x[a-fA-F0-9]{40}$/.test(data.wallet)) {
       throw new Error("Enter a valid 0x EVM address");
     }
     if (data.token === "gram_ton") {
       const { Address } = await import("@ton/core");
       try { Address.parse(data.wallet); } catch { throw new Error("Enter a valid TON address"); }
+      const memo = (data.memo || "").trim();
+      if (memo) destination = `${data.wallet}|${memo}`;
     }
+
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("id,tenant_id,telegram_id,username,first_name").eq("tenant_id", data.tenantId).eq("telegram_id", telegramId).maybeSingle();
     if (!user) throw new Error("User not found");
