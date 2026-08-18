@@ -7,7 +7,7 @@ export type SceneKind =
   | "lava" | "ocean" | "candy" | "neon" | "ice" | "dragon" | "ghost" | "milk";
 
 /** How players earn in this bot. Tasks + "watch ads & earn" exist in every mode. */
-export type GameMode = "mine" | "tap" | "spin" | "idle";
+export type GameMode = "mine" | "tap" | "spin" | "idle" | "scratch" | "quiz" | "streak" | "forecast";
 
 export type LayoutFamily = "cosmic" | "crystal" | "forge" | "playful" | "nature";
 
@@ -16,6 +16,10 @@ export const GAME_MODES: Array<{ id: GameMode; label: string; hint: string }> = 
   { id: "tap", label: "Tap to earn", hint: "Tap for instant tokens, energy refills over time" },
   { id: "spin", label: "Spin to earn", hint: "Free daily spin plus spins earned from tasks" },
   { id: "idle", label: "Idle / farm to earn", hint: "Production accrues offline, collect on return" },
+  { id: "scratch", label: "Scratch to earn", hint: "Scratch a foil card to reveal a hidden prize" },
+  { id: "quiz", label: "Quiz to earn", hint: "One trivia question per round, streaks pay more" },
+  { id: "streak", label: "Check-in to earn", hint: "Daily calendar with a rising day multiplier" },
+  { id: "forecast", label: "Predict to earn", hint: "Call the next round up or down" },
 ];
 
 export type ThemePreset = {

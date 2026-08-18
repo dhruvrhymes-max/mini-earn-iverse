@@ -31,7 +31,7 @@ export const createTenant = createServerFn({ method: "POST" })
         action_verb: z.string(),
         welcome_text: z.string(),
         welcome_cta_text: z.string(),
-        game_mode: z.enum(["mine", "tap", "spin", "idle"]).optional(),
+        game_mode: z.enum(["mine", "tap", "spin", "idle", "scratch", "quiz", "streak", "forecast"]).optional(),
       }).optional(),
     }).parse(input),
   )

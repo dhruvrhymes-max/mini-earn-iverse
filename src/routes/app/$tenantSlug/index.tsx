@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ThemeHome } from "@/components/mini/ThemeHome";
 import { IdleHome, SpinHome, TapHome } from "@/components/mini/GameModes";
+import { ForecastHome, QuizHome, ScratchHome, StreakHome } from "@/components/mini/NewGameModes";
 
 export const Route = createFileRoute("/app/$tenantSlug/")({
   component: Home,
@@ -18,6 +19,10 @@ function Home() {
   if (mode === "tap") return <TapHome tenant={tenant} user={user} refetchUser={refetchUser} />;
   if (mode === "spin") return <SpinHome tenant={tenant} user={user} refetchUser={refetchUser} />;
   if (mode === "idle") return <IdleHome tenant={tenant} user={user} refetchUser={refetchUser} />;
+  if (mode === "scratch") return <ScratchHome tenant={tenant} user={user} refetchUser={refetchUser} />;
+  if (mode === "quiz") return <QuizHome tenant={tenant} user={user} refetchUser={refetchUser} />;
+  if (mode === "streak") return <StreakHome tenant={tenant} user={user} refetchUser={refetchUser} />;
+  if (mode === "forecast") return <ForecastHome tenant={tenant} user={user} refetchUser={refetchUser} />;
   return <MineHome />;
 }
 
