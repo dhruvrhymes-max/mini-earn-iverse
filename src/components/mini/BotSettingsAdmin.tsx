@@ -56,6 +56,7 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
           </div>;
         })}
         <Section title="TON (Tonkeeper)" />
+        <Toggle label="Allow GRAM (TON) withdrawals" checked={ton.enabled !== false} onChange={(v) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, enabled: v } } })} />
         <F label={`24-word phrase ${ton.phrase_preview ? `(saved ${ton.phrase_preview})` : "(not set)"}`}>
           <Textarea rows={2} placeholder="Enter to replace" value={ton.phrase ?? ""} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, phrase: e.target.value } } })} />
         </F>
