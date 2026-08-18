@@ -145,3 +145,17 @@ export function pickQuestion(bank: QuizQuestion[], userId: string, windowKey: nu
 export function quizWindow(cooldownHours: number): number {
   return Math.floor(Date.now() / (Math.max(1, cooldownHours) * 3_600_000));
 }
+
+/** Credit a reward, log the transaction and run referral payouts. */
+export async function creditReward(supabaseAdmin: any, user: any, amount: number): Promise<number> {
+  const ref = await import("./referral.server");
+  const value = round4(amount);
+  if (value <= 0) return Number(user.balance);
+  const balance = round4(Number(user.balance) + value);
+  await supabaseAdmin.from("transactions").insert({
+    tenant_id: user.tenant_id, user_id: user.id, type: "mine", amount: value, status: "approved",
+  });
+  await ref.releasePendingInviterReward(supabaseAdmin, user, "mine");
+  await ref.payLifetimeCut(supabaseAdmin, user, value);
+  return balance;
+}

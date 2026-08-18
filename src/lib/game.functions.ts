@@ -164,20 +164,6 @@ function maskHandle(name: string): string {
 
 /* ── New earn loops: scratch / quiz / check-in streak / forecast ─────────── */
 
-async function credit(supabaseAdmin: any, user: any, amount: number) {
-  const g = await import("./game.server");
-  const ref = await import("./referral.server");
-  const value = g.round4(amount);
-  if (value <= 0) return Number(user.balance);
-  const balance = g.round4(Number(user.balance) + value);
-  await supabaseAdmin.from("transactions").insert({
-    tenant_id: user.tenant_id, user_id: user.id, type: "mine", amount: value, status: "approved",
-  });
-  await ref.releasePendingInviterReward(supabaseAdmin, user, "mine");
-  await ref.payLifetimeCut(supabaseAdmin, user, value);
-  return balance;
-}
-
 /** Combined state for the new modes (one round-trip on load). */
 export const getModeState = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
@@ -226,7 +212,7 @@ export const scratchCard = createServerFn({ method: "POST" })
     const ready = g.readyAt(user.last_scratch_at, Number(cfg.scratch_cooldown_hours));
     if (Date.now() < ready) return { ok: false as const, ready_at: ready };
     const prize = g.pickSpinPrize(cfg.scratch_prizes);
-    const balance = await credit(supabaseAdmin, user, prize.amount);
+    const balance = await g.creditReward(supabaseAdmin, user, prize.amount);
     const nextReady = Date.now() + Number(cfg.scratch_cooldown_hours) * 3_600_000;
     await supabaseAdmin.from("app_users")
       .update({ balance, last_scratch_at: new Date().toISOString() }).eq("id", user.id);
@@ -252,7 +238,7 @@ export const answerQuiz = createServerFn({ method: "POST" })
     const amount = correct
       ? Number(cfg.quiz_reward) + Math.min(streak - 1, 6) * Number(cfg.quiz_streak_bonus)
       : 0;
-    const balance = await credit(supabaseAdmin, user, amount);
+    const balance = await g.creditReward(supabaseAdmin, user, amount);
     await supabaseAdmin.from("app_users").update({
       balance, quiz_streak: streak, last_quiz_at: new Date().toISOString(),
     }).eq("id", user.id);
@@ -275,7 +261,7 @@ export const dailyCheckIn = createServerFn({ method: "POST" })
     const prev = st.continues ? Number(user.checkin_streak ?? 0) : 0;
     const day = Math.min(prev + 1, Number(cfg.checkin_max_days));
     const amount = Number(cfg.checkin_base) + (day - 1) * Number(cfg.checkin_step);
-    const balance = await credit(supabaseAdmin, user, amount);
+    const balance = await g.creditReward(supabaseAdmin, user, amount);
     await supabaseAdmin.from("app_users").update({
       balance, checkin_streak: day, last_checkin_at: new Date().toISOString(),
     }).eq("id", user.id);
@@ -302,7 +288,7 @@ export const placeForecast = createServerFn({ method: "POST" })
     const amount = won
       ? Number(cfg.forecast_reward) * (1 + Math.min(streak - 1, 4) * 0.25)
       : Number(cfg.forecast_consolation);
-    const balance = await credit(supabaseAdmin, user, amount);
+    const balance = await g.creditReward(supabaseAdmin, user, amount);
     await supabaseAdmin.from("app_users").update({
       balance, last_forecast_at: new Date().toISOString(), forecast_state: { streak },
     }).eq("id", user.id);
