@@ -688,3 +688,60 @@ export const setLanguage = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * Verifies that a member joined every required channel/group of the tenant.
+ * Uses the platform check bot (falls back to the tenant bot) and Telegram's
+ * getChatMember. Chat ids fall back to the @username parsed from the t.me link.
+ */
+export const checkChannelJoin = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { data: user } = await supabaseAdmin
+      .from("app_users").select("id, telegram_id, tenant_id").eq("id", data.userId).maybeSingle();
+    if (!user) throw new Error("User not found");
+    const { data: tenant } = await supabaseAdmin
+      .from("tenants").select("id, bot_token, onboarding").eq("id", user.tenant_id).maybeSingle();
+    const ob: any = tenant?.onboarding || {};
+    const channels: any[] = Array.isArray(ob.channels) ? ob.channels.filter((c: any) => c?.url || c?.chat_id) : [];
+    if (!ob.require_join || channels.length === 0) {
+      await supabaseAdmin.from("app_users").update({ onboarded: true }).eq("id", user.id);
+      return { ok: true, results: channels.map(() => true) };
+    }
+
+    const { data: checkBot } = await supabaseAdmin.from("check_bots")
+      .select("bot_token")
+      .eq("active", true)
+      .or(`tenant_id.eq.${user.tenant_id},tenant_id.is.null`)
+      .order("tenant_id", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    const token = checkBot?.bot_token || tenant?.bot_token;
+    if (!token) throw new Error("Membership check is not configured yet — contact support.");
+
+    const chatIdOf = (c: any) => {
+      const raw = String(c.chat_id || "").trim();
+      if (raw) return raw.startsWith("-") || raw.startsWith("@") ? raw : `@${raw.replace(/^@/, "")}`;
+      const m = String(c.url || "").match(/t\.me\/(?:s\/)?([A-Za-z0-9_]{4,})/);
+      return m ? `@${m[1]}` : null;
+    };
+
+    const results = await Promise.all(channels.map(async (c) => {
+      const chat = chatIdOf(c);
+      if (!chat) return false;
+      try {
+        const r = await fetch(`https://api.telegram.org/bot${token}/getChatMember`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ chat_id: chat, user_id: user.telegram_id }),
+        }).then((x) => x.json());
+        const status = r?.result?.status;
+        return ["creator", "administrator", "member", "restricted"].includes(status);
+      } catch { return false; }
+    }));
+
+    const ok = results.every(Boolean);
+    if (ok) await supabaseAdmin.from("app_users").update({ onboarded: true }).eq("id", user.id);
+    return { ok, results };
+  });
