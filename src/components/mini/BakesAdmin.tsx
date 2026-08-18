@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MINER_ICON_PRESETS } from "@/lib/icon-presets";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { adminListMiners, adminSaveMiner, adminDeleteMiner } from "@/lib/miners.functions";
@@ -97,7 +98,17 @@ export function BakesAdmin({ tenantId, initData, previewTgId, tokenSymbol }: Pro
             <Field label="Name"><Input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></Field>
             <Field label="Emoji"><Input value={edit.emoji ?? ""} onChange={(e) => setEdit({ ...edit, emoji: e.target.value })} /></Field>
           </div>
-          <Field label="Image URL"><Input value={edit.image_url ?? ""} onChange={(e) => setEdit({ ...edit, image_url: e.target.value })} /></Field>
+          <Field label="Icon / logo">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {MINER_ICON_PRESETS.map((p) => (
+                <button key={p.label} type="button" title={p.label} onClick={() => setEdit({ ...edit, image_url: p.url })}
+                  className={`h-9 w-9 rounded-full overflow-hidden border-2 ${edit.image_url === p.url ? "border-white" : "border-transparent"}`}>
+                  <img src={p.url} alt={p.label} className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+            <Input value={edit.image_url ?? ""} onChange={(e) => setEdit({ ...edit, image_url: e.target.value })} placeholder="https://… or pick above" />
+          </Field>
           <Field label="Description"><Input value={edit.description ?? ""} onChange={(e) => setEdit({ ...edit, description: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Rarity">
