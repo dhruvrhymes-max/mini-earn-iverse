@@ -38,7 +38,7 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
     return (
       <Box onSave={() => m.mutate({ payout: {
         evm: { chain_label: evm.chain_label, rpc_url: evm.rpc_url, contract: evm.contract, explorer: evm.explorer, decimals: Number(evm.decimals) || 6, private_key: evm.private_key || null },
-        ton: { api_key: ton.api_key, explorer: ton.explorer, phrase: ton.phrase || null },
+        ton: { api_key: ton.api_key, explorer: ton.explorer, endpoint: ton.endpoint || null, jetton_master: ton.jetton_master || null, jetton_decimals: Number(ton.jetton_decimals) || 6, phrase: ton.phrase || null },
         auto_pay: !!s.payout.auto_pay,
       } })} pending={m.isPending}>
         <Section title="EVM (USDT payouts)" />
