@@ -2,15 +2,37 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+async function isSuperAdmin(supabase: any, userId: string) {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "super_admin").maybeSingle();
+  return !!data;
+}
+
+/** Super admins may create bots freely; everyone else needs approval. */
+async function assertApproved(supabase: any, userId: string) {
+  const { data, error } = await supabase.rpc("is_account_approved", { _user_id: userId });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Your account is pending approval from the ZeroLabNetwork super admin.");
+}
+
+export const myAccountStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const [{ data: approved }, { data: row }] = await Promise.all([
+      supabase.rpc("is_account_approved", { _user_id: userId }),
+      supabase.from("account_approvals").select("status").eq("user_id", userId).maybeSingle(),
+    ]);
+    return { approved: !!approved, status: (row?.status as string) ?? "pending" };
+  });
+
 export const listMyTenants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data, error } = await supabase
-      .from("tenants")
-      .select("*")
-      .eq("owner_user_id", userId)
-      .order("created_at", { ascending: false });
+    const superAdmin = await isSuperAdmin(supabase, userId);
+    let q = supabase.from("tenants").select("*").order("created_at", { ascending: false });
+    if (!superAdmin) q = q.eq("owner_user_id", userId);
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -37,6 +59,7 @@ export const createTenant = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await assertApproved(supabase, userId);
     const username = data.bot_username.replace(/^@/, "");
     const slug = username.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || `bot-${Date.now()}`;
     const insert: Record<string, any> = {

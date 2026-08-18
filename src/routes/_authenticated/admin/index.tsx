@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listMyTenants, createTenant } from "@/lib/admin.functions";
+import { listMyTenants, createTenant, myAccountStatus } from "@/lib/admin.functions";
 import { THEME_PRESETS, GAME_MODES, type ThemePreset } from "@/lib/theme-presets";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,8 +25,11 @@ function AdminIndex() {
   const navigate = useNavigate();
   const list = useServerFn(listMyTenants);
   const create = useServerFn(createTenant);
+  const status = useServerFn(myAccountStatus);
   const qc = useQueryClient();
   const { data: tenants = [], isLoading } = useQuery({ queryKey: ["myTenants"], queryFn: () => list() });
+  const { data: account } = useQuery({ queryKey: ["myAccountStatus"], queryFn: () => status() });
+  const approved = account?.approved !== false;
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
@@ -110,12 +113,17 @@ function AdminIndex() {
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">
+        {!approved && (
+          <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+            Your account is <strong>{account?.status ?? "pending"}</strong>. A ZeroLabNetwork super admin must approve it before you can create bots.
+          </div>
+        )}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">My Bots</h1>
+          <h1 className="text-2xl font-bold">{roles.includes("super_admin") ? "All Bots" : "My Bots"}</h1>
           <div className="flex gap-2">
-            <Button asChild variant="outline"><Link to="/admin/new-ai"><Shield className="mr-1 h-4 w-4" />AI Creator</Link></Button>
+            <Button asChild variant="outline" disabled={!approved}><Link to="/admin/new-ai"><Shield className="mr-1 h-4 w-4" />AI Creator</Link></Button>
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
-            <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />New bot</Button></DialogTrigger>
+            <DialogTrigger asChild><Button disabled={!approved}><Plus className="mr-1 h-4 w-4" />New bot</Button></DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{step === 1 ? "Choose a theme & token" : "Connect your Telegram bot"}</DialogTitle>

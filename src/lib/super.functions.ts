@@ -136,3 +136,32 @@ export const deleteCheckBot = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const listAccountApprovals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireSuperAdmin(context.supabase, context.userId);
+    const { data, error } = await context.supabase
+      .from("account_approvals")
+      .select("user_id,email,status,reviewed_at,created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    const { data: tenants } = await context.supabase.from("tenants").select("owner_user_id");
+    const counts = new Map<string, number>();
+    for (const t of tenants ?? []) counts.set(t.owner_user_id, (counts.get(t.owner_user_id) ?? 0) + 1);
+    return rows.map((r: any) => ({ ...r, bots: counts.get(r.user_id) ?? 0 }));
+  });
+
+export const setAccountApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ userId: z.string().uuid(), status: z.enum(["pending", "approved", "rejected"]) }).parse(i))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context.supabase, context.userId);
+    const { error } = await context.supabase
+      .from("account_approvals")
+      .update({ status: data.status, reviewed_by: context.userId, reviewed_at: new Date().toISOString() })
+      .eq("user_id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
