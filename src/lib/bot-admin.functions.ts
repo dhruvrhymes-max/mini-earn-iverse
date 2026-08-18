@@ -87,8 +87,12 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
         ton: z.object({
           api_key: z.string().max(200),
           explorer: z.string().max(300),
+          endpoint: z.string().max(300).optional().nullable(),
+          jetton_master: z.string().max(120).optional().nullable(),
+          jetton_decimals: z.number().int().min(0).max(24).optional().nullable(),
           phrase: z.string().max(500).optional().nullable(),
         }).optional(),
+
         auto_pay: z.boolean().optional(),
       }).optional(),
       deposit: z.object({
