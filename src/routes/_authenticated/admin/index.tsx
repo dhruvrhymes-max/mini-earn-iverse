@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listMyTenants, createTenant } from "@/lib/admin.functions";
+import { listMyTenants, createTenant, myAccountStatus } from "@/lib/admin.functions";
 import { THEME_PRESETS, GAME_MODES, type ThemePreset } from "@/lib/theme-presets";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
