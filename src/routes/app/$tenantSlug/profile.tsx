@@ -68,17 +68,6 @@ function Profile() {
         </div>
       </Section>
 
-      {(tenant as any).about_text && (
-        <Section skin={skin} primary={theme.primary} title="About & how to earn">
-          <div className={skin.card} style={skin.cardStyle(theme.primary, theme.accent)}>
-            <div className="flex items-center gap-2 mb-2">
-              {tenant.token_icon_url && <img src={tenant.token_icon_url} alt={`${tenant.token_symbol} icon`} className="h-7 w-7 rounded-full" />}
-              <span className="font-bold">{tenant.name}</span>
-            </div>
-            <p className="text-xs leading-relaxed text-white/70 whitespace-pre-line">{(tenant as any).about_text}</p>
-          </div>
-        </Section>
-      )}
 
       <Section skin={skin} primary={theme.primary} title="Promo code">
         <PromoRedeem skin={skin} theme={theme} user={user} tokenSymbol={tenant.token_symbol} />
