@@ -44,6 +44,7 @@ import { Route as AuthenticatedAdminTenantIdIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminTenantIdWithdrawalsRouteImport } from './routes/_authenticated/admin/$tenantId/withdrawals'
 import { Route as AuthenticatedAdminTenantIdTasksRouteImport } from './routes/_authenticated/admin/$tenantId/tasks'
 import { Route as AuthenticatedAdminTenantIdReferralsRouteImport } from './routes/_authenticated/admin/$tenantId/referrals'
+import { Route as AuthenticatedAdminTenantIdPayoutSettingsRouteImport } from './routes/_authenticated/admin/$tenantId/payout-settings'
 import { Route as AuthenticatedAdminTenantIdMinersRouteImport } from './routes/_authenticated/admin/$tenantId/miners'
 import { Route as AuthenticatedAdminTenantIdMilestonesRouteImport } from './routes/_authenticated/admin/$tenantId/milestones'
 import { Route as AuthenticatedAdminTenantIdEconomicsRouteImport } from './routes/_authenticated/admin/$tenantId/economics'
@@ -233,6 +234,12 @@ const AuthenticatedAdminTenantIdReferralsRoute =
     path: '/referrals',
     getParentRoute: () => AuthenticatedAdminTenantIdRoute,
   } as any)
+const AuthenticatedAdminTenantIdPayoutSettingsRoute =
+  AuthenticatedAdminTenantIdPayoutSettingsRouteImport.update({
+    id: '/payout-settings',
+    path: '/payout-settings',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
 const AuthenticatedAdminTenantIdMinersRoute =
   AuthenticatedAdminTenantIdMinersRouteImport.update({
     id: '/miners',
@@ -307,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
   '/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
+  '/admin/$tenantId/payout-settings': typeof AuthenticatedAdminTenantIdPayoutSettingsRoute
   '/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
@@ -346,6 +354,7 @@ export interface FileRoutesByTo {
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
   '/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
+  '/admin/$tenantId/payout-settings': typeof AuthenticatedAdminTenantIdPayoutSettingsRoute
   '/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
@@ -390,6 +399,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/_authenticated/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
   '/_authenticated/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
+  '/_authenticated/admin/$tenantId/payout-settings': typeof AuthenticatedAdminTenantIdPayoutSettingsRoute
   '/_authenticated/admin/$tenantId/referrals': typeof AuthenticatedAdminTenantIdReferralsRoute
   '/_authenticated/admin/$tenantId/tasks': typeof AuthenticatedAdminTenantIdTasksRoute
   '/_authenticated/admin/$tenantId/withdrawals': typeof AuthenticatedAdminTenantIdWithdrawalsRoute
@@ -434,6 +444,7 @@ export interface FileRouteTypes {
     | '/admin/$tenantId/economics'
     | '/admin/$tenantId/milestones'
     | '/admin/$tenantId/miners'
+    | '/admin/$tenantId/payout-settings'
     | '/admin/$tenantId/referrals'
     | '/admin/$tenantId/tasks'
     | '/admin/$tenantId/withdrawals'
@@ -473,6 +484,7 @@ export interface FileRouteTypes {
     | '/admin/$tenantId/economics'
     | '/admin/$tenantId/milestones'
     | '/admin/$tenantId/miners'
+    | '/admin/$tenantId/payout-settings'
     | '/admin/$tenantId/referrals'
     | '/admin/$tenantId/tasks'
     | '/admin/$tenantId/withdrawals'
@@ -516,6 +528,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$tenantId/economics'
     | '/_authenticated/admin/$tenantId/milestones'
     | '/_authenticated/admin/$tenantId/miners'
+    | '/_authenticated/admin/$tenantId/payout-settings'
     | '/_authenticated/admin/$tenantId/referrals'
     | '/_authenticated/admin/$tenantId/tasks'
     | '/_authenticated/admin/$tenantId/withdrawals'
@@ -780,6 +793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTenantIdReferralsRouteImport
       parentRoute: typeof AuthenticatedAdminTenantIdRoute
     }
+    '/_authenticated/admin/$tenantId/payout-settings': {
+      id: '/_authenticated/admin/$tenantId/payout-settings'
+      path: '/payout-settings'
+      fullPath: '/admin/$tenantId/payout-settings'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdPayoutSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
     '/_authenticated/admin/$tenantId/miners': {
       id: '/_authenticated/admin/$tenantId/miners'
       path: '/miners'
@@ -851,6 +871,7 @@ interface AuthenticatedAdminTenantIdRouteChildren {
   AuthenticatedAdminTenantIdEconomicsRoute: typeof AuthenticatedAdminTenantIdEconomicsRoute
   AuthenticatedAdminTenantIdMilestonesRoute: typeof AuthenticatedAdminTenantIdMilestonesRoute
   AuthenticatedAdminTenantIdMinersRoute: typeof AuthenticatedAdminTenantIdMinersRoute
+  AuthenticatedAdminTenantIdPayoutSettingsRoute: typeof AuthenticatedAdminTenantIdPayoutSettingsRoute
   AuthenticatedAdminTenantIdReferralsRoute: typeof AuthenticatedAdminTenantIdReferralsRoute
   AuthenticatedAdminTenantIdTasksRoute: typeof AuthenticatedAdminTenantIdTasksRoute
   AuthenticatedAdminTenantIdWithdrawalsRoute: typeof AuthenticatedAdminTenantIdWithdrawalsRoute
@@ -870,6 +891,8 @@ const AuthenticatedAdminTenantIdRouteChildren: AuthenticatedAdminTenantIdRouteCh
       AuthenticatedAdminTenantIdMilestonesRoute,
     AuthenticatedAdminTenantIdMinersRoute:
       AuthenticatedAdminTenantIdMinersRoute,
+    AuthenticatedAdminTenantIdPayoutSettingsRoute:
+      AuthenticatedAdminTenantIdPayoutSettingsRoute,
     AuthenticatedAdminTenantIdReferralsRoute:
       AuthenticatedAdminTenantIdReferralsRoute,
     AuthenticatedAdminTenantIdTasksRoute: AuthenticatedAdminTenantIdTasksRoute,
