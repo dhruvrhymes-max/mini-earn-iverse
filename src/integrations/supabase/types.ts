@@ -721,6 +721,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          about_text: string | null
           action_verb: string
           ad_config: Json
           admin_telegram_ids: number[]
@@ -754,6 +755,7 @@ export type Database = {
           welcome_text: string | null
         }
         Insert: {
+          about_text?: string | null
           action_verb?: string
           ad_config?: Json
           admin_telegram_ids?: number[]
@@ -787,6 +789,7 @@ export type Database = {
           welcome_text?: string | null
         }
         Update: {
+          about_text?: string | null
           action_verb?: string
           ad_config?: Json
           admin_telegram_ids?: number[]

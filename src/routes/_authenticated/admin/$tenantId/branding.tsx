@@ -14,6 +14,9 @@ import { Loader2, Trash2 } from "lucide-react";
 import { sanitizeShortName } from "@/lib/mini-admin";
 
 import { MiniAppLinks } from "@/components/admin/MiniAppLinks";
+import { IconPicker } from "@/components/admin/IconPicker";
+import { TOKEN_ICON_PRESETS } from "@/lib/icon-presets";
+import { buildAboutText } from "@/lib/about-text";
 
 const WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/telegram-webhook`;
 
@@ -42,6 +45,7 @@ function Branding() {
       welcome_text: (t as any).welcome_text ?? "",
       welcome_cta_text: (t as any).welcome_cta_text ?? "",
       welcome_image_url: (t as any).welcome_image_url ?? "",
+      about_text: (t as any).about_text ?? "",
       bot_token: "",
       primary: (t.theme as any).primary, background: (t.theme as any).background, accent: (t.theme as any).accent,
       // economics
@@ -73,6 +77,7 @@ function Branding() {
         welcome_text: form.welcome_text || null,
         welcome_cta_text: form.welcome_cta_text || null,
         welcome_image_url: form.welcome_image_url || null,
+        about_text: form.about_text || null,
         theme: { primary: form.primary, background: form.background, accent: form.accent },
         admin_telegram_ids: adminIds,
         economics: {
@@ -136,7 +141,14 @@ function Branding() {
         <Field label="Token name"><Input value={form.token_name ?? ""} onChange={(e) => setForm({ ...form, token_name: e.target.value })} /></Field>
         <Field label="Token symbol"><Input value={form.token_symbol ?? ""} onChange={(e) => setForm({ ...form, token_symbol: e.target.value })} /></Field>
         <Field label="Action verb (Mine / Fish / Wood)"><Input value={form.action_verb ?? ""} onChange={(e) => setForm({ ...form, action_verb: e.target.value })} /></Field>
-        <Field label="Token icon URL"><Input value={form.token_icon_url ?? ""} onChange={(e) => setForm({ ...form, token_icon_url: e.target.value })} placeholder="https://…" /></Field>
+        <Field label="Token icon (shown everywhere in the mini app)">
+          <IconPicker
+            value={form.token_icon_url}
+            onChange={(url) => setForm({ ...form, token_icon_url: url })}
+            presets={TOKEN_ICON_PRESETS}
+            uploadPrefix="token-icons"
+          />
+        </Field>
         <div className="grid grid-cols-3 gap-3">
           <Field label="Primary"><Input type="color" value={form.primary ?? "#f59e0b"} onChange={(e) => setForm({ ...form, primary: e.target.value })} /></Field>
           <Field label="Background"><Input type="color" value={form.background ?? "#0a0a0a"} onChange={(e) => setForm({ ...form, background: e.target.value })} /></Field>
@@ -188,6 +200,21 @@ function Branding() {
           </Field>
           <Field label="Welcome text"><Textarea rows={3} value={form.welcome_text ?? ""} onChange={(e) => setForm({ ...form, welcome_text: e.target.value })} placeholder="Welcome to My Bot! Mine tokens 24/7…" /></Field>
           <Field label="CTA button text"><Input value={form.welcome_cta_text ?? ""} onChange={(e) => setForm({ ...form, welcome_cta_text: e.target.value })} placeholder="Open My Bot" /></Field>
+        </div>
+
+        <div className="pt-6 mt-6 border-t space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">About this bot</h2>
+              <p className="text-sm text-muted-foreground">Explain what users can do here — mining, refer &amp; earn, watch &amp; earn, tasks. Shown inside the mini app.</p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => setForm((f: any) => ({ ...f, about_text: buildAboutText({ ...(t as any), ...f, economics: { tokens_per_mine: Number(f.tokens_per_mine), mine_duration_seconds: Number(f.mine_duration_seconds), token_per_usdt: Number(f.token_per_usdt), min_withdraw_usdt: Number(f.min_withdraw_usdt) } }) }))}>
+              Auto-generate
+            </Button>
+          </div>
+          <Field label="Description / how to earn">
+            <Textarea rows={10} value={form.about_text ?? ""} onChange={(e) => setForm({ ...form, about_text: e.target.value })} placeholder="Mine tokens every 4h, watch ads for bonuses, invite friends…" />
+          </Field>
         </div>
 
         <div className="pt-6 mt-6 border-t space-y-4">

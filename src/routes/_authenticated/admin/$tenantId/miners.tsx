@@ -11,12 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { IconPicker } from "@/components/admin/IconPicker";
+import { MINER_ICON_PRESETS } from "@/lib/icon-presets";
 
 export const Route = createFileRoute("/_authenticated/admin/$tenantId/miners")({
   component: MinersPage,
 });
 
-const EMPTY = { id: null as string|null, name: "", emoji: "⛏️", image_url: "", description: "", rarity: "common" as const,
+const EMPTY = { id: null as string|null, name: "", emoji: "⛏️", image_url: MINER_ICON_PRESETS[0].url, description: "", rarity: "common" as const,
   price_tokens: 1000, rate_boost_per_hour: 20, duration_hours: 0, is_free: false, active: true, sort_order: 0 };
 
 function MinersPage() {
@@ -73,7 +75,14 @@ function MinersPage() {
                 <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
                 <div><Label>Emoji</Label><Input value={form.emoji ?? ""} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></div>
               </div>
-              <div><Label>Image URL (optional)</Label><Input placeholder="https://…/bottle.png" value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
+              <div><Label>Miner icon / logo</Label>
+                <IconPicker
+                  value={form.image_url}
+                  onChange={(url: string) => setForm({ ...form, image_url: url })}
+                  presets={MINER_ICON_PRESETS}
+                  uploadPrefix="miner-icons"
+                />
+              </div>
               <div><Label>Description</Label><Textarea rows={2} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Rarity</Label>

@@ -15,6 +15,7 @@ export const EMPTY_MINI_TENANT = {
   token_name: "Token",
   token_symbol: "TKN",
   token_icon_url: null,
+  about_text: null,
   action_verb: "Mine",
   theme: { primary: "#f59e0b", background: "#0a0a0a", accent: "#fbbf24" },
   economics: { token_per_usdt: 10000, min_withdraw_usdt: 0.1, mining_cycle_hours: 4, mining_rate_per_hour: 100 },

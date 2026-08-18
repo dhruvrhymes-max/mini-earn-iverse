@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { emojiIconUrl } from "@/lib/icon-presets";
 
 async function isSuperAdmin(supabase: any, userId: string) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "super_admin").maybeSingle();
@@ -73,7 +74,7 @@ export const createTenant = createServerFn({ method: "POST" })
       insert.theme = data.preset.theme;
       insert.token_name = data.preset.token_name;
       insert.token_symbol = data.preset.token_symbol;
-      insert.token_icon_url = data.preset.token_icon_url || null;
+      insert.token_icon_url = data.preset.token_icon_url || emojiIconUrl("🪙", data.preset.theme.primary, data.preset.theme.accent);
       insert.action_verb = data.preset.action_verb;
       insert.welcome_text = data.preset.welcome_text;
       insert.welcome_cta_text = data.preset.welcome_cta_text;
