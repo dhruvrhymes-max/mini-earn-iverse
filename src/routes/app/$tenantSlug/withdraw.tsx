@@ -15,7 +15,13 @@ export const Route = createFileRoute("/app/$tenantSlug/withdraw")({ component: W
 function Withdraw() {
   const { tenant, user, refetchUser, initData, previewTgId } = useMini();
   const [amount, setAmount] = useState("");
-  const [token, setToken] = useState<"usdt_bep20" | "usdt_polygon" | "gram_ton">("usdt_bep20");
+  const nets = ((tenant as any).withdraw_networks ?? {}) as Record<string, boolean>;
+  const tokens = ([
+    { id: "usdt_bep20", label: "USDT BEP20" },
+    { id: "usdt_polygon", label: "USDT POL" },
+    { id: "gram_ton", label: "GRAM (TON)" },
+  ] as const).filter((t) => nets[t.id] !== false);
+  const [token, setToken] = useState<"usdt_bep20" | "usdt_polygon" | "gram_ton">(tokens[0]?.id ?? "usdt_bep20");
   const [wallet, setWallet] = useState("");
   const fn = useServerFn(requestWithdrawal);
   const m = useMutation({
