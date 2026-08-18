@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listWithdrawals, processWithdrawal } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/$tenantId/withdrawals")({
   component: Withdrawals,
@@ -14,9 +15,10 @@ function Withdrawals() {
   const list = useServerFn(listWithdrawals);
   const proc = useServerFn(processWithdrawal);
   const qc = useQueryClient();
+  const [reason, setReason] = useState("");
   const { data: rows = [] } = useQuery({ queryKey: ["withdrawals", tenantId], queryFn: () => list({ data: { tenantId } }) });
   const m = useMutation({
-    mutationFn: (v: { id: string; approve: boolean }) => proc({ data: v }),
+    mutationFn: (v: { id: string; approve: boolean }) => proc({ data: { ...v, reason: v.approve ? undefined : reason || "Rejected by admin" } }),
     onSuccess: (r: any) => { qc.invalidateQueries({ queryKey: ["withdrawals", tenantId] }); toast.success(r.tx_hash ? `Paid: ${r.tx_hash.slice(0, 16)}…` : "Updated"); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -39,7 +41,7 @@ function Withdrawals() {
                 <td className="p-3 text-right">
                   {r.status === "pending" && (
                     <div className="flex gap-2 justify-end">
-                      <Button size="sm" onClick={() => m.mutate({ id: r.id, approve: true })}>Accept</Button>
+                       <Button size="sm" disabled={m.isPending} onClick={() => m.mutate({ id: r.id, approve: true })}>{m.isPending ? "Sending…" : "Approve & send"}</Button>
                       <Button size="sm" variant="outline" onClick={() => m.mutate({ id: r.id, approve: false })}>Reject</Button>
                     </div>
                   )}

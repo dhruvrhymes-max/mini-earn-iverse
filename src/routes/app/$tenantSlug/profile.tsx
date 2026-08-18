@@ -8,7 +8,7 @@ import { setLanguage } from "@/lib/miniapp.functions";
 import { LANGUAGES } from "@/lib/languages";
 import { useTelegramPhoto } from "@/lib/tg-photo";
 import { familyOf, skinOf, hexA } from "@/lib/theme-family";
-import { ChevronRight, Wallet, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck, Pickaxe, ShoppingBag } from "lucide-react";
+import { ChevronRight, ReceiptText, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck, Pickaxe, ShoppingBag } from "lucide-react";
 
 export const Route = createFileRoute("/app/$tenantSlug/profile")({
   component: Profile,
@@ -26,9 +26,9 @@ function Profile() {
     { to: "/app/$tenantSlug/miners", label: "Miners", icon: Pickaxe },
     { to: "/app/$tenantSlug/withdraw", label: "Withdraw USDT", icon: ArrowDownToLine },
     { to: "/app/$tenantSlug/convert", label: "Convert to USDT", icon: ArrowLeftRight },
-    { to: "/app/$tenantSlug/wallets", label: "Wallet addresses", icon: Wallet },
+    { to: "/app/$tenantSlug/payouts", label: "Withdrawal receipts", icon: ReceiptText },
     { to: "/app/$tenantSlug/history", label: "Transaction history", icon: History },
-    { to: "/app/$tenantSlug/payouts", label: "Payouts & proof", icon: ShieldCheck },
+    { to: "/app/$tenantSlug/deposit", label: "Deposit", icon: ShieldCheck },
   ] as const;
   const c = tenant.community as any;
   const go = (to: any) => nav({ to, params: { tenantSlug: tenant.slug } as any });
