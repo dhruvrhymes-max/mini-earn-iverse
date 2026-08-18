@@ -75,7 +75,14 @@ function MinersPage() {
                 <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
                 <div><Label>Emoji</Label><Input value={form.emoji ?? ""} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></div>
               </div>
-              <div><Label>Image URL (optional)</Label><Input placeholder="https://…/bottle.png" value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
+              <div><Label>Miner icon / logo</Label>
+                <IconPicker
+                  value={form.image_url}
+                  onChange={(url: string) => setForm({ ...form, image_url: url })}
+                  presets={MINER_ICON_PRESETS}
+                  uploadPrefix="miner-icons"
+                />
+              </div>
               <div><Label>Description</Label><Textarea rows={2} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Rarity</Label>
