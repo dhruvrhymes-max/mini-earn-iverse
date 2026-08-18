@@ -210,17 +210,29 @@ export const adminFindUser = createServerFn({ method: "POST" })
     }
     if (!row) throw new Error("No member found");
 
-    const [{ count: refs }, { count: activeRefs }, { data: txs }, { data: ips }] = await Promise.all([
+    const [{ data: referredUsers }, { data: txs }, { data: ips }] = await Promise.all([
       supabaseAdmin.from("app_users").select("id", { count: "exact", head: true })
         .eq("tenant_id", data.tenantId).eq("referrer_id", row.id),
-      supabaseAdmin.from("app_users").select("id", { count: "exact", head: true })
-        .eq("tenant_id", data.tenantId).eq("referrer_id", row.id).eq("has_activity", true),
       supabaseAdmin.from("transactions").select("type,amount,status,created_at")
         .eq("user_id", row.id).order("created_at", { ascending: false }).limit(10),
       supabaseAdmin.from("ip_logs").select("ip,created_at").eq("user_id", row.id)
         .order("created_at", { ascending: false }).limit(5),
     ]);
-    return { user: row, referrals: refs ?? 0, activeReferrals: activeRefs ?? 0, recent: txs ?? [], ips: ips ?? [] };
+    const referralIds = (referredUsers ?? []).map((referral) => referral.id);
+    let activeReferrals = 0;
+    if (referralIds.length > 0) {
+      const [{ data: adRefs }, { data: taskRefs }, { data: globalTaskRefs }] = await Promise.all([
+        supabaseAdmin.from("app_users").select("id").in("id", referralIds).gt("ads_watched", 0),
+        supabaseAdmin.from("user_tasks").select("user_id").eq("tenant_id", data.tenantId).in("user_id", referralIds).gt("count", 0),
+        supabaseAdmin.from("user_global_tasks").select("user_id").eq("tenant_id", data.tenantId).in("user_id", referralIds).gt("count", 0),
+      ]);
+      activeReferrals = new Set([
+        ...(adRefs ?? []).map((referral) => referral.id),
+        ...(taskRefs ?? []).map((referral) => referral.user_id),
+        ...(globalTaskRefs ?? []).map((referral) => referral.user_id),
+      ]).size;
+    }
+    return { user: row, referrals: referralIds.length, activeReferrals, recent: txs ?? [], ips: ips ?? [] };
   });
 
 export const adminListMembers = createServerFn({ method: "POST" })
@@ -234,12 +246,23 @@ export const adminListMembers = createServerFn({ method: "POST" })
       .limit(1000);
     if (error) throw new Error(error.message);
 
+    const memberIds = (rows ?? []).map((member) => member.id);
+    const [{ data: taskRows }, { data: globalTaskRows }] = memberIds.length > 0
+      ? await Promise.all([
+          supabaseAdmin.from("user_tasks").select("user_id").eq("tenant_id", data.tenantId).in("user_id", memberIds).gt("count", 0),
+          supabaseAdmin.from("user_global_tasks").select("user_id").eq("tenant_id", data.tenantId).in("user_id", memberIds).gt("count", 0),
+        ])
+      : [{ data: [] }, { data: [] }];
+    const taskActiveIds = new Set([
+      ...(taskRows ?? []).map((task) => task.user_id),
+      ...(globalTaskRows ?? []).map((task) => task.user_id),
+    ]);
     const referralCounts = new Map<string, { total: number; active: number }>();
     for (const member of rows ?? []) {
       if (!member.referrer_id) continue;
       const current = referralCounts.get(member.referrer_id) ?? { total: 0, active: 0 };
       current.total += 1;
-      if (member.has_activity) current.active += 1;
+      if (Number(member.ads_watched) > 0 || taskActiveIds.has(member.id)) current.active += 1;
       referralCounts.set(member.referrer_id, current);
     }
 
