@@ -28,7 +28,7 @@ const POLYGON_PUBLIC_RPCS = [
 function evmRpcUrls(cfg: any): string[] {
   const configured = String(cfg.rpc_url || "").trim();
   const isPolygon = Number(cfg.chain_id) === 137 || String(cfg.chain_label || "").toLowerCase().includes("polygon");
-  const disabledLegacyPolygon = /^https?:\/\/(www\.)?polygon-rpc\.com\/?$/i.test(configured);
+  const disabledLegacyPolygon = /\bpolygon-rpc\.com\b/i.test(configured);
   if (isPolygon) {
     return [...new Set([...(disabledLegacyPolygon ? [] : [configured]), ...POLYGON_PUBLIC_RPCS].filter(Boolean))];
   }

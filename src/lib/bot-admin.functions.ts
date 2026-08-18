@@ -17,7 +17,7 @@ export const adminGetSettings = createServerFn({ method: "POST" })
     const legacyEvm = payout?.evm || {};
     const network = (key: "bep20" | "polygon", defaults: any) => {
       const cfg = payout?.[key] || (String(legacyEvm.chain_label || "").toLowerCase().includes(key === "bep20" ? "bep" : "polygon") ? legacyEvm : {});
-      const rpcUrl = key === "polygon" && /^https?:\/\/(www\.)?polygon-rpc\.com\/?$/i.test(String(cfg.rpc_url || ""))
+      const rpcUrl = key === "polygon" && /\bpolygon-rpc\.com\b/i.test(String(cfg.rpc_url || ""))
         ? defaults.rpc_url
         : cfg.rpc_url ?? defaults.rpc_url;
       return {
