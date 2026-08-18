@@ -57,8 +57,14 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
           <Textarea rows={2} placeholder="Enter to replace" value={ton.phrase ?? ""} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, phrase: e.target.value } } })} />
         </F>
         <F label="TON API key"><Input value={ton.api_key} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, api_key: e.target.value } } })} /></F>
+        <F label="TON RPC endpoint"><Input value={ton.endpoint ?? ""} placeholder="https://toncenter.com/api/v2/jsonRPC" onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, endpoint: e.target.value } } })} /></F>
+        <div className="grid grid-cols-2 gap-2">
+          <F label="Jetton master (blank = native TON)"><Input value={ton.jetton_master ?? ""} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, jetton_master: e.target.value } } })} /></F>
+          <F label="Jetton decimals"><Input type="number" value={ton.jetton_decimals ?? 6} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, jetton_decimals: e.target.value } } })} /></F>
+        </div>
         <F label="TON explorer base"><Input value={ton.explorer} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, explorer: e.target.value } } })} /></F>
-        <p className="text-[11px] text-white/40">Keys are encrypted before storage and never sent back to the app.</p>
+        <p className="text-[11px] text-white/40">Keys are encrypted before storage and never sent back to the app. "Mark paid" signs and broadcasts the payment with these credentials.</p>
+
       </Box>
     );
   }
