@@ -136,7 +136,14 @@ function Branding() {
         <Field label="Token name"><Input value={form.token_name ?? ""} onChange={(e) => setForm({ ...form, token_name: e.target.value })} /></Field>
         <Field label="Token symbol"><Input value={form.token_symbol ?? ""} onChange={(e) => setForm({ ...form, token_symbol: e.target.value })} /></Field>
         <Field label="Action verb (Mine / Fish / Wood)"><Input value={form.action_verb ?? ""} onChange={(e) => setForm({ ...form, action_verb: e.target.value })} /></Field>
-        <Field label="Token icon URL"><Input value={form.token_icon_url ?? ""} onChange={(e) => setForm({ ...form, token_icon_url: e.target.value })} placeholder="https://…" /></Field>
+        <Field label="Token icon (shown everywhere in the mini app)">
+          <IconPicker
+            value={form.token_icon_url}
+            onChange={(url) => setForm({ ...form, token_icon_url: url })}
+            presets={TOKEN_ICON_PRESETS}
+            uploadPrefix="token-icons"
+          />
+        </Field>
         <div className="grid grid-cols-3 gap-3">
           <Field label="Primary"><Input type="color" value={form.primary ?? "#f59e0b"} onChange={(e) => setForm({ ...form, primary: e.target.value })} /></Field>
           <Field label="Background"><Input type="color" value={form.background ?? "#0a0a0a"} onChange={(e) => setForm({ ...form, background: e.target.value })} /></Field>
