@@ -25,13 +25,14 @@ export function WithdrawalsAdmin({ tenantId, initData, previewTgId }: Props) {
   const m = useMutation({
     mutationFn: (v: { txId: string; approve: boolean }) =>
       process({ data: { ...auth, ...v, tx_hash: v.approve ? hash || null : null, reason: v.approve ? null : reason || null } }),
-    onSuccess: () => {
+    onSuccess: (r: any) => {
       setOpen(null); setHash(""); setReason("");
       qc.invalidateQueries({ queryKey: ["admin-withdrawals", tenantId] });
-      toast.success("Request processed");
+      toast.success(r?.tx_hash ? `Paid on-chain · ${String(r.tx_hash).slice(0, 14)}…` : "Request processed");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message || "Payment failed"),
   });
+
 
   return (
     <div className="space-y-3">
@@ -52,14 +53,18 @@ export function WithdrawalsAdmin({ tenantId, initData, previewTgId }: Props) {
           {r.status === "pending" && (
             open === r.id ? (
               <div className="space-y-2">
-                <Input placeholder="Transaction hash (optional)" value={hash} onChange={(e) => setHash(e.target.value)} />
+                <Input placeholder="Transaction hash (leave empty to pay on-chain)" value={hash} onChange={(e) => setHash(e.target.value)} />
                 <Input placeholder="Rejection reason" value={reason} onChange={(e) => setReason(e.target.value)} />
+                <p className="text-[11px] text-white/40">
+                  Mark paid sends {String(r.network || "").toLowerCase() === "ton" ? "TON/jetton from your Tonkeeper phrase" : "the token from your EVM private key"} automatically.
+                </p>
                 <div className="flex gap-2">
-                  <Button size="sm" className="flex-1" onClick={() => m.mutate({ txId: r.id, approve: true })}>Mark paid</Button>
-                  <Button size="sm" variant="destructive" className="flex-1" onClick={() => m.mutate({ txId: r.id, approve: false })}>Reject</Button>
+                  <Button size="sm" className="flex-1" disabled={m.isPending} onClick={() => m.mutate({ txId: r.id, approve: true })}>{m.isPending ? "Sending…" : "Mark paid"}</Button>
+                  <Button size="sm" variant="destructive" className="flex-1" disabled={m.isPending} onClick={() => m.mutate({ txId: r.id, approve: false })}>Reject</Button>
                   <Button size="sm" variant="ghost" onClick={() => setOpen(null)}>×</Button>
                 </div>
               </div>
+
             ) : (
               <Button size="sm" variant="secondary" className="w-full" onClick={() => setOpen(r.id)}>Process</Button>
             )

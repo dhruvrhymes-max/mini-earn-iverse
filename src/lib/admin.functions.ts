@@ -193,14 +193,17 @@ export const processWithdrawal = createServerFn({ method: "POST" })
     if (e1) throw new Error(e1.message);
     if (tx.status !== "pending") throw new Error("Already processed");
     if (data.approve) {
-      // Mock Web3 payout — TODO: integrate signer/RPC here.
-      const mockHash = "0x" + Math.random().toString(16).slice(2).padEnd(64, "0").slice(0, 64);
+      const { data: tenant } = await s.from("tenants").select("*").eq("id", tx.tenant_id).single();
+      const { sendPayout } = await import("./payout.server");
+      const res = await sendPayout(tenant, { network: tx.network, wallet: tx.wallet, amount: Number(tx.amount) });
       const { error } = await s.from("transactions").update({
         status: "paid",
-        tx_hash: mockHash,
+        tx_hash: res.hash,
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
-      return { ok: true, tx_hash: mockHash };
+      await (await import("./proof.server")).sendWithdrawalProof(tenant, tx, "paid", res.hash, null);
+      return { ok: true, tx_hash: res.hash };
+
     } else {
       // Refund the user's USDT balance
       const { error: refundErr } = await s.rpc as any; // skip rpc; just update

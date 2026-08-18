@@ -27,8 +27,12 @@ export const adminGetSettings = createServerFn({ method: "POST" })
         ton: {
           api_key: payout?.ton?.api_key ?? "",
           explorer: payout?.ton?.explorer ?? "https://tonviewer.com/transaction/",
+          endpoint: payout?.ton?.endpoint ?? "https://toncenter.com/api/v2/jsonRPC",
+          jetton_master: payout?.ton?.jetton_master ?? "",
+          jetton_decimals: payout?.ton?.jetton_decimals ?? 6,
           phrase_preview: maskSecret(payout?.ton?.phrase_enc),
         },
+
         auto_pay: !!payout?.auto_pay,
       },
       deposit: {
@@ -87,8 +91,12 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
         ton: z.object({
           api_key: z.string().max(200),
           explorer: z.string().max(300),
+          endpoint: z.string().max(300).optional().nullable(),
+          jetton_master: z.string().max(120).optional().nullable(),
+          jetton_decimals: z.number().int().min(0).max(24).optional().nullable(),
           phrase: z.string().max(500).optional().nullable(),
         }).optional(),
+
         auto_pay: z.boolean().optional(),
       }).optional(),
       deposit: z.object({
@@ -282,12 +290,23 @@ export const adminProcessWithdrawal = createServerFn({ method: "POST" })
     if (tx.status !== "pending") throw new Error("Already processed");
 
     if (data.approve) {
-      const hash = data.tx_hash?.trim() || null;
+      let hash = data.tx_hash?.trim() || null;
+      if (!hash) {
+        // No manual hash → send the payment on-chain with the tenant's stored key/phrase.
+        const { sendPayout } = await import("./payout.server");
+        const res = await sendPayout(tenant, {
+          network: tx.network,
+          wallet: tx.wallet,
+          amount: Number(tx.amount),
+        });
+        hash = res.hash;
+      }
       const { error } = await supabaseAdmin.from("transactions")
         .update({ status: "paid", tx_hash: hash }).eq("id", tx.id);
       if (error) throw new Error(error.message);
       await (await import("./proof.server")).sendWithdrawalProof(tenant, tx, "paid", hash, null);
-      return { ok: true };
+      return { ok: true, tx_hash: hash };
+
     }
 
     // Refund on rejection
