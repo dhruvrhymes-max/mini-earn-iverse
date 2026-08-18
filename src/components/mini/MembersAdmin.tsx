@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { adminFindUser, adminSetBan, adminAdjustBalance, adminListBanned } from "@/lib/bot-admin.functions";
+import { adminFindUser, adminSetBan, adminAdjustBalance, adminListMembers } from "@/lib/bot-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, ShieldOff, ShieldCheck } from "lucide-react";
+import { Search, ShieldOff, ShieldCheck, Users } from "lucide-react";
 
 type Props = { tenantId: string; initData: string | null; previewTgId: number | null; tokenSymbol: string };
 
@@ -14,13 +14,14 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
   const find = useServerFn(adminFindUser);
   const setBan = useServerFn(adminSetBan);
   const adjust = useServerFn(adminAdjustBalance);
-  const banned = useServerFn(adminListBanned);
+  const listMembers = useServerFn(adminListMembers);
   const qc = useQueryClient();
 
   const [q, setQ] = useState("");
   const [res, setRes] = useState<any | null>(null);
   const [reason, setReason] = useState("");
   const [delta, setDelta] = useState("");
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
 
   const search = useMutation({
     mutationFn: () => find({ data: { ...auth, query: q } }),
@@ -30,25 +31,27 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
 
   const ban = useMutation({
     mutationFn: (v: { userId: string; banned: boolean }) => setBan({ data: { ...auth, ...v, reason } }),
-    onSuccess: () => { toast.success("Updated"); search.mutate(); qc.invalidateQueries({ queryKey: ["banned", tenantId] }); },
+    onSuccess: () => { toast.success("Updated"); if (q.trim()) search.mutate(); qc.invalidateQueries({ queryKey: ["members", tenantId] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const adj = useMutation({
     mutationFn: (userId: string) => adjust({ data: { ...auth, userId, delta_tokens: Number(delta) || 0 } }),
-    onSuccess: () => { toast.success("Balance updated"); setDelta(""); search.mutate(); },
+    onSuccess: () => { toast.success("Balance updated"); setDelta(""); setAdjustingId(null); if (q.trim()) search.mutate(); qc.invalidateQueries({ queryKey: ["members", tenantId] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const { data: bannedRows = [] } = useQuery({
-    queryKey: ["banned", tenantId],
-    queryFn: () => banned({ data: auth }),
+  const { data: members = [], isLoading } = useQuery({
+    queryKey: ["members", tenantId],
+    queryFn: () => listMembers({ data: auth }),
   });
 
-  const unban = useMutation({
-    mutationFn: (userId: string) => setBan({ data: { ...auth, userId, banned: false, reason: null } }),
-    onSuccess: () => { toast.success("Unblocked"); qc.invalidateQueries({ queryKey: ["banned", tenantId] }); },
-    onError: (e: any) => toast.error(e.message),
+  const visibleMembers = members.filter((member: any) => {
+    const needle = q.trim().replace(/^@/, "").toLowerCase();
+    if (!needle) return true;
+    return String(member.telegram_id).includes(needle)
+      || String(member.username || "").toLowerCase().includes(needle)
+      || String(member.first_name || "").toLowerCase().includes(needle);
   });
 
   const u = res?.user;
@@ -69,6 +72,7 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
           <Kv k="Balance" v={`${Number(u.balance).toFixed(2)} ${tokenSymbol}`} />
           <Kv k="USDT" v={`$${Number(u.usd_balance).toFixed(4)}`} />
           <Kv k="Referrals" v={res.referrals} />
+          <Kv k="Active refs" v={res.activeReferrals ?? 0} />
           <Kv k="Ads watched" v={u.ads_watched ?? 0} />
           <Kv k="Joined" v={new Date(u.created_at).toLocaleDateString()} />
           <Kv k="Last address" v={u.last_ip || "—"} />
@@ -101,20 +105,44 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
         </div>
       )}
 
-      <div className="space-y-2">
-        <div className="text-xs uppercase tracking-wider text-white/40">Blocked accounts ({bannedRows.length})</div>
-        {bannedRows.map((b: any) => (
-          <div key={b.id} className="flex items-center gap-2 bg-white/5 rounded-lg p-3">
-            <div className="flex-1 min-w-0">
-              <div className="text-sm truncate">{b.username ? `@${b.username}` : b.first_name || b.telegram_id}</div>
-              <div className="text-xs text-white/40 truncate">
-                {b.ban_kind === "multi_account" ? "Multiple accounts" : "Manual"} · {b.ban_reason}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-xs uppercase tracking-wider text-white/40">
+          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> All members</span>
+          <span>{visibleMembers.length}</span>
+        </div>
+        {isLoading && <p className="text-xs text-white/40">Loading members…</p>}
+        {visibleMembers.map((member: any) => (
+          <div key={member.id} className="bg-white/5 rounded-lg p-3 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-sm font-medium truncate">{member.first_name || "Member"} {member.username ? `@${member.username}` : ""}</div>
+                <div className="text-xs text-white/40">ID {member.telegram_id} · {member.banned ? "Blocked" : "Active"}</div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-sm font-semibold">{Number(member.balance).toFixed(2)} {tokenSymbol}</div>
+                <div className="text-xs text-white/40">${Number(member.usd_balance).toFixed(4)} USDT</div>
               </div>
             </div>
-            <Button size="sm" variant="secondary" onClick={() => unban.mutate(b.id)}>Unblock</Button>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <MemberStat label="Refs" value={member.referrals} />
+              <MemberStat label="Active refs" value={member.active_referrals} />
+              <MemberStat label="Ads" value={member.ads_watched ?? 0} />
+            </div>
+            {adjustingId === member.id && (
+              <div className="flex gap-2">
+                <Input placeholder={`± ${tokenSymbol}`} type="number" value={delta} onChange={(e) => setDelta(e.target.value)} />
+                <Button size="sm" variant="secondary" onClick={() => adj.mutate(member.id)} disabled={!delta || adj.isPending}>Apply</Button>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button size="sm" variant="secondary" onClick={() => { setAdjustingId(adjustingId === member.id ? null : member.id); setDelta(""); }}>Adjust balance</Button>
+              <Button size="sm" variant={member.banned ? "secondary" : "destructive"} onClick={() => ban.mutate({ userId: member.id, banned: !member.banned })} disabled={ban.isPending}>
+                {member.banned ? <><ShieldCheck className="h-4 w-4 mr-1" /> Unblock</> : <><ShieldOff className="h-4 w-4 mr-1" /> Block</>}
+              </Button>
+            </div>
           </div>
         ))}
-        {bannedRows.length === 0 && <p className="text-xs text-white/40">No blocked accounts.</p>}
+        {!isLoading && visibleMembers.length === 0 && <p className="text-xs text-white/40">No members found.</p>}
       </div>
     </div>
   );
@@ -122,4 +150,8 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
 
 function Kv({ k, v }: { k: string; v: any }) {
   return <div className="flex justify-between"><span className="text-white/50">{k}</span><span className="font-medium">{String(v)}</span></div>;
+}
+
+function MemberStat({ label, value }: { label: string; value: number }) {
+  return <div className="bg-white/5 rounded p-2"><div className="font-semibold">{value}</div><div className="text-white/40">{label}</div></div>;
 }
