@@ -23,12 +23,14 @@ function Withdraw() {
   ] as const).filter((t) => nets[t.id] !== false);
   const [token, setToken] = useState<"usdt_bep20" | "usdt_polygon" | "gram_ton">(tokens[0]?.id ?? "usdt_bep20");
   const [wallet, setWallet] = useState("");
+  const [memo, setMemo] = useState("");
   const fn = useServerFn(requestWithdrawal);
   const m = useMutation({
-    mutationFn: () => fn({ data: { tenantId: tenant.id, initData, previewTgId: initData ? null : previewTgId, amount_usdt: Number(amount), token, wallet: wallet.trim() } }),
-    onSuccess: () => { toast.success("Withdrawal requested"); refetchUser(); setAmount(""); setWallet(""); },
+    mutationFn: () => fn({ data: { tenantId: tenant.id, initData, previewTgId: initData ? null : previewTgId, amount_usdt: Number(amount), token, wallet: wallet.trim(), memo: token === "gram_ton" ? memo.trim() || null : null } }),
+    onSuccess: () => { toast.success("Withdrawal requested"); refetchUser(); setAmount(""); setWallet(""); setMemo(""); },
     onError: (e: any) => toast.error(e.message),
   });
+
   const min = (tenant.economics as any).min_withdraw_usdt;
   return (
     <div className="p-6 pt-12">
