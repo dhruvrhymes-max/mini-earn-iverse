@@ -44,6 +44,8 @@ function Withdraw() {
           </Select>
         </div>
         <div><Label>Destination address</Label><Input value={wallet} onChange={(e) => setWallet(e.target.value)} placeholder={token === "gram_ton" ? "TON wallet address" : "0x…"} className="bg-white/10 border-white/20" /></div>
+        {token === "gram_ton" && <div><Label>Memo / comment (optional)</Label><Input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="Required by some exchanges" className="bg-white/10 border-white/20" /></div>}
+
         <div><Label>Amount (USDT)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="bg-white/10 border-white/20" /></div>
         {tokens.length === 0 && <p className="text-xs text-white/50">Withdrawals are temporarily disabled.</p>}
         <Button className="w-full" onClick={() => m.mutate()} disabled={m.isPending || !amount || !wallet.trim() || tokens.length === 0}>{m.isPending ? "Submitting…" : "Request withdrawal"}</Button>
