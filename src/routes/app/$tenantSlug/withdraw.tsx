@@ -38,7 +38,7 @@ function Withdraw() {
         <div><Label>Select token</Label>
           <Select value={token} onValueChange={(v) => setToken(v as typeof token)}>
             <SelectTrigger className="bg-white/10 border-white/20"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="usdt_bep20">USDT BEP20</SelectItem><SelectItem value="usdt_polygon">USDT POL</SelectItem><SelectItem value="gram_ton">GRAM (TON)</SelectItem></SelectContent>
+            <SelectContent>{tokens.map((t) => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div><Label>Destination address</Label><Input value={wallet} onChange={(e) => setWallet(e.target.value)} placeholder={token === "gram_ton" ? "TON wallet address" : "0x…"} className="bg-white/10 border-white/20" /></div>
