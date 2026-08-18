@@ -28,10 +28,13 @@ function IndexPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="max-w-2xl text-center">
         <h1 className="text-5xl font-bold text-foreground mb-4">
-          Welcome to Mini Earn-iverse
+          Welcome to ZeroLabNetwork
         </h1>
-        <p className="text-xl text-muted-foreground mb-8">
+        <p className="text-xl text-muted-foreground mb-4">
           Gamified Telegram Mini Apps with multi-tenant economy, ad monetization and withdrawals
+        </p>
+        <p className="text-sm font-medium text-muted-foreground mb-8">
+          For ZeroLabNetwork project members only.
         </p>
         <div className="flex gap-4 justify-center">
           <a
