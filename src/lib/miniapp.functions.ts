@@ -441,7 +441,7 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: tenant, error: tenantError } = await supabaseAdmin.from("tenants")
-      .select("*, check_bots(*)").eq("id", data.tenantId).eq("status", "active").maybeSingle();
+      .select("*").eq("id", data.tenantId).eq("status", "active").maybeSingle();
     if (tenantError) throw new Error(tenantError.message);
     if (!tenant) throw new Error("Bot not found");
     let telegramId: number | null = null;

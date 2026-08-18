@@ -14,22 +14,26 @@ export const adminGetSettings = createServerFn({ method: "POST" })
     const { maskSecret } = await import("./wallet-crypto.server");
     const { DEFAULT_PROOF_TEMPLATE } = await import("./proof.server");
     const payout: any = tenant.payout_config || {};
+    const legacyEvm = payout?.evm || {};
+    const network = (key: "bep20" | "polygon", defaults: any) => {
+      const cfg = payout?.[key] || (String(legacyEvm.chain_label || "").toLowerCase().includes(key === "bep20" ? "bep" : "polygon") ? legacyEvm : {});
+      return {
+        chain_label: cfg.chain_label ?? defaults.chain_label,
+        chain_id: cfg.chain_id ?? defaults.chain_id,
+        rpc_url: cfg.rpc_url ?? defaults.rpc_url,
+        contract: cfg.contract ?? defaults.contract,
+        explorer: cfg.explorer ?? defaults.explorer,
+        decimals: cfg.decimals ?? 18,
+        key_preview: maskSecret(cfg.private_key_enc),
+      };
+    };
     return {
       payout: {
-        evm: {
-          chain_label: payout?.evm?.chain_label ?? "Polygon",
-          rpc_url: payout?.evm?.rpc_url ?? "",
-          contract: payout?.evm?.contract ?? "",
-          explorer: payout?.evm?.explorer ?? "https://polygonscan.com/tx/",
-          decimals: payout?.evm?.decimals ?? 6,
-          key_preview: maskSecret(payout?.evm?.private_key_enc),
-        },
+        bep20: network("bep20", { chain_label: "BNB Smart Chain", chain_id: 56, rpc_url: "https://bsc-rpc.publicnode.com", contract: "0x55d398326f99059ff775485246999027b3197955", explorer: "https://bscscan.com/tx/" }),
+        polygon: network("polygon", { chain_label: "Polygon", chain_id: 137, rpc_url: "https://polygon-bor-rpc.publicnode.com", contract: "0xc2132D05D31c914a87C6611C10748AaCbAEd4C19", explorer: "https://polygonscan.com/tx/" }),
         ton: {
           api_key: payout?.ton?.api_key ?? "",
           explorer: payout?.ton?.explorer ?? "https://tonviewer.com/transaction/",
-          endpoint: payout?.ton?.endpoint ?? "https://toncenter.com/api/v2/jsonRPC",
-          jetton_master: payout?.ton?.jetton_master ?? "",
-          jetton_decimals: payout?.ton?.jetton_decimals ?? 6,
           phrase_preview: maskSecret(payout?.ton?.phrase_enc),
         },
 
@@ -80,8 +84,18 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
     z.object({
       ...Auth,
       payout: z.object({
-        evm: z.object({
+        bep20: z.object({
           chain_label: z.string().max(40),
+          chain_id: z.number().int().positive(),
+          rpc_url: z.string().max(300),
+          contract: z.string().max(100),
+          explorer: z.string().max(300),
+          decimals: z.number().int().min(0).max(24),
+          private_key: z.string().max(200).optional().nullable(),
+        }).optional(),
+        polygon: z.object({
+          chain_label: z.string().max(40),
+          chain_id: z.number().int().positive(),
           rpc_url: z.string().max(300),
           contract: z.string().max(100),
           explorer: z.string().max(300),
@@ -92,8 +106,6 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
           api_key: z.string().max(200),
           explorer: z.string().max(300),
           endpoint: z.string().max(300).optional().nullable(),
-          jetton_master: z.string().max(120).optional().nullable(),
-          jetton_decimals: z.number().int().min(0).max(24).optional().nullable(),
           phrase: z.string().max(500).optional().nullable(),
         }).optional(),
 
@@ -143,16 +155,14 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
 
     if (data.payout) {
       const cur: any = tenant.payout_config || {};
-      const evm = data.payout.evm
-        ? {
-            ...(cur.evm || {}),
-            ...data.payout.evm,
-            private_key_enc: data.payout.evm.private_key?.trim()
-              ? encryptSecret(data.payout.evm.private_key.trim())
-              : cur.evm?.private_key_enc ?? null,
-          }
-        : cur.evm;
-      if (evm) delete (evm as any).private_key;
+      const mergeEvm = (key: "bep20" | "polygon", incoming: any) => {
+        if (!incoming) return cur[key];
+        const result = { ...cur[key], ...incoming, private_key_enc: incoming.private_key?.trim() ? encryptSecret(incoming.private_key.trim()) : cur[key]?.private_key_enc ?? null };
+        delete result.private_key;
+        return result;
+      };
+      const bep20 = mergeEvm("bep20", data.payout.bep20);
+      const polygon = mergeEvm("polygon", data.payout.polygon);
       const ton = data.payout.ton
         ? {
             ...(cur.ton || {}),
@@ -163,7 +173,7 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
           }
         : cur.ton;
       if (ton) delete (ton as any).phrase;
-      patch.payout_config = { ...cur, evm, ton, auto_pay: data.payout.auto_pay ?? cur.auto_pay ?? false };
+      patch.payout_config = { ...cur, bep20, polygon, ton, auto_pay: data.payout.auto_pay ?? cur.auto_pay ?? false };
     }
     if (data.deposit) patch.deposit_config = { ...((tenant.deposit_config as any) || {}), ...data.deposit };
     if (data.onboarding) patch.onboarding = { ...((tenant.onboarding as any) || {}), ...data.onboarding };
