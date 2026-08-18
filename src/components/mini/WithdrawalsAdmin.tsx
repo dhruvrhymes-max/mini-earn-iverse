@@ -25,13 +25,14 @@ export function WithdrawalsAdmin({ tenantId, initData, previewTgId }: Props) {
   const m = useMutation({
     mutationFn: (v: { txId: string; approve: boolean }) =>
       process({ data: { ...auth, ...v, tx_hash: v.approve ? hash || null : null, reason: v.approve ? null : reason || null } }),
-    onSuccess: () => {
+    onSuccess: (r: any) => {
       setOpen(null); setHash(""); setReason("");
       qc.invalidateQueries({ queryKey: ["admin-withdrawals", tenantId] });
-      toast.success("Request processed");
+      toast.success(r?.tx_hash ? `Paid on-chain · ${String(r.tx_hash).slice(0, 14)}…` : "Request processed");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message || "Payment failed"),
   });
+
 
   return (
     <div className="space-y-3">
