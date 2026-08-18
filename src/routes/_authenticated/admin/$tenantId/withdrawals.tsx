@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listWithdrawals, processWithdrawal } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -40,9 +41,12 @@ function Withdrawals() {
                 <td className="p-3">{r.status}</td>
                 <td className="p-3 text-right">
                   {r.status === "pending" && (
-                    <div className="flex gap-2 justify-end">
-                       <Button size="sm" disabled={m.isPending} onClick={() => m.mutate({ id: r.id, approve: true })}>{m.isPending ? "Sending…" : "Approve & send"}</Button>
-                      <Button size="sm" variant="outline" onClick={() => m.mutate({ id: r.id, approve: false })}>Reject</Button>
+                    <div className="flex flex-col gap-2 items-end">
+                      <Input className="max-w-56" placeholder="Rejection reason" value={reason} onChange={(event) => setReason(event.target.value)} />
+                      <div className="flex gap-2">
+                        <Button size="sm" disabled={m.isPending} onClick={() => m.mutate({ id: r.id, approve: true })}>{m.isPending ? "Sending…" : "Approve & send"}</Button>
+                        <Button size="sm" variant="outline" disabled={m.isPending} onClick={() => m.mutate({ id: r.id, approve: false })}>Reject</Button>
+                      </div>
                     </div>
                   )}
                   {r.tx_hash && <span className="text-xs font-mono text-muted-foreground">{r.tx_hash.slice(0, 12)}…</span>}

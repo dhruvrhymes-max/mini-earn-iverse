@@ -33,6 +33,7 @@ export const adminGetSettings = createServerFn({ method: "POST" })
         polygon: network("polygon", { chain_label: "Polygon", chain_id: 137, rpc_url: "https://polygon-bor-rpc.publicnode.com", contract: "0xc2132D05D31c914a87C6611C10748AaCbAEd4C19", explorer: "https://polygonscan.com/tx/" }),
         ton: {
           api_key: payout?.ton?.api_key ?? "",
+          endpoint: payout?.ton?.endpoint ?? "https://toncenter.com/api/v2/jsonRPC",
           explorer: payout?.ton?.explorer ?? "https://tonviewer.com/transaction/",
           phrase_preview: maskSecret(payout?.ton?.phrase_enc),
         },

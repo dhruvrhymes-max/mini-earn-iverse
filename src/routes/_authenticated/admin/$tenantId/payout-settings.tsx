@@ -9,7 +9,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/admin/$tenantId/payout-settings")({ component: PayoutSettings });
+export const Route = createFileRoute("/_authenticated/admin/$tenantId/payout-settings")({
+  head: () => ({
+    meta: [
+      { title: "Payout Settings | ZeroLabNetwork" },
+      { name: "description", content: "Configure secure blockchain payouts and payment-channel notifications." },
+      { property: "og:title", content: "Payout Settings | ZeroLabNetwork" },
+      { property: "og:description", content: "Configure secure blockchain payouts and payment-channel notifications." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: PayoutSettings,
+});
 
 function PayoutSettings() {
   const { tenantId } = useParams({ from: "/_authenticated/admin/$tenantId/payout-settings" });
