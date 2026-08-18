@@ -79,12 +79,20 @@ async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResul
     const code = await publicClient.getCode({ address: token as `0x${string}` });
     if (!code || code === "0x") throw new Error(`No token contract found at ${token} on ${cfg.chain_label || "this chain"}. Check the USDT contract address in payout settings.`);
 
-    // Trust on-chain decimals over the configured value.
-    let decimals = Number(cfg.decimals ?? 6);
-    try {
-      decimals = Number(await publicClient.readContract({ address: token as `0x${string}`, abi: TOKEN_META_ABI, functionName: "decimals" }));
-    } catch { /* keep configured decimals */ }
+    // Decimals MUST come from the contract — a wrong value silently sends ~0 tokens.
+    let decimals: number | null = null;
+    for (let attempt = 0; attempt < 3 && decimals === null; attempt++) {
+      try {
+        const d = Number(await publicClient.readContract({ address: token as `0x${string}`, abi: TOKEN_META_ABI, functionName: "decimals" }));
+        if (Number.isFinite(d) && d >= 0 && d <= 36) decimals = d;
+      } catch { /* retry */ }
+    }
+    if (decimals === null) {
+      throw new Error(`Could not read token decimals from ${token}. Payout aborted to avoid sending a wrong amount.`);
+    }
     const value = toUnits(amount, decimals);
+    if (value <= 0n) throw new Error("Computed payout amount is zero — check the amount and token decimals.");
+
 
     const [tokenBal, gasBal] = await Promise.all([
       publicClient.readContract({ address: token as `0x${string}`, abi: TOKEN_META_ABI, functionName: "balanceOf", args: [account.address] }).catch(() => null),

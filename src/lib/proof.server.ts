@@ -3,15 +3,16 @@
 export const DEFAULT_PROOF_TEMPLATE = [
   "{status_emoji} <b>{status}</b>",
   "",
-  "👤 User: {username}",
-  "🆔 ID: {user_id}",
-  "💵 Amount: {amount} {currency}",
-  "🌐 Network: {network}",
-  "🪙 Token: {token}",
-  "🔗 Tx: {tx}",
+  "👤 <b>User:</b> <b>{username}</b>",
+  "🆔 <b>ID:</b> <b>{user_id}</b>",
+  "💵 <b>Amount:</b> <b>{amount} {currency}</b>",
+  "🌐 <b>Network:</b> <b>{network}</b>",
+  "🪙 <b>Token:</b> <b>{token}</b>",
+  "🔗 <b>Tx:</b> <b>{tx}</b>",
   "",
-  "{footer}",
+  "<b>{footer}</b>",
 ].join("\n");
+
 
 export function renderProof(template: string, vars: Record<string, string>): string {
   return (template || DEFAULT_PROOF_TEMPLATE).replace(/\{(\w+)\}/g, (_m, k) => vars[k] ?? "—");
