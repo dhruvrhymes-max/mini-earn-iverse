@@ -26,7 +26,7 @@ export const adminGetSettings = createServerFn({ method: "POST" })
         rpc_url: rpcUrl,
         contract: cfg.contract ?? defaults.contract,
         explorer: cfg.explorer ?? defaults.explorer,
-        decimals: cfg.decimals ?? defaults.decimals ?? 18,
+        decimals: defaults.decimals ?? cfg.decimals ?? 18,
         enabled: cfg.enabled !== false,
         key_preview: maskSecret(cfg.private_key_enc),
       };
@@ -166,7 +166,8 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
       const cur: any = tenant.payout_config || {};
       const mergeEvm = (key: "bep20" | "polygon", incoming: any) => {
         if (!incoming) return cur[key];
-        const result = { ...cur[key], ...incoming, private_key_enc: incoming.private_key?.trim() ? encryptSecret(incoming.private_key.trim()) : cur[key]?.private_key_enc ?? null };
+        const canonicalDecimals = key === "bep20" ? 18 : 6;
+        const result = { ...cur[key], ...incoming, decimals: canonicalDecimals, private_key_enc: incoming.private_key?.trim() ? encryptSecret(incoming.private_key.trim()) : cur[key]?.private_key_enc ?? null };
         delete result.private_key;
         return result;
       };

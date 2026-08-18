@@ -30,6 +30,15 @@ const POLYGON_PUBLIC_RPCS = [
   "https://polygon.drpc.org",
 ];
 
+// Canonical USDT contracts have different decimals on each chain. Keep these
+// values authoritative even when an older tenant setting contains a stale
+// value (BSC USDT is 18 decimals; Polygon USDT is 6).
+const KNOWN_TOKEN_DECIMALS: Record<string, number> = {
+  "0x55d398326f99059ff775485246999027b3197955": 18,
+  "0xc2132d05d31c914a87c6611c10748aacbaed4c19": 6,
+  "0xc2132d05d31c914a87c6611c10748aeb04b58e8f": 6,
+};
+
 function evmRpcUrls(cfg: any): string[] {
   const configured = String(cfg.rpc_url || "").trim();
   const isPolygon = Number(cfg.chain_id) === 137 || String(cfg.chain_label || "").toLowerCase().includes("polygon");
@@ -80,7 +89,7 @@ async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResul
     if (!code || code === "0x") throw new Error(`No token contract found at ${token} on ${cfg.chain_label || "this chain"}. Check the USDT contract address in payout settings.`);
 
     // Decimals MUST come from the contract — a wrong value silently sends ~0 tokens.
-    let decimals: number | null = null;
+    let decimals: number | null = KNOWN_TOKEN_DECIMALS[token.toLowerCase()] ?? null;
     for (let attempt = 0; attempt < 3 && decimals === null; attempt++) {
       try {
         const d = Number(await publicClient.readContract({ address: token as `0x${string}`, abi: TOKEN_META_ABI, functionName: "decimals" }));
@@ -92,6 +101,11 @@ async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResul
     }
     const value = toUnits(amount, decimals);
     if (value <= 0n) throw new Error("Computed payout amount is zero — check the amount and token decimals.");
+
+    const minimumExpectedUnits = toUnits(amount, decimals);
+    if (value !== minimumExpectedUnits) {
+      throw new Error("Payout amount encoding failed. Nothing was sent.");
+    }
 
 
     const [tokenBal, gasBal] = await Promise.all([

@@ -237,7 +237,7 @@ export const getPayoutSettings = createServerFn({ method: "GET" })
       const rpcUrl = key === "polygon" && /\bpolygon-rpc\.com\b/i.test(String(configured.rpc_url || ""))
         ? defaults.polygon.rpc_url
         : configured.rpc_url ?? defaults[key].rpc_url;
-      return { ...defaults[key], ...configured, rpc_url: rpcUrl, private_key_enc: undefined, key_preview: maskSecret(configured.private_key_enc) };
+      return { ...defaults[key], ...configured, decimals: defaults[key].decimals, rpc_url: rpcUrl, private_key_enc: undefined, key_preview: maskSecret(configured.private_key_enc) };
     };
     return {
       bep20: read("bep20"), polygon: read("polygon"),
@@ -263,7 +263,7 @@ export const savePayoutSettings = createServerFn({ method: "POST" })
     const { encryptSecret } = await import("./wallet-crypto.server");
     const current: any = tenant.payout_config || {};
     const secureEvm = (key: "bep20" | "polygon", value: any) => {
-      const next = { ...current[key], ...value, private_key_enc: value.private_key?.trim() ? encryptSecret(value.private_key.trim()) : current[key]?.private_key_enc ?? null };
+      const next = { ...current[key], ...value, decimals: key === "bep20" ? 18 : 6, private_key_enc: value.private_key?.trim() ? encryptSecret(value.private_key.trim()) : current[key]?.private_key_enc ?? null };
       delete next.private_key;
       return next;
     };
