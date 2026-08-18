@@ -161,3 +161,154 @@ function maskHandle(name: string): string {
   if (clean.length <= 3) return `${clean}***`;
   return `${clean.slice(0, 3)}***${clean.slice(-1)}`;
 }
+
+/* ── New earn loops: scratch / quiz / check-in streak / forecast ─────────── */
+
+async function credit(supabaseAdmin: any, user: any, amount: number) {
+  const g = await import("./game.server");
+  const ref = await import("./referral.server");
+  const value = g.round4(amount);
+  if (value <= 0) return Number(user.balance);
+  const balance = g.round4(Number(user.balance) + value);
+  await supabaseAdmin.from("transactions").insert({
+    tenant_id: user.tenant_id, user_id: user.id, type: "mine", amount: value, status: "approved",
+  });
+  await ref.releasePendingInviterReward(supabaseAdmin, user, "mine");
+  await ref.payLifetimeCut(supabaseAdmin, user, value);
+  return balance;
+}
+
+/** Combined state for the new modes (one round-trip on load). */
+export const getModeState = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const { user } = await loadPlayer(data.userId);
+    const g = await import("./game.server");
+    const cfg = g.modeConfig(user.tenants?.economics);
+    const win = g.quizWindow(Number(cfg.quiz_cooldown_hours));
+    const { question } = g.pickQuestion(g.quizBank(cfg), user.id, win);
+    const streak = g.streakStatus(user.last_checkin_at, 24);
+    return {
+      balance: Number(user.balance),
+      scratch: {
+        ready_at: g.readyAt(user.last_scratch_at, Number(cfg.scratch_cooldown_hours)),
+        prizes: cfg.scratch_prizes,
+      },
+      quiz: {
+        ready_at: g.readyAt(user.last_quiz_at, Number(cfg.quiz_cooldown_hours)),
+        streak: Number(user.quiz_streak ?? 0),
+        reward: Number(cfg.quiz_reward),
+        question: { q: question.q, options: question.options },
+      },
+      checkin: {
+        ready_at: streak.nextAt,
+        streak: streak.continues ? Number(user.checkin_streak ?? 0) : 0,
+        max_days: Number(cfg.checkin_max_days),
+        base: Number(cfg.checkin_base),
+        step: Number(cfg.checkin_step),
+      },
+      forecast: {
+        ready_at: g.readyAt(user.last_forecast_at, Number(cfg.forecast_cooldown_minutes) / 60),
+        reward: Number(cfg.forecast_reward),
+        consolation: Number(cfg.forecast_consolation),
+        streak: Number((user.forecast_state as any)?.streak ?? 0),
+      },
+    };
+  });
+
+/** Scratch to earn — reveal a hidden prize once the cooldown clears. */
+export const scratchCard = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin, user } = await loadPlayer(data.userId);
+    const g = await import("./game.server");
+    const cfg = g.modeConfig(user.tenants?.economics);
+    const ready = g.readyAt(user.last_scratch_at, Number(cfg.scratch_cooldown_hours));
+    if (Date.now() < ready) return { ok: false as const, ready_at: ready };
+    const prize = g.pickSpinPrize(cfg.scratch_prizes);
+    const balance = await credit(supabaseAdmin, user, prize.amount);
+    const nextReady = Date.now() + Number(cfg.scratch_cooldown_hours) * 3_600_000;
+    await supabaseAdmin.from("app_users")
+      .update({ balance, last_scratch_at: new Date().toISOString() }).eq("id", user.id);
+    return { ok: true as const, amount: prize.amount, index: prize.index, balance, ready_at: nextReady };
+  });
+
+/** Quiz to earn — answer today's question; streaks add a bonus. */
+export const answerQuiz = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({
+    userId: z.string().uuid(),
+    choice: z.number().int().min(0).max(9),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin, user } = await loadPlayer(data.userId);
+    const g = await import("./game.server");
+    const cfg = g.modeConfig(user.tenants?.economics);
+    const cooldown = Number(cfg.quiz_cooldown_hours);
+    const ready = g.readyAt(user.last_quiz_at, cooldown);
+    if (Date.now() < ready) return { ok: false as const, ready_at: ready };
+    const { question } = g.pickQuestion(g.quizBank(cfg), user.id, g.quizWindow(cooldown));
+    const correct = data.choice === question.answer;
+    const streak = correct ? Number(user.quiz_streak ?? 0) + 1 : 0;
+    const amount = correct
+      ? Number(cfg.quiz_reward) + Math.min(streak - 1, 6) * Number(cfg.quiz_streak_bonus)
+      : 0;
+    const balance = await credit(supabaseAdmin, user, amount);
+    await supabaseAdmin.from("app_users").update({
+      balance, quiz_streak: streak, last_quiz_at: new Date().toISOString(),
+    }).eq("id", user.id);
+    return {
+      ok: true as const, correct, amount, streak, balance,
+      answer: question.answer,
+      ready_at: Date.now() + cooldown * 3_600_000,
+    };
+  });
+
+/** Check-in / streak to earn — daily claim with a rising multiplier. */
+export const dailyCheckIn = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin, user } = await loadPlayer(data.userId);
+    const g = await import("./game.server");
+    const cfg = g.modeConfig(user.tenants?.economics);
+    const st = g.streakStatus(user.last_checkin_at, 24);
+    if (!st.canClaim) return { ok: false as const, ready_at: st.nextAt };
+    const prev = st.continues ? Number(user.checkin_streak ?? 0) : 0;
+    const day = Math.min(prev + 1, Number(cfg.checkin_max_days));
+    const amount = Number(cfg.checkin_base) + (day - 1) * Number(cfg.checkin_step);
+    const balance = await credit(supabaseAdmin, user, amount);
+    await supabaseAdmin.from("app_users").update({
+      balance, checkin_streak: day, last_checkin_at: new Date().toISOString(),
+    }).eq("id", user.id);
+    return { ok: true as const, amount, day, balance, ready_at: Date.now() + 86_400_000 };
+  });
+
+/** Forecast to earn — call the next round up or down. */
+export const placeForecast = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({
+    userId: z.string().uuid(),
+    direction: z.enum(["up", "down"]),
+  }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin, user } = await loadPlayer(data.userId);
+    const g = await import("./game.server");
+    const cfg = g.modeConfig(user.tenants?.economics);
+    const cooldownH = Number(cfg.forecast_cooldown_minutes) / 60;
+    const ready = g.readyAt(user.last_forecast_at, cooldownH);
+    if (Date.now() < ready) return { ok: false as const, ready_at: ready };
+    const outcome = Math.random() < 0.5 ? "up" : "down";
+    const won = outcome === data.direction;
+    const prevStreak = Number((user.forecast_state as any)?.streak ?? 0);
+    const streak = won ? prevStreak + 1 : 0;
+    const amount = won
+      ? Number(cfg.forecast_reward) * (1 + Math.min(streak - 1, 4) * 0.25)
+      : Number(cfg.forecast_consolation);
+    const balance = await credit(supabaseAdmin, user, amount);
+    await supabaseAdmin.from("app_users").update({
+      balance, last_forecast_at: new Date().toISOString(), forecast_state: { streak },
+    }).eq("id", user.id);
+    return {
+      ok: true as const, won, outcome, streak, balance,
+      amount: g.round4(amount),
+      ready_at: Date.now() + cooldownH * 3_600_000,
+    };
+  });
