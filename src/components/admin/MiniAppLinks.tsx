@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Copy, ExternalLink } from "lucide-react";
 
 /** Public origin the Telegram Mini App is served from. */
-export const PUBLIC_APP_ORIGIN = "https://mini-earn-iverse.lovable.app";
+export const PUBLIC_APP_ORIGIN = "https://zerolabnetwork.xyz";
 
 export function miniAppWebUrl(slug: string) {
   return `${PUBLIC_APP_ORIGIN}/app/${slug}`;
