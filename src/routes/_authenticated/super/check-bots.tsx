@@ -37,7 +37,7 @@ function CheckBots() {
   const { data: tenants = [] } = useQuery({ queryKey: ["all-tenants"], queryFn: () => tenantsFn() });
 
   const m = useMutation({
-    mutationFn: (v: any) => save({ data: { ...v, channels: v.channels.filter((c: any) => c.url?.trim()) } }),
+    mutationFn: (v: any) => save({ data: { id: v.id, tenant_id: v.tenant_id, label: v.label, bot_token: v.bot_token, active: v.active } }),
     onSuccess: (r: any) => { setEdit(null); qc.invalidateQueries({ queryKey: ["check-bots"] }); toast.success(`Saved @${r.bot_username ?? "bot"}`); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -102,10 +102,10 @@ function CheckBots() {
             <div className="flex-1 min-w-0">
               <div className="font-semibold">{r.label} {r.bot_username && <span className="text-muted-foreground text-sm">@{r.bot_username}</span>}</div>
               <div className="text-xs text-muted-foreground">
-                {r.tenants?.name ?? "All bots"} · {(r.channels as any[])?.length ?? 0} channels · {r.active ? "active" : "off"}
+                {r.tenants?.name ?? "All bots"} · {r.active ? "active" : "off"}
               </div>
             </div>
-            <Button size="sm" variant="secondary" onClick={() => setEdit({ ...BLANK, ...r, bot_token: "", channels: r.channels ?? [] })}>Edit</Button>
+            <Button size="sm" variant="secondary" onClick={() => setEdit({ ...BLANK, ...r, bot_token: "" })}>Edit</Button>
             <Button size="sm" variant="ghost" onClick={() => d.mutate(r.id)}><Trash2 className="h-4 w-4" /></Button>
           </div>
         ))}

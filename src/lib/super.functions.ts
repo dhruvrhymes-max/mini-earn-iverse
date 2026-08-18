@@ -106,11 +106,7 @@ export const saveCheckBot = createServerFn({ method: "POST" })
       tenant_id: z.string().uuid().nullable(),
       label: z.string().trim().min(1).max(80),
       bot_token: z.string().trim().regex(/^\d+:[A-Za-z0-9_-]{20,}$/, "Invalid bot token"),
-      channels: z.array(z.object({
-        title: z.string().max(80).optional().nullable(),
-        url: z.string().max(300),
-        chat_id: z.string().max(60).optional().nullable(),
-      })).max(6),
+
       active: z.boolean().default(true),
     }).parse(i),
   )
