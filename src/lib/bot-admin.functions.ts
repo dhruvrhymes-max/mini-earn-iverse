@@ -282,12 +282,23 @@ export const adminProcessWithdrawal = createServerFn({ method: "POST" })
     if (tx.status !== "pending") throw new Error("Already processed");
 
     if (data.approve) {
-      const hash = data.tx_hash?.trim() || null;
+      let hash = data.tx_hash?.trim() || null;
+      if (!hash) {
+        // No manual hash → send the payment on-chain with the tenant's stored key/phrase.
+        const { sendPayout } = await import("./payout.server");
+        const res = await sendPayout(tenant, {
+          network: tx.network,
+          wallet: tx.wallet,
+          amount: Number(tx.amount),
+        });
+        hash = res.hash;
+      }
       const { error } = await supabaseAdmin.from("transactions")
         .update({ status: "paid", tx_hash: hash }).eq("id", tx.id);
       if (error) throw new Error(error.message);
       await (await import("./proof.server")).sendWithdrawalProof(tenant, tx, "paid", hash, null);
-      return { ok: true };
+      return { ok: true, tx_hash: hash };
+
     }
 
     // Refund on rejection
