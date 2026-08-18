@@ -20,6 +20,11 @@ const ERC20_ABI = [
   },
 ] as const;
 
+const TOKEN_META_ABI = [
+  { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint8" }] },
+  { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
+] as const;
+
 const POLYGON_PUBLIC_RPCS = [
   "https://polygon-bor-rpc.publicnode.com",
   "https://polygon.drpc.org",
