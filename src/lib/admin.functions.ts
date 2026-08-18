@@ -186,35 +186,15 @@ export const listWithdrawals = createServerFn({ method: "GET" })
 
 export const processWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ id: z.string().uuid(), approve: z.boolean() }).parse(i))
+  .inputValidator((i) => z.object({ id: z.string().uuid(), approve: z.boolean(), reason: z.string().trim().max(300).optional() }).parse(i))
   .handler(async ({ data, context }) => {
     const s = context.supabase;
-    const { data: tx, error: e1 } = await s.from("transactions").select("*").eq("id", data.id).single();
+    const { data: tx, error: e1 } = await s.from("transactions").select("id,tenant_id").eq("id", data.id).single();
     if (e1) throw new Error(e1.message);
-    if (tx.status !== "pending") throw new Error("Already processed");
-    if (data.approve) {
-      const { data: tenant } = await s.from("tenants").select("*").eq("id", tx.tenant_id).single();
-      const { sendPayout } = await import("./payout.server");
-      const res = await sendPayout(tenant, { network: tx.network, wallet: tx.wallet, amount: Number(tx.amount) });
-      const { error } = await s.from("transactions").update({
-        status: "paid",
-        tx_hash: res.hash,
-      }).eq("id", data.id);
-      if (error) throw new Error(error.message);
-      await (await import("./proof.server")).sendWithdrawalProof(tenant, tx, "paid", res.hash, null);
-      return { ok: true, tx_hash: res.hash };
-
-    } else {
-      // Refund the user's USDT balance
-      const { error: refundErr } = await s.rpc as any; // skip rpc; just update
-      const { data: user } = await s.from("app_users").select("usd_balance").eq("id", tx.user_id).single();
-      await s.from("app_users").update({
-        usd_balance: Number(user?.usd_balance || 0) + Number(tx.amount),
-      }).eq("id", tx.user_id);
-      const { error } = await s.from("transactions").update({ status: "rejected" }).eq("id", data.id);
-      if (error) throw new Error(error.message);
-      return { ok: true };
-    }
+    const { data: tenant, error: tenantError } = await s.from("tenants").select("*").eq("id", tx.tenant_id).single();
+    if (tenantError) throw new Error(tenantError.message);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return (await import("./withdrawal-processing.server")).processWithdrawalSecurely(supabaseAdmin, tenant, data.id, data.approve, data.reason);
   });
 
 export const listMilestones = createServerFn({ method: "GET" })

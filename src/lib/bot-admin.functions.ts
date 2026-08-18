@@ -279,43 +279,11 @@ export const adminProcessWithdrawal = createServerFn({ method: "POST" })
       txId: z.string().uuid(),
       approve: z.boolean(),
       reason: z.string().max(300).optional().nullable(),
-      tx_hash: z.string().max(120).optional().nullable(),
     }).parse(i),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin, tenant } = await gate(data);
-    const { data: tx } = await supabaseAdmin.from("transactions").select("*, app_users(username,telegram_id)")
-      .eq("id", data.txId).eq("tenant_id", data.tenantId).maybeSingle();
-    if (!tx) throw new Error("Request not found");
-    if (tx.status !== "pending") throw new Error("Already processed");
-
-    if (data.approve) {
-      let hash = data.tx_hash?.trim() || null;
-      if (!hash) {
-        // No manual hash → send the payment on-chain with the tenant's stored key/phrase.
-        const { sendPayout } = await import("./payout.server");
-        const res = await sendPayout(tenant, {
-          network: tx.network,
-          wallet: tx.wallet,
-          amount: Number(tx.amount),
-        });
-        hash = res.hash;
-      }
-      const { error } = await supabaseAdmin.from("transactions")
-        .update({ status: "paid", tx_hash: hash }).eq("id", tx.id);
-      if (error) throw new Error(error.message);
-      await (await import("./proof.server")).sendWithdrawalProof(tenant, tx, "paid", hash, null);
-      return { ok: true, tx_hash: hash };
-
-    }
-
-    // Refund on rejection
-    const { data: u } = await supabaseAdmin.from("app_users").select("usd_balance").eq("id", tx.user_id).single();
-    await supabaseAdmin.from("app_users")
-      .update({ usd_balance: Number(u?.usd_balance || 0) + Number(tx.amount) }).eq("id", tx.user_id);
-    const { error } = await supabaseAdmin.from("transactions")
-      .update({ status: "rejected", reject_reason: data.reason ?? "Rejected by admin" }).eq("id", tx.id);
-    if (error) throw new Error(error.message);
-    await (await import("./proof.server")).sendWithdrawalProof(tenant, tx, "rejected", null, data.reason ?? null);
-    return { ok: true };
+    return (await import("./withdrawal-processing.server")).processWithdrawalSecurely(
+      supabaseAdmin, tenant, data.txId, data.approve, data.reason,
+    );
   });
