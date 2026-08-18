@@ -171,9 +171,15 @@ Deno.serve(async (req) => {
       const welcomeText = renderWelcome(tenant, msg.from);
       const ctaText = tenant.welcome_cta_text || `Open ${tenant.name}`;
       const reply_markup = { inline_keyboard: [[{ text: ctaText, web_app: { url: webAppUrl } }]] };
-      const res = tenant.welcome_image_url
+      let res = tenant.welcome_image_url
         ? await api("sendPhoto", { chat_id: chatId, photo: tenant.welcome_image_url, caption: welcomeText, parse_mode: "HTML", reply_markup })
         : await api("sendMessage", { chat_id: chatId, text: welcomeText, parse_mode: "HTML", reply_markup });
+      if (!res?.ok) {
+        // custom text may contain invalid HTML — resend as plain text
+        res = tenant.welcome_image_url
+          ? await api("sendPhoto", { chat_id: chatId, photo: tenant.welcome_image_url, caption: welcomeText, reply_markup })
+          : await api("sendMessage", { chat_id: chatId, text: welcomeText, reply_markup });
+      }
       return json({ ok: true, telegram: res });
     }
 
