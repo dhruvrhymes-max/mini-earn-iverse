@@ -35,6 +35,9 @@ export const applyAiBotConfig = createServerFn({ method: "POST" })
   .inputValidator((i) => ApplySchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { data: approved, error: approvalError } = await supabase.rpc("is_account_approved", { _user_id: userId });
+    if (approvalError) throw new Error(approvalError.message);
+    if (!approved) throw new Error("Your account is pending approval from the ZeroLabNetwork super admin.");
     const username = data.bot_username.replace(/^@/, "");
     const baseSlug = (data.config.slug_hint || username).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-+|-+$/g, "").slice(0, 30) || `bot-${Date.now()}`;
     const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
