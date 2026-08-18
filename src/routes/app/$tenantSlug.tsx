@@ -318,7 +318,12 @@ function Splash({ msg, seo }: { msg: string; seo: any }) {
     tap: "Tap to earn instantly — energy refills over time.",
     spin: "Spin the free wheel and win token prizes.",
     idle: "Production runs while you're away — collect on return.",
+    scratch: "Scratch a fresh card each round to reveal a hidden prize.",
+    quiz: "Answer one question per round — streaks pay bigger rewards.",
+    streak: "Check in every day and watch the daily reward grow.",
+    forecast: "Call the next round up or down and stack winning streaks.",
   };
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center text-white" style={{ background: bg }}>
       {/* Visible: a quiet branded loader only — no wall of text flashing on open. */}
