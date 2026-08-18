@@ -209,7 +209,13 @@ export const getPayoutSettings = createServerFn({ method: "GET" })
       bep20: { chain_label: "BNB Smart Chain", chain_id: 56, rpc_url: "https://bsc-rpc.publicnode.com", contract: "0x55d398326f99059ff775485246999027b3197955", explorer: "https://bscscan.com/tx/", decimals: 18 },
       polygon: { chain_label: "Polygon", chain_id: 137, rpc_url: "https://polygon-bor-rpc.publicnode.com", contract: "0xc2132D05D31c914a87C6611C10748AaCbAEd4C19", explorer: "https://polygonscan.com/tx/", decimals: 6 },
     };
-    const read = (key: "bep20" | "polygon") => ({ ...defaults[key], ...(p[key] || {}), private_key_enc: undefined, key_preview: maskSecret(p[key]?.private_key_enc) });
+    const read = (key: "bep20" | "polygon") => {
+      const configured = p[key] || {};
+      const rpcUrl = key === "polygon" && /\bpolygon-rpc\.com\b/i.test(String(configured.rpc_url || ""))
+        ? defaults.polygon.rpc_url
+        : configured.rpc_url ?? defaults[key].rpc_url;
+      return { ...defaults[key], ...configured, rpc_url: rpcUrl, private_key_enc: undefined, key_preview: maskSecret(configured.private_key_enc) };
+    };
     return {
       bep20: read("bep20"), polygon: read("polygon"),
       ton: { endpoint: "https://toncenter.com/api/v2/jsonRPC", explorer: "https://tonviewer.com/transaction/", api_key: "", ...(p.ton || {}), phrase_enc: undefined, phrase_preview: maskSecret(p.ton?.phrase_enc) },

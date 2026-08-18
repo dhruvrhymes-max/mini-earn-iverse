@@ -17,10 +17,13 @@ export const adminGetSettings = createServerFn({ method: "POST" })
     const legacyEvm = payout?.evm || {};
     const network = (key: "bep20" | "polygon", defaults: any) => {
       const cfg = payout?.[key] || (String(legacyEvm.chain_label || "").toLowerCase().includes(key === "bep20" ? "bep" : "polygon") ? legacyEvm : {});
+      const rpcUrl = key === "polygon" && /\bpolygon-rpc\.com\b/i.test(String(cfg.rpc_url || ""))
+        ? defaults.rpc_url
+        : cfg.rpc_url ?? defaults.rpc_url;
       return {
         chain_label: cfg.chain_label ?? defaults.chain_label,
         chain_id: cfg.chain_id ?? defaults.chain_id,
-        rpc_url: cfg.rpc_url ?? defaults.rpc_url,
+        rpc_url: rpcUrl,
         contract: cfg.contract ?? defaults.contract,
         explorer: cfg.explorer ?? defaults.explorer,
         decimals: cfg.decimals ?? 18,
@@ -207,15 +210,67 @@ export const adminFindUser = createServerFn({ method: "POST" })
     }
     if (!row) throw new Error("No member found");
 
-    const [{ count: refs }, { data: txs }, { data: ips }] = await Promise.all([
-      supabaseAdmin.from("app_users").select("id", { count: "exact", head: true })
+    const [{ data: referredUsers }, { data: txs }, { data: ips }] = await Promise.all([
+      supabaseAdmin.from("app_users").select("id")
         .eq("tenant_id", data.tenantId).eq("referrer_id", row.id),
       supabaseAdmin.from("transactions").select("type,amount,status,created_at")
         .eq("user_id", row.id).order("created_at", { ascending: false }).limit(10),
       supabaseAdmin.from("ip_logs").select("ip,created_at").eq("user_id", row.id)
         .order("created_at", { ascending: false }).limit(5),
     ]);
-    return { user: row, referrals: refs ?? 0, recent: txs ?? [], ips: ips ?? [] };
+    const referralIds = (referredUsers ?? []).map((referral) => referral.id);
+    let activeReferrals = 0;
+    if (referralIds.length > 0) {
+      const [{ data: adRefs }, { data: taskRefs }, { data: globalTaskRefs }] = await Promise.all([
+        supabaseAdmin.from("app_users").select("id").in("id", referralIds).gt("ads_watched", 0),
+        supabaseAdmin.from("user_tasks").select("user_id").eq("tenant_id", data.tenantId).in("user_id", referralIds).gt("count", 0),
+        supabaseAdmin.from("user_global_tasks").select("user_id").eq("tenant_id", data.tenantId).in("user_id", referralIds).gt("count", 0),
+      ]);
+      activeReferrals = new Set([
+        ...(adRefs ?? []).map((referral) => referral.id),
+        ...(taskRefs ?? []).map((referral) => referral.user_id),
+        ...(globalTaskRefs ?? []).map((referral) => referral.user_id),
+      ]).size;
+    }
+    return { user: row, referrals: referralIds.length, activeReferrals, recent: txs ?? [], ips: ips ?? [] };
+  });
+
+export const adminListMembers = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object(Auth).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await gate(data);
+    const { data: rows, error } = await supabaseAdmin.from("app_users")
+      .select("id,telegram_id,username,first_name,balance,usd_balance,referrer_id,has_activity,ads_watched,banned,ban_reason,ban_kind,created_at,last_ip")
+      .eq("tenant_id", data.tenantId)
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (error) throw new Error(error.message);
+
+    const memberIds = (rows ?? []).map((member) => member.id);
+    const [{ data: taskRows }, { data: globalTaskRows }] = memberIds.length > 0
+      ? await Promise.all([
+          supabaseAdmin.from("user_tasks").select("user_id").eq("tenant_id", data.tenantId).in("user_id", memberIds).gt("count", 0),
+          supabaseAdmin.from("user_global_tasks").select("user_id").eq("tenant_id", data.tenantId).in("user_id", memberIds).gt("count", 0),
+        ])
+      : [{ data: [] }, { data: [] }];
+    const taskActiveIds = new Set([
+      ...(taskRows ?? []).map((task) => task.user_id),
+      ...(globalTaskRows ?? []).map((task) => task.user_id),
+    ]);
+    const referralCounts = new Map<string, { total: number; active: number }>();
+    for (const member of rows ?? []) {
+      if (!member.referrer_id) continue;
+      const current = referralCounts.get(member.referrer_id) ?? { total: 0, active: 0 };
+      current.total += 1;
+      if (Number(member.ads_watched) > 0 || taskActiveIds.has(member.id)) current.active += 1;
+      referralCounts.set(member.referrer_id, current);
+    }
+
+    return (rows ?? []).map((member) => ({
+      ...member,
+      referrals: referralCounts.get(member.id)?.total ?? 0,
+      active_referrals: referralCounts.get(member.id)?.active ?? 0,
+    }));
   });
 
 export const adminSetBan = createServerFn({ method: "POST" })

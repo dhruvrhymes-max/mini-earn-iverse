@@ -20,6 +20,21 @@ const ERC20_ABI = [
   },
 ] as const;
 
+const POLYGON_PUBLIC_RPCS = [
+  "https://polygon-bor-rpc.publicnode.com",
+  "https://polygon.drpc.org",
+];
+
+function evmRpcUrls(cfg: any): string[] {
+  const configured = String(cfg.rpc_url || "").trim();
+  const isPolygon = Number(cfg.chain_id) === 137 || String(cfg.chain_label || "").toLowerCase().includes("polygon");
+  const disabledLegacyPolygon = /\bpolygon-rpc\.com\b/i.test(configured);
+  if (isPolygon) {
+    return [...new Set([...(disabledLegacyPolygon ? [] : [configured]), ...POLYGON_PUBLIC_RPCS].filter(Boolean))];
+  }
+  return configured ? [configured] : [];
+}
+
 function toUnits(amount: number, decimals: number): bigint {
   const [i, f = ""] = String(amount).split(".");
   const frac = (f + "0".repeat(decimals)).slice(0, decimals);
@@ -29,10 +44,11 @@ function toUnits(amount: number, decimals: number): bigint {
 async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResult> {
   const enc = cfg.private_key_enc;
   if (!enc) throw new Error("EVM private key is not configured in payout settings");
-  if (!cfg.rpc_url) throw new Error("EVM RPC URL is not configured in payout settings");
+  const rpcUrls = evmRpcUrls(cfg);
+  if (rpcUrls.length === 0) throw new Error("EVM RPC URL is not configured in payout settings");
   if (!/^0x[a-fA-F0-9]{40}$/.test(to)) throw new Error("Invalid EVM destination address");
 
-  const { createWalletClient, createPublicClient, http } = await import("viem");
+  const { createWalletClient, createPublicClient, fallback, http } = await import("viem");
   const { privateKeyToAccount } = await import("viem/accounts");
 
   let pk = decryptSecret(enc).trim();
@@ -40,13 +56,16 @@ async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResul
   if (!/^0x[a-fA-F0-9]{64}$/.test(pk)) throw new Error("Stored EVM private key is malformed");
 
   const account = privateKeyToAccount(pk as `0x${string}`);
-  const publicClient = createPublicClient({ transport: http(cfg.rpc_url) });
+  const transport = rpcUrls.length === 1
+    ? http(rpcUrls[0])
+    : fallback(rpcUrls.map((url) => http(url)), { rank: false });
+  const publicClient = createPublicClient({ transport });
   const chainId = await publicClient.getChainId();
   if (cfg.chain_id && Number(cfg.chain_id) !== chainId) {
     throw new Error(`Configured RPC is chain ${chainId}, expected ${cfg.chain_id}`);
   }
-  const chain = { id: chainId, name: cfg.chain_label || "EVM", nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [cfg.rpc_url] } } } as any;
-  const wallet = createWalletClient({ account, chain, transport: http(cfg.rpc_url) });
+  const chain = { id: chainId, name: cfg.chain_label || "EVM", nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: rpcUrls } } } as any;
+  const wallet = createWalletClient({ account, chain, transport });
 
   const decimals = Number(cfg.decimals ?? 6);
   const value = toUnits(amount, cfg.contract ? decimals : 18);
