@@ -287,6 +287,30 @@ export type Database = {
           },
         ]
       }
+      bot_admin_sessions: {
+        Row: {
+          mode: string
+          target_tg: number | null
+          tenant_id: string
+          tg_id: number
+          updated_at: string
+        }
+        Insert: {
+          mode: string
+          target_tg?: number | null
+          tenant_id: string
+          tg_id: number
+          updated_at?: string
+        }
+        Update: {
+          mode?: string
+          target_tg?: number | null
+          tenant_id?: string
+          tg_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       check_bots: {
         Row: {
           active: boolean
