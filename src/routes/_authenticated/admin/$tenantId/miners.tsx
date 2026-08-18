@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/admin/$tenantId/miners")({
   component: MinersPage,
 });
 
-const EMPTY = { id: null as string|null, name: "", emoji: "⛏️", image_url: "", description: "", rarity: "common" as const,
+const EMPTY = { id: null as string|null, name: "", emoji: "⛏️", image_url: MINER_ICON_PRESETS[0].url, description: "", rarity: "common" as const,
   price_tokens: 1000, rate_boost_per_hour: 20, duration_hours: 0, is_free: false, active: true, sort_order: 0 };
 
 function MinersPage() {
