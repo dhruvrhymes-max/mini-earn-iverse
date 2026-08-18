@@ -7,6 +7,7 @@ import { useMini } from "@/lib/miniapp-context";
 import { isMiniAdmin } from "@/lib/mini-admin";
 import { AdProvidersAdmin } from "@/components/mini/AdProvidersAdmin";
 import { BakesAdmin } from "@/components/mini/BakesAdmin";
+import { PromosAdmin } from "@/components/mini/PromosAdmin";
 import { MembersAdmin } from "@/components/mini/MembersAdmin";
 import { WithdrawalsAdmin } from "@/components/mini/WithdrawalsAdmin";
 import { BotSettingsAdmin } from "@/components/mini/BotSettingsAdmin";
@@ -21,6 +22,7 @@ const TABS = [
   { id: "bot", label: "Bot" },
   { id: "bakes", label: "Bakes" },
   { id: "members", label: "Members" },
+  { id: "promos", label: "Promos" },
   { id: "withdrawals", label: "Withdrawals" },
   { id: "invites", label: "Invites" },
   { id: "welcome", label: "Welcome" },
@@ -170,6 +172,7 @@ function MiniAdmin() {
       {tab === "members" && <Section title="Members"><MembersAdmin {...tabProps} tokenSymbol={t.token_symbol || "TKN"} /></Section>}
       {tab === "withdrawals" && <Section title="Withdrawal requests"><WithdrawalsAdmin {...tabProps} /></Section>}
       {tab === "payouts" && <Section title="Payout wallets"><BotSettingsAdmin {...tabProps} section="payouts" /></Section>}
+      {tab === "promos" && <Section title="Promo codes"><PromosAdmin {...tabProps} /></Section>}
       {tab === "deposits" && <Section title="TON deposits"><BotSettingsAdmin {...tabProps} section="deposits" /></Section>}
       {tab === "welcome" && <Section title="Welcome & required joins"><BotSettingsAdmin {...tabProps} section="welcome" /></Section>}
       {tab === "security" && <Section title="Security"><BotSettingsAdmin {...tabProps} section="security" /></Section>}

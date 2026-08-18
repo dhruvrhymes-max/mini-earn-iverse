@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listMiners, myMiners, buyMiner } from "@/lib/miners.functions";
+import { TonPayDialog, type TonPayRequest } from "@/components/mini/TonPayDialog";
 import { useMini } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ function Miners() {
   const qc = useQueryClient();
   const theme = (tenant.theme as any);
   const [tab, setTab] = useState<"market" | "mine">("market");
+  const [pay, setPay] = useState<TonPayRequest | null>(null);
   const { data: miners = [] } = useQuery({ queryKey: ["miners", tenant.id], queryFn: () => listFn({ data: { tenantId: tenant.id } }), enabled: !!tenant.id });
   const { data: mine = [] } = useQuery({ queryKey: ["my-miners", user.id], queryFn: () => myFn({ data: { userId: user.id } }), enabled: !!user.id });
 
@@ -41,6 +43,10 @@ function Miners() {
     const exp = um.expires_at ? new Date(um.expires_at).getTime() : Infinity;
     if (exp > Date.now()) owned.set(um.miner_id, um);
   }
+  const startBuy = (mn: any) => {
+    if (!mn.is_free && mn.currency === "ton") { setPay({ kind: "miner", minerId: mn.id, label: mn.name }); return; }
+    m.mutate(mn.id);
+  };
   const freeMiner = (miners as any[]).find((m: any) => m.is_free);
 
   return (
@@ -81,7 +87,7 @@ function Miners() {
           <div className="space-y-3">
             {(miners as any[]).filter((mn) => !mn.is_free).map((mn: any) => {
               const has = owned.has(mn.id);
-              const affordable = Number(user.balance) >= Number(mn.price_tokens);
+              const affordable = mn.currency === "ton" || Number(user.balance) >= Number(mn.price_tokens);
               const rarity = RARITY_STYLE[mn.rarity] || RARITY_STYLE.common;
               return (
                 <div key={mn.id} className="rounded-2xl p-4 flex items-center gap-3"
@@ -103,11 +109,11 @@ function Miners() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <div className="text-right">
-                      <div className="font-bold text-lg" style={{ color: theme.primary }}>{Number(mn.price_tokens).toLocaleString()}</div>
-                      <div className="text-[10px] text-white/50 uppercase">{tenant.token_symbol}</div>
+                      <div className="font-bold text-lg" style={{ color: theme.primary }}>{Number(mn.currency === "ton" ? mn.price_ton : mn.price_tokens).toLocaleString()}</div>
+                      <div className="text-[10px] text-white/50 uppercase">{mn.currency === "ton" ? "Gram (TON)" : tenant.token_symbol}</div>
                     </div>
-                    <Button size="sm" disabled={has || m.isPending || !affordable} onClick={() => m.mutate(mn.id)}
-                      style={{ background: theme.primary, color: "#000" }}>{has ? "Owned" : "+ Buy"}</Button>
+                    <Button size="sm" disabled={has || m.isPending || !affordable} onClick={() => startBuy(mn)}
+                      style={{ background: theme.primary, color: "#000" }}>{has ? "Owned" : mn.currency === "ton" ? "Pay TON" : "+ Buy"}</Button>
                   </div>
                 </div>
               );
@@ -133,6 +139,15 @@ function Miners() {
           ))}
         </div>
       )}
+
+      <TonPayDialog
+        open={!!pay}
+        request={pay}
+        userId={user.id}
+        theme={theme}
+        onClose={() => setPay(null)}
+        onPaid={() => { refetchUser(); qc.invalidateQueries({ queryKey: ["my-miners"] }); }}
+      />
     </div>
   );
 }
