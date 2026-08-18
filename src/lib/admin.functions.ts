@@ -59,6 +59,7 @@ export const createTenant = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await assertApproved(supabase, userId);
     const username = data.bot_username.replace(/^@/, "");
     const slug = username.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || `bot-${Date.now()}`;
     const insert: Record<string, any> = {
