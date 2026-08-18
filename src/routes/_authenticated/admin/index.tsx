@@ -25,8 +25,11 @@ function AdminIndex() {
   const navigate = useNavigate();
   const list = useServerFn(listMyTenants);
   const create = useServerFn(createTenant);
+  const status = useServerFn(myAccountStatus);
   const qc = useQueryClient();
   const { data: tenants = [], isLoading } = useQuery({ queryKey: ["myTenants"], queryFn: () => list() });
+  const { data: account } = useQuery({ queryKey: ["myAccountStatus"], queryFn: () => status() });
+  const approved = account?.approved !== false;
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
