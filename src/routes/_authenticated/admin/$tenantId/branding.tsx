@@ -113,7 +113,7 @@ function Branding() {
       const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url, allowed_updates: ["message"] }),
+        body: JSON.stringify({ url, allowed_updates: ["message", "callback_query"] }),
       });
       const j = await res.json();
       if (!j.ok) throw new Error(j.description);
