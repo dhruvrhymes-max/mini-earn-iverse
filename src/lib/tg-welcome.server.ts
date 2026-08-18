@@ -7,7 +7,7 @@
  * Telegram rejects messages to users who never interacted with the bot; those
  * failures are swallowed on purpose — opening the app must never break.
  */
-const PUBLIC_APP_ORIGIN = "https://mini-earn-iverse.lovable.app";
+const PUBLIC_APP_ORIGIN = "https://zerolabnetwork.xyz";
 
 const esc = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
