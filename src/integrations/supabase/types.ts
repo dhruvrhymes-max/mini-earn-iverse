@@ -1096,6 +1096,52 @@ export type Database = {
       }
     }
     Functions: {
+      claim_withdrawal: {
+        Args: { _tenant_id: string; _transaction_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          network: string | null
+          reject_reason: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          tenant_id: string
+          tx_hash: string | null
+          type: Database["public"]["Enums"]["tx_type"]
+          user_id: string
+          wallet: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_withdrawal: {
+        Args: { _tenant_id: string; _transaction_id: string; _tx_hash: string }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          network: string | null
+          reject_reason: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          tenant_id: string
+          tx_hash: string | null
+          type: Database["public"]["Enums"]["tx_type"]
+          user_id: string
+          wallet: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1106,6 +1152,63 @@ export type Database = {
       is_tenant_owner: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      reject_withdrawal: {
+        Args: { _reason: string; _tenant_id: string; _transaction_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          network: string | null
+          reject_reason: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          tenant_id: string
+          tx_hash: string | null
+          type: Database["public"]["Enums"]["tx_type"]
+          user_id: string
+          wallet: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      release_withdrawal_claim: {
+        Args: { _tenant_id: string; _transaction_id: string }
+        Returns: undefined
+      }
+      reserve_withdrawal: {
+        Args: {
+          _amount: number
+          _currency: string
+          _network: string
+          _tenant_id: string
+          _user_id: string
+          _wallet: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          network: string | null
+          reject_reason: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          tenant_id: string
+          tx_hash: string | null
+          type: Database["public"]["Enums"]["tx_type"]
+          user_id: string
+          wallet: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
