@@ -83,20 +83,29 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
   if (section === "welcome") {
     const ch = s.onboarding.channels ?? [];
     const setCh = (next: any[]) => set("onboarding", "channels", next);
+    const upd = (i: number, field: string, value: string) =>
+      setCh(ch.map((x: any, j: number) => (j === i ? { ...x, [field]: value } : x)));
     return (
-      <Box onSave={() => m.mutate({ onboarding: s.onboarding })} pending={m.isPending}>
+      <Box onSave={() => m.mutate({ onboarding: { ...s.onboarding, channels: ch.filter((c: any) => (c.url || "").trim() || (c.chat_id || "").trim()) } })} pending={m.isPending}>
         <Toggle label="Show welcome screen on first open" checked={s.onboarding.enabled} onChange={(v) => set("onboarding", "enabled", v)} />
-        <F label="Title"><Input value={s.onboarding.title} onChange={(e) => set("onboarding", "title", e.target.value)} /></F>
-        <F label="Message"><Textarea rows={3} value={s.onboarding.text} onChange={(e) => set("onboarding", "text", e.target.value)} /></F>
-        <F label="Image URL"><Input value={s.onboarding.image_url} onChange={(e) => set("onboarding", "image_url", e.target.value)} /></F>
+        <F label="Title"><Input placeholder="One quick step" value={s.onboarding.title} onChange={(e) => set("onboarding", "title", e.target.value)} /></F>
+        <F label="Message"><Textarea rows={3} placeholder="Join our channels to unlock the app and start earning." value={s.onboarding.text} onChange={(e) => set("onboarding", "text", e.target.value)} /></F>
+        <F label="Logo / image URL (optional)"><Input value={s.onboarding.image_url} onChange={(e) => set("onboarding", "image_url", e.target.value)} /></F>
         <Toggle label="Require joining before playing" checked={s.onboarding.require_join} onChange={(v) => set("onboarding", "require_join", v)} />
-        <Section title="Channels & groups" />
+        <Section title="Check channels & groups" />
+        <p className="text-[11px] text-white/40">
+          Add a title and the channel link or @username. Membership is verified with Telegram — the check bot must be an
+          admin of every chat. For private chats use the numeric -100… ID.
+        </p>
         {ch.map((c: any, i: number) => (
-          <div key={i} className="flex gap-2 items-end">
-            <F label="Title"><Input value={c.title ?? ""} onChange={(e) => setCh(ch.map((x: any, j: number) => j === i ? { ...x, title: e.target.value } : x))} /></F>
-            <F label="Link"><Input value={c.url ?? ""} onChange={(e) => setCh(ch.map((x: any, j: number) => j === i ? { ...x, url: e.target.value } : x))} /></F>
-            <F label="Chat ID"><Input placeholder="@chat or -100…" value={c.chat_id ?? ""} onChange={(e) => setCh(ch.map((x: any, j: number) => j === i ? { ...x, chat_id: e.target.value } : x))} /></F>
-            <button className="p-2 text-white/40" onClick={() => setCh(ch.filter((_: any, j: number) => j !== i))}><Trash2 className="h-4 w-4" /></button>
+          <div key={i} className="space-y-2 rounded-xl border border-white/10 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] uppercase tracking-wider text-white/40">Channel {i + 1}</span>
+              <button className="p-1 text-white/40" onClick={() => setCh(ch.filter((_: any, j: number) => j !== i))}><Trash2 className="h-4 w-4" /></button>
+            </div>
+            <F label="Title"><Input placeholder="FOXVerse Official" value={c.title ?? ""} onChange={(e) => upd(i, "title", e.target.value)} /></F>
+            <F label="Link or @username"><Input placeholder="https://t.me/foxverse or @foxverse" value={c.url ?? ""} onChange={(e) => upd(i, "url", e.target.value)} /></F>
+            <F label="Chat ID (optional)"><Input placeholder="@foxverse or -100…" value={c.chat_id ?? ""} onChange={(e) => upd(i, "chat_id", e.target.value)} /></F>
           </div>
         ))}
         {ch.length < 6 && (
@@ -107,6 +116,7 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
       </Box>
     );
   }
+
 
   if (section === "security") {
     return (
