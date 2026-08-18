@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import { useMini } from "@/lib/miniapp-context";
 import { isMiniAdmin } from "@/lib/mini-admin";
 import { setLanguage } from "@/lib/miniapp.functions";
+import { redeemPromo } from "@/lib/promo.functions";
 import { LANGUAGES } from "@/lib/languages";
 import { useTelegramPhoto } from "@/lib/tg-photo";
 import { familyOf, skinOf, hexA } from "@/lib/theme-family";
-import { ChevronRight, ReceiptText, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck, Pickaxe, ShoppingBag } from "lucide-react";
+import { Ticket, ChevronRight, ReceiptText, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck, Pickaxe, ShoppingBag } from "lucide-react";
 
 export const Route = createFileRoute("/app/$tenantSlug/profile")({
   component: Profile,
@@ -79,6 +80,10 @@ function Profile() {
         </Section>
       )}
 
+      <Section skin={skin} primary={theme.primary} title="Promo code">
+        <PromoRedeem skin={skin} theme={theme} user={user} tokenSymbol={tenant.token_symbol} />
+      </Section>
+
       <Section skin={skin} primary={theme.primary} title="Community">
         {c.channel_url && <CommunityRow skin={skin} theme={theme} url={c.channel_url} label="Official channel" />}
         {c.support_url && <CommunityRow skin={skin} theme={theme} url={c.support_url} label="Support" />}
@@ -88,6 +93,55 @@ function Profile() {
       <Section skin={skin} primary={theme.primary} title="Settings">
         <LanguagePicker skin={skin} theme={theme} user={user} />
       </Section>
+    </div>
+  );
+}
+
+function PromoRedeem({ skin, theme, user, tokenSymbol }: any) {
+  const { refetchUser } = useMini();
+  const redeem = useServerFn(redeemPromo);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (!code.trim()) return;
+    setBusy(true);
+    try {
+      const res: any = await redeem({ data: { userId: user.id, code: code.trim() } });
+      toast.success(`Code applied — +${Number(res.reward).toLocaleString()} ${tokenSymbol}`);
+      setCode("");
+      refetchUser();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not redeem that code");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={skin.card} style={skin.cardStyle(theme.primary, theme.accent)}>
+      <div className="flex items-center gap-3">
+        <Ticket className="h-5 w-5" style={{ color: theme.primary }} />
+        <span className="flex-1 font-semibold">Redeem a promo code</span>
+      </div>
+      <div className="flex gap-2 mt-3">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="ENTER CODE"
+          className="flex-1 rounded-xl px-3 py-2 text-sm font-mono bg-white/5 outline-none"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+        />
+        <button
+          onClick={submit}
+          disabled={busy || !code.trim()}
+          className="px-4 rounded-xl text-sm font-bold disabled:opacity-50"
+          style={{ background: theme.primary, color: "#000" }}
+        >
+          {busy ? "…" : "Claim"}
+        </button>
+      </div>
+      <p className="text-[11px] text-white/40 mt-2">Each code can be claimed once per account.</p>
     </div>
   );
 }

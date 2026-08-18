@@ -74,14 +74,8 @@ export const buyMiner = createServerFn({ method: "POST" })
         .select("id").eq("user_id", user.id).eq("miner_id", miner.id).maybeSingle();
       if (existing) throw new Error("Already claimed");
     } else if ((miner as any).currency === "ton") {
-      const price = Number((miner as any).price_ton || 0);
-      const funded = Number((user as any).ton_deposited || 0);
-      if (funded < price) throw new Error(`Not enough TON — deposit ${(price - funded).toFixed(2)} TON first`);
-      await supabaseAdmin.from("app_users").update({ ton_deposited: funded - price } as any).eq("id", user.id);
-      await supabaseAdmin.from("transactions").insert({
-        tenant_id: user.tenant_id, user_id: user.id, type: "convert" as any, amount: -price,
-        currency: "TON", status: "approved",
-      });
+      // TON bakes are delivered by the on-chain payment flow (ton-pay.functions.ts) only.
+      throw new Error("This bake is paid with TON — use the payment page to complete it");
     } else {
       const price = Number(miner.price_tokens);
       if (Number(user.balance) < price) throw new Error("Insufficient balance");

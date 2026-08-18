@@ -4,9 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { listMiners, myMiners, buyMiner, myReceipts } from "@/lib/miners.functions";
+import { TonPayDialog, type TonPayRequest } from "@/components/mini/TonPayDialog";
 import { useMini } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Zap, Timer, Gift, Receipt, ShoppingBag, Check } from "lucide-react";
+
 
 export const Route = createFileRoute("/app/$tenantSlug/shop")({
   head: () => ({
@@ -29,6 +31,7 @@ function Shop() {
   const theme = tenant.theme as any;
   const qc = useQueryClient();
   const [tab, setTab] = useState<"shop" | "receipts">("shop");
+  const [pay, setPay] = useState<TonPayRequest | null>(null);
 
   const listFn = useServerFn(listMiners);
   const myFn = useServerFn(myMiners);
@@ -68,6 +71,14 @@ function Shop() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const startBuy = (b: any) => {
+    if (!b.is_free && b.currency === "ton") {
+      setPay({ kind: "miner", minerId: b.id, label: b.name });
+      return;
+    }
+    buy.mutate(b.id);
+  };
 
   const all = bakes as any[];
   const free = all.filter((b) => b.is_free);
@@ -118,7 +129,7 @@ function Shop() {
               busy={buy.isPending}
               balance={Number(user.balance)}
               ton={Number((user as any).ton_deposited ?? 0)}
-              onBuy={() => buy.mutate(b.id)}
+              onBuy={() => startBuy(b)}
             />
           ))}
           {all.length === 0 && (
@@ -148,6 +159,19 @@ function Shop() {
           ))}
         </div>
       )}
+
+      <TonPayDialog
+        open={!!pay}
+        request={pay}
+        userId={user.id}
+        theme={theme}
+        onClose={() => setPay(null)}
+        onPaid={() => {
+          refetchUser();
+          qc.invalidateQueries({ queryKey: ["my-miners", user.id] });
+          qc.invalidateQueries({ queryKey: ["shop-receipts", user.id] });
+        }}
+      />
     </div>
   );
 }
@@ -156,7 +180,7 @@ function TierCard({ index, bake, theme, tokenSymbol, owned, busy, balance, ton, 
   const isFree = !!bake.is_free;
   const isTon = bake.currency === "ton";
   const price = isTon ? Number(bake.price_ton) : Number(bake.price_tokens);
-  const affordable = isFree || (isTon ? ton >= price : balance >= price);
+  const affordable = isFree || isTon || balance >= price;
   return (
     <div className="rounded-2xl p-4 flex items-center gap-3"
       style={{
@@ -190,7 +214,7 @@ function TierCard({ index, bake, theme, tokenSymbol, owned, busy, balance, ton, 
         </div>
         <Button size="sm" disabled={owned || busy || !affordable} onClick={onBuy}
           style={{ background: theme.primary, color: "#000" }}>
-          {owned ? <><Check className="h-3.5 w-3.5 mr-1" />Owned</> : isFree ? "Claim" : affordable ? "Buy" : "Low funds"}
+          {owned ? <><Check className="h-3.5 w-3.5 mr-1" />Owned</> : isFree ? "Claim" : isTon ? "Pay TON" : affordable ? "Buy" : "Low funds"}
         </Button>
       </div>
     </div>
