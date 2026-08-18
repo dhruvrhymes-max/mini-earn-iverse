@@ -46,7 +46,8 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
         {(["bep20", "polygon"] as const).map((key) => {
           const evm = s.payout[key];
           return <div key={key} className="space-y-3 border-b border-white/10 pb-4">
-            <Section title={key === "bep20" ? "USDT BEP20" : "USDT Polygon"} />
+            <Section title={key === "bep20" ? "USDT BEP20" : "USDT POL (Polygon)"} />
+            <Toggle label={`Allow ${key === "bep20" ? "USDT BEP20" : "USDT POL"} withdrawals`} checked={evm.enabled !== false} onChange={(v) => setNetwork(key, "enabled", v)} />
             <div className="grid grid-cols-2 gap-2"><F label="Chain ID"><Input type="number" value={evm.chain_id} onChange={(e) => setNetwork(key, "chain_id", e.target.value)} /></F><F label="Decimals"><Input type="number" value={evm.decimals} onChange={(e) => setNetwork(key, "decimals", e.target.value)} /></F></div>
             <F label="RPC URL"><Input value={evm.rpc_url} onChange={(e) => setNetwork(key, "rpc_url", e.target.value)} /></F>
             <F label="USDT contract"><Input value={evm.contract} onChange={(e) => setNetwork(key, "contract", e.target.value)} /></F>
