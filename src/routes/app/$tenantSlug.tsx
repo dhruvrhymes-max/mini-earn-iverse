@@ -368,43 +368,122 @@ function Centered({ children }: { children: React.ReactNode }) {
 
 function Onboarding({ tenant, userId, refetch }: { tenant: any; userId: string; refetch: () => void }) {
   const mark = useServerFn(markOnboarded);
+  const check = useServerFn(checkChannelJoin);
   const [i, setI] = useState(0);
   const ob: any = tenant?.onboarding || {};
-  const channels: any[] = Array.isArray(ob.channels) ? ob.channels.filter((c: any) => c?.url) : [];
+  const primary = tenant?.theme?.primary || "#f59e0b";
+  const channels: any[] = Array.isArray(ob.channels) ? ob.channels.filter((c: any) => c?.url || c?.chat_id) : [];
   const [joined, setJoined] = useState<Record<number, boolean>>({});
-  const allJoined = !ob.require_join || channels.every((_, n) => joined[n]);
+  const [checking, setChecking] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const joinedCount = channels.filter((_, n) => joined[n]).length;
 
   if (ob.enabled) {
+    const requireJoin = !!ob.require_join && channels.length > 0;
+    const onContinue = async () => {
+      setNote(null);
+      setChecking(true);
+      try {
+        if (requireJoin) {
+          const r: any = await check({ data: { userId } });
+          const flags: boolean[] = r?.results ?? [];
+          setJoined(Object.fromEntries(flags.map((v, n) => [n, v])));
+          if (!r?.ok) { setNote("You are not in every channel yet. Join them all, then tap check again."); return; }
+        } else {
+          await mark({ data: { userId } });
+        }
+        refetch();
+      } catch (e: any) {
+        setNote(e?.message || "Could not verify right now — try again.");
+      } finally {
+        setChecking(false);
+      }
+    };
+
     return (
-      <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-6 text-center text-white">
-        {ob.image_url && <img src={ob.image_url} alt="" className="h-28 w-28 object-contain mb-4 rounded-2xl" />}
-        <h2 className="text-2xl font-bold mb-2">{ob.title || "Welcome!"}</h2>
-        <p className="text-sm text-white/80 max-w-xs whitespace-pre-line">{ob.text || ""}</p>
-        <div className="w-full max-w-xs mt-6 space-y-2">
-          {channels.map((c, n) => (
-            <a
-              key={n}
-              href={c.url}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setJoined((prev) => ({ ...prev, [n]: true }))}
-              className="flex items-center justify-between bg-white/10 rounded-xl px-4 py-3 text-sm"
-            >
-              <span>{c.title || "Join channel"}</span>
-              <span className="text-xs text-white/60">{joined[n] ? "Joined" : "Join"}</span>
-            </a>
-          ))}
+      <div
+        className="fixed inset-0 z-50 overflow-y-auto text-white"
+        style={{ background: `radial-gradient(120% 70% at 50% 0%, ${primary}22 0%, #0b0b0d 60%, #08080a 100%)` }}
+      >
+        <div className="min-h-full flex flex-col items-center px-6 py-10 text-center">
+          <div
+            className="h-20 w-32 rounded-2xl flex items-center justify-center mb-7"
+            style={{ border: `1px solid ${primary}66`, boxShadow: `0 0 40px ${primary}33`, background: `${primary}12` }}
+          >
+            {ob.image_url
+              ? <img src={ob.image_url} alt="" className="h-12 w-12 object-contain" />
+              : <ShieldCheck className="h-10 w-10" style={{ color: primary }} />}
+          </div>
+
+          <h2 className="text-3xl font-extrabold tracking-tight">{ob.title || "One quick step"}</h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-white/60 max-w-sm whitespace-pre-line">
+            {ob.text || "Join our channels to unlock the app and start earning. Membership is checked automatically — no codes, no waiting."}
+          </p>
+
+          {channels.length > 0 && (
+            <div className="w-full max-w-sm mt-8">
+              <div className="flex items-center justify-between text-[11px] font-semibold tracking-[0.18em] text-white/45">
+                <span>{joinedCount}/{channels.length} JOINED</span>
+              </div>
+              <div className="mt-2 h-[2px] w-full rounded bg-white/10 overflow-hidden">
+                <div
+                  className="h-full transition-all duration-500"
+                  style={{ width: `${channels.length ? (joinedCount / channels.length) * 100 : 0}%`, background: primary }}
+                />
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {channels.map((c, n) => (
+                  <div key={n} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-3 text-left">
+                    <div className="h-11 w-11 shrink-0 rounded-xl bg-[#2AABEE] flex items-center justify-center">
+                      <Send className="h-5 w-5 text-white -translate-x-[1px]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-[15px]">{c.title || "Telegram channel"}</p>
+                      <p className="text-xs text-white/45">{joined[n] ? "Joined" : requireJoin ? "Required" : "Optional"}</p>
+                    </div>
+                    <a
+                      href={c.url || "#"}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setJoined((prev) => ({ ...prev, [n]: prev[n] ?? false }))}
+                      className="shrink-0 rounded-xl px-4 py-2 text-sm font-bold"
+                      style={joined[n]
+                        ? { border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.6)" }
+                        : { border: `1px solid ${primary}88`, color: primary, background: `${primary}14` }}
+                    >
+                      {joined[n] ? "Joined" : "Join"}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            disabled={checking}
+            onClick={onContinue}
+            className="mt-8 w-full max-w-sm rounded-2xl py-4 text-[17px] font-extrabold text-black disabled:opacity-60 flex items-center justify-center gap-2"
+            style={{ background: primary, boxShadow: `0 10px 40px ${primary}44` }}
+          >
+            {checking ? "Checking…" : requireJoin ? <><Check className="h-5 w-5" /> I've joined — Check</> : (tenant?.welcome_cta_text || "Start")}
+          </button>
+
+          {requireJoin && (
+            <p className="mt-4 flex items-start gap-2 text-[13px] leading-snug text-white/45 max-w-sm">
+              <AlertCircle className="h-4 w-4 mt-[2px] shrink-0" style={{ color: primary }} />
+              <span>{note || "Join every channel above, then tap check. Leaving a channel later locks the app again."}</span>
+            </p>
+          )}
+          {!requireJoin && note && <p className="mt-4 text-[13px] text-white/45">{note}</p>}
+
+          <p className="mt-8 text-[13px] font-semibold tracking-[0.22em] text-white/35 uppercase">{tenant?.name}</p>
         </div>
-        <Button
-          className="mt-8"
-          disabled={!allJoined}
-          onClick={async () => { await mark({ data: { userId } }); refetch(); }}
-        >
-          {allJoined ? (tenant?.welcome_cta_text || "Start") : "Join to continue"}
-        </Button>
       </div>
     );
   }
+
 
   const slides = [
     { title: "Welcome!", body: "Earn tokens by mining, completing tasks, and inviting friends." },
