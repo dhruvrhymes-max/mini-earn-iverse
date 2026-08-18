@@ -24,7 +24,7 @@ const ApplySchema = z.object({
       motion_style: z.string().optional(),
     }),
     scene: z.string(),
-    game_mode: z.enum(["mine", "tap", "spin", "idle"]).optional(),
+    game_mode: z.enum(["mine", "tap", "spin", "idle", "scratch", "quiz", "streak", "forecast"]).optional(),
     tasks: z.array(z.any()),
     miners: z.array(z.any()),
   }),

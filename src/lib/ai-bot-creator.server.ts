@@ -26,7 +26,7 @@ const AiOutputSchema = z.object({
     motion_style: z.string(),
   }),
   scene: z.enum(scenes),
-  game_mode: z.enum(["mine", "tap", "spin", "idle"]).default("mine"),
+  game_mode: z.enum(["mine", "tap", "spin", "idle", "scratch", "quiz", "streak", "forecast"]).default("mine"),
   tasks: z.array(z.object({ title: z.string(), reward: z.coerce.number(), url: z.string().nullable().default(null) })),
   miners: z.array(z.object({
     name: z.string(), emoji: z.string(), price_tokens: z.coerce.number(), rate_boost_per_hour: z.coerce.number(),
@@ -61,7 +61,7 @@ Requirements:
 - layout_family is the closest of cosmic, crystal, forge, playful, nature.
 - surface_style and motion_style are concrete visual instructions, not generic adjectives.
 - scene is one of: ${scenes.join(", ")}.
-- game_mode is the earning loop that best fits the concept: "mine" (start a cycle and claim), "tap" (instant taps limited by energy), "spin" (cooldown prize wheel) or "idle" (offline production collected on return).
+- game_mode is the earning loop that best fits the concept: "mine" (start a cycle and claim), "tap" (instant taps limited by energy), "spin" (cooldown prize wheel) or "idle" (offline production collected on return), "scratch" (cooldown scratch card), "quiz" (trivia round), "streak" (daily check-in calendar) or "forecast" (call the next round up or down).
 - Tasks always include a "Watch ad & earn" style quest, but core earning is never locked behind an ad.
 - Generate 3-5 relevant tasks and exactly 5 themed miners/upgrades with unique names.
 - First miner is free, permanent, and earns 400/hour. Paid miners scale from common through legendary.
@@ -89,7 +89,7 @@ Return ONLY JSON using this exact contract and exact snake_case property names:
     "surface_style": "string",
     "motion_style": "string"
   },
-  "game_mode": "mine|tap|spin|idle",
+  "game_mode": "mine|tap|spin|idle|scratch|quiz|streak|forecast",
   "scene": "one allowed scene",
   "tasks": [{ "title": "string", "reward": 100, "url": null }],
   "miners": [{

@@ -12,7 +12,7 @@ import { ListChecks, Pickaxe, Users, Wallet } from "lucide-react";
 type Props = { tenant: any; user: any; refetchUser: () => void };
 
 /** Shell shared by every non-mining mode: themed backdrop, balance, quick tiles. */
-function Shell({ tenant, children }: { tenant: any; children: React.ReactNode }) {
+export function Shell({ tenant, children }: { tenant: any; children: React.ReactNode }) {
   const kind = (tenant.theme_preset || tenant.theme?.scene || "gold") as SceneKind;
   const theme = tenant.theme || {};
   return (
@@ -23,7 +23,7 @@ function Shell({ tenant, children }: { tenant: any; children: React.ReactNode })
   );
 }
 
-function BalanceCard({ tenant, user }: { tenant: any; user: any }) {
+export function BalanceCard({ tenant, user }: { tenant: any; user: any }) {
   const theme = tenant.theme || {};
   const rate = Number(tenant.economics?.token_per_usdt) || 10000;
   const usd = formatUsd(Number(user.balance) / rate);
@@ -41,7 +41,7 @@ function BalanceCard({ tenant, user }: { tenant: any; user: any }) {
   );
 }
 
-function QuickTiles({ tenantSlug, primary }: { tenantSlug: string; primary: string }) {
+export function QuickTiles({ tenantSlug, primary }: { tenantSlug: string; primary: string }) {
   const nav = useNavigate();
   const tiles = [
     { to: "/app/$tenantSlug/miners", label: "Boost", Icon: Pickaxe },

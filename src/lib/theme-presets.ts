@@ -7,7 +7,7 @@ export type SceneKind =
   | "lava" | "ocean" | "candy" | "neon" | "ice" | "dragon" | "ghost" | "milk";
 
 /** How players earn in this bot. Tasks + "watch ads & earn" exist in every mode. */
-export type GameMode = "mine" | "tap" | "spin" | "idle";
+export type GameMode = "mine" | "tap" | "spin" | "idle" | "scratch" | "quiz" | "streak" | "forecast";
 
 export type LayoutFamily = "cosmic" | "crystal" | "forge" | "playful" | "nature";
 
@@ -16,6 +16,10 @@ export const GAME_MODES: Array<{ id: GameMode; label: string; hint: string }> = 
   { id: "tap", label: "Tap to earn", hint: "Tap for instant tokens, energy refills over time" },
   { id: "spin", label: "Spin to earn", hint: "Free daily spin plus spins earned from tasks" },
   { id: "idle", label: "Idle / farm to earn", hint: "Production accrues offline, collect on return" },
+  { id: "scratch", label: "Scratch to earn", hint: "Scratch a foil card to reveal a hidden prize" },
+  { id: "quiz", label: "Quiz to earn", hint: "One trivia question per round, streaks pay more" },
+  { id: "streak", label: "Check-in to earn", hint: "Daily calendar with a rising day multiplier" },
+  { id: "forecast", label: "Predict to earn", hint: "Call the next round up or down" },
 ];
 
 export type ThemePreset = {
@@ -258,7 +262,49 @@ export const THEME_PRESETS: ThemePreset[] = [
     welcome_text: "🔷 Welcome to Crystal Cavern\nCleave seams, bank SHARD, cash out USDT.\n\n💠 Earn more:\n• Daily tasks\n• Watch ads & earn\n• Invite friends",
     welcome_cta_text: "🔷 Start Cleaving",
   },
+  // ── new 2026 formats: scratch / quiz / check-in / predict ─────
+  {
+    id: "foil", label: "Foil Fortune", emoji: "🎟️", scene: "gold", game_mode: "scratch", layout_family: "forge",
+    description: "Metallic ticket booth — scratch foil, reveal the prize",
+    theme: { primary: "#facc15", background: "#120e04", accent: "#fef08a" },
+    token_name: "Foil", token_symbol: "FOIL", token_icon_url: null, action_verb: "Scratch",
+    welcome_text: "<b>🎟️ Welcome to Foil Fortune</b>\nA fresh scratch card every few hours — reveal FOIL and cash out USDT.\n\n<b>✨ Earn more:</b>\n• Daily tasks\n• Watch ads &amp; earn\n• Invite friends",
+    welcome_cta_text: "🎟️ Scratch a Card",
+  },
+  {
+    id: "aurora-scratch", label: "Aurora Tickets", emoji: "🪩", scene: "neon", game_mode: "scratch", layout_family: "cosmic",
+    description: "Holographic violet — iridescent scratch tickets",
+    theme: { primary: "#c084fc", background: "#0a0518", accent: "#7dd3fc" },
+    token_name: "Prism", token_symbol: "PRSM", token_icon_url: null, action_verb: "Reveal",
+    welcome_text: "<b>🪩 Welcome to Aurora Tickets</b>\nPeel the hologram, reveal PRSM, withdraw USDT.\n\n<b>💫 Earn more:</b>\n• Daily tasks\n• Watch ads &amp; earn\n• Invite friends",
+    welcome_cta_text: "🪩 Reveal Ticket",
+  },
+  {
+    id: "brainwave", label: "Brainwave Quiz", emoji: "🧠", scene: "crypto", game_mode: "quiz", layout_family: "cosmic",
+    description: "Electric indigo — trivia rounds with streak bonuses",
+    theme: { primary: "#6366f1", background: "#060616", accent: "#22d3ee" },
+    token_name: "Synapse", token_symbol: "SYN", token_icon_url: null, action_verb: "Answer",
+    welcome_text: "<b>🧠 Welcome to Brainwave</b>\nOne question per round. Correct answers stack SYN — streaks pay extra.\n\n<b>⚡ Earn more:</b>\n• Daily tasks\n• Watch ads &amp; earn\n• Invite friends",
+    welcome_cta_text: "🧠 Answer Today",
+  },
+  {
+    id: "sunrise", label: "Sunrise Streak", emoji: "🌅", scene: "candy", game_mode: "streak", layout_family: "playful",
+    description: "Warm sunrise — daily check-in calendar that grows",
+    theme: { primary: "#fb7185", background: "#190711", accent: "#fdba74" },
+    token_name: "Ray", token_symbol: "RAY", token_icon_url: null, action_verb: "Check in",
+    welcome_text: "<b>🌅 Welcome to Sunrise Streak</b>\nCheck in daily — every day in a row pays more RAY.\n\n<b>🔥 Earn more:</b>\n• Daily tasks\n• Watch ads &amp; earn\n• Invite friends",
+    welcome_cta_text: "🌅 Start Your Streak",
+  },
+  {
+    id: "oracle", label: "Oracle Market", emoji: "📈", scene: "ocean", game_mode: "forecast", layout_family: "crystal",
+    description: "Trading-desk teal — call the next round up or down",
+    theme: { primary: "#2dd4bf", background: "#03110f", accent: "#a3e635" },
+    token_name: "Signal", token_symbol: "SGNL", token_icon_url: null, action_verb: "Predict",
+    welcome_text: "<b>📈 Welcome to Oracle Market</b>\nCall the next close up or down. Hot streaks multiply your SGNL.\n\n<b>📊 Earn more:</b>\n• Daily tasks\n• Watch ads &amp; earn\n• Invite friends",
+    welcome_cta_text: "📈 Make a Call",
+  },
 ];
+
 
 
 export const getPreset = (id?: string | null) =>
