@@ -97,6 +97,7 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
           contract: z.string().max(100),
           explorer: z.string().max(300),
           decimals: z.number().int().min(0).max(24),
+          enabled: z.boolean().optional(),
           private_key: z.string().max(200).optional().nullable(),
         }).optional(),
         polygon: z.object({
@@ -106,6 +107,7 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
           contract: z.string().max(100),
           explorer: z.string().max(300),
           decimals: z.number().int().min(0).max(24),
+          enabled: z.boolean().optional(),
           private_key: z.string().max(200).optional().nullable(),
         }).optional(),
         ton: z.object({
@@ -113,6 +115,7 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
           explorer: z.string().max(300),
           endpoint: z.string().max(300).optional().nullable(),
           phrase: z.string().max(500).optional().nullable(),
+          enabled: z.boolean().optional(),
         }).optional(),
 
         auto_pay: z.boolean().optional(),
