@@ -95,11 +95,12 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
           <div key={i} className="flex gap-2 items-end">
             <F label="Title"><Input value={c.title ?? ""} onChange={(e) => setCh(ch.map((x: any, j: number) => j === i ? { ...x, title: e.target.value } : x))} /></F>
             <F label="Link"><Input value={c.url ?? ""} onChange={(e) => setCh(ch.map((x: any, j: number) => j === i ? { ...x, url: e.target.value } : x))} /></F>
+            <F label="Chat ID"><Input placeholder="@chat or -100…" value={c.chat_id ?? ""} onChange={(e) => setCh(ch.map((x: any, j: number) => j === i ? { ...x, chat_id: e.target.value } : x))} /></F>
             <button className="p-2 text-white/40" onClick={() => setCh(ch.filter((_: any, j: number) => j !== i))}><Trash2 className="h-4 w-4" /></button>
           </div>
         ))}
         {ch.length < 6 && (
-          <Button variant="outline" size="sm" onClick={() => setCh([...ch, { title: "", url: "" }])}>
+          <Button variant="outline" size="sm" onClick={() => setCh([...ch, { title: "", url: "", chat_id: "" }])}>
             <Plus className="h-4 w-4 mr-1" /> Add channel
           </Button>
         )}
