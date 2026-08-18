@@ -36,6 +36,7 @@ import { Route as AppTenantSlugAdminRouteImport } from './routes/app/$tenantSlug
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as AuthenticatedSuperTenantsRouteImport } from './routes/_authenticated/super/tenants'
 import { Route as AuthenticatedSuperTasksRouteImport } from './routes/_authenticated/super/tasks'
+import { Route as AuthenticatedSuperMembersRouteImport } from './routes/_authenticated/super/members'
 import { Route as AuthenticatedSuperCheckBotsRouteImport } from './routes/_authenticated/super/check-bots'
 import { Route as AuthenticatedSuperAnnouncementsRouteImport } from './routes/_authenticated/super/announcements'
 import { Route as AuthenticatedAdminNewAiRouteImport } from './routes/_authenticated/admin/new-ai'
@@ -187,6 +188,12 @@ const AuthenticatedSuperTasksRoute = AuthenticatedSuperTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthenticatedSuperRoute,
 } as any)
+const AuthenticatedSuperMembersRoute =
+  AuthenticatedSuperMembersRouteImport.update({
+    id: '/members',
+    path: '/members',
+    getParentRoute: () => AuthenticatedSuperRoute,
+  } as any)
 const AuthenticatedSuperCheckBotsRoute =
   AuthenticatedSuperCheckBotsRouteImport.update({
     id: '/check-bots',
@@ -289,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/admin/new-ai': typeof AuthenticatedAdminNewAiRoute
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/super/check-bots': typeof AuthenticatedSuperCheckBotsRoute
+  '/super/members': typeof AuthenticatedSuperMembersRoute
   '/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
@@ -329,6 +337,7 @@ export interface FileRoutesByTo {
   '/admin/new-ai': typeof AuthenticatedAdminNewAiRoute
   '/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/super/check-bots': typeof AuthenticatedSuperCheckBotsRoute
+  '/super/members': typeof AuthenticatedSuperMembersRoute
   '/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
@@ -374,6 +383,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/new-ai': typeof AuthenticatedAdminNewAiRoute
   '/_authenticated/super/announcements': typeof AuthenticatedSuperAnnouncementsRoute
   '/_authenticated/super/check-bots': typeof AuthenticatedSuperCheckBotsRoute
+  '/_authenticated/super/members': typeof AuthenticatedSuperMembersRoute
   '/_authenticated/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/_authenticated/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/admin/new-ai'
     | '/super/announcements'
     | '/super/check-bots'
+    | '/super/members'
     | '/super/tasks'
     | '/super/tenants'
     | '/api/public/client-error'
@@ -459,6 +470,7 @@ export interface FileRouteTypes {
     | '/admin/new-ai'
     | '/super/announcements'
     | '/super/check-bots'
+    | '/super/members'
     | '/super/tasks'
     | '/super/tenants'
     | '/api/public/client-error'
@@ -503,6 +515,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/new-ai'
     | '/_authenticated/super/announcements'
     | '/_authenticated/super/check-bots'
+    | '/_authenticated/super/members'
     | '/_authenticated/super/tasks'
     | '/_authenticated/super/tenants'
     | '/api/public/client-error'
@@ -737,6 +750,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperTasksRouteImport
       parentRoute: typeof AuthenticatedSuperRoute
     }
+    '/_authenticated/super/members': {
+      id: '/_authenticated/super/members'
+      path: '/members'
+      fullPath: '/super/members'
+      preLoaderRoute: typeof AuthenticatedSuperMembersRouteImport
+      parentRoute: typeof AuthenticatedSuperRoute
+    }
     '/_authenticated/super/check-bots': {
       id: '/_authenticated/super/check-bots'
       path: '/check-bots'
@@ -848,6 +868,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedSuperRouteChildren {
   AuthenticatedSuperAnnouncementsRoute: typeof AuthenticatedSuperAnnouncementsRoute
   AuthenticatedSuperCheckBotsRoute: typeof AuthenticatedSuperCheckBotsRoute
+  AuthenticatedSuperMembersRoute: typeof AuthenticatedSuperMembersRoute
   AuthenticatedSuperTasksRoute: typeof AuthenticatedSuperTasksRoute
   AuthenticatedSuperTenantsRoute: typeof AuthenticatedSuperTenantsRoute
   AuthenticatedSuperIndexRoute: typeof AuthenticatedSuperIndexRoute
@@ -856,6 +877,7 @@ interface AuthenticatedSuperRouteChildren {
 const AuthenticatedSuperRouteChildren: AuthenticatedSuperRouteChildren = {
   AuthenticatedSuperAnnouncementsRoute: AuthenticatedSuperAnnouncementsRoute,
   AuthenticatedSuperCheckBotsRoute: AuthenticatedSuperCheckBotsRoute,
+  AuthenticatedSuperMembersRoute: AuthenticatedSuperMembersRoute,
   AuthenticatedSuperTasksRoute: AuthenticatedSuperTasksRoute,
   AuthenticatedSuperTenantsRoute: AuthenticatedSuperTenantsRoute,
   AuthenticatedSuperIndexRoute: AuthenticatedSuperIndexRoute,

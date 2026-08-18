@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_authenticated/super")({
 const NAV = [
   { to: "/super", label: "Overview", Icon: Shield, exact: true },
   { to: "/super/tenants", label: "Tenants", Icon: Building2 },
+  { to: "/super/members", label: "Member approvals", Icon: Shield },
   { to: "/super/check-bots", label: "Check bots", Icon: ListChecks },
   { to: "/super/tasks", label: "Global tasks", Icon: ListChecks },
   { to: "/super/announcements", label: "Announcements", Icon: Megaphone },
