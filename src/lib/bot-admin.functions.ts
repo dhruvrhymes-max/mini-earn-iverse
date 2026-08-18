@@ -26,19 +26,21 @@ export const adminGetSettings = createServerFn({ method: "POST" })
         rpc_url: rpcUrl,
         contract: cfg.contract ?? defaults.contract,
         explorer: cfg.explorer ?? defaults.explorer,
-        decimals: cfg.decimals ?? 18,
+        decimals: cfg.decimals ?? defaults.decimals ?? 18,
+        enabled: cfg.enabled !== false,
         key_preview: maskSecret(cfg.private_key_enc),
       };
     };
     return {
       payout: {
-        bep20: network("bep20", { chain_label: "BNB Smart Chain", chain_id: 56, rpc_url: "https://bsc-rpc.publicnode.com", contract: "0x55d398326f99059ff775485246999027b3197955", explorer: "https://bscscan.com/tx/" }),
-        polygon: network("polygon", { chain_label: "Polygon", chain_id: 137, rpc_url: "https://polygon-bor-rpc.publicnode.com", contract: "0xc2132D05D31c914a87C6611C10748AaCbAEd4C19", explorer: "https://polygonscan.com/tx/" }),
+        bep20: network("bep20", { chain_label: "BNB Smart Chain", chain_id: 56, rpc_url: "https://bsc-rpc.publicnode.com", contract: "0x55d398326f99059ff775485246999027b3197955", explorer: "https://bscscan.com/tx/", decimals: 18 }),
+        polygon: network("polygon", { chain_label: "Polygon", chain_id: 137, rpc_url: "https://polygon-bor-rpc.publicnode.com", contract: "0xc2132D05D31c914a87C6611C10748AaCbAEd4C19", explorer: "https://polygonscan.com/tx/", decimals: 6 }),
         ton: {
           api_key: payout?.ton?.api_key ?? "",
           endpoint: payout?.ton?.endpoint ?? "https://toncenter.com/api/v2/jsonRPC",
           explorer: payout?.ton?.explorer ?? "https://tonviewer.com/transaction/",
           phrase_preview: maskSecret(payout?.ton?.phrase_enc),
+          enabled: payout?.ton?.enabled !== false,
         },
 
         auto_pay: !!payout?.auto_pay,
