@@ -46,7 +46,7 @@ function AiCreator() {
         const webhook = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/telegram-webhook?t=${tenant.id}`;
         await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
           method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ url: webhook, allowed_updates: ["message"] }),
+          body: JSON.stringify({ url: webhook, allowed_updates: ["message", "callback_query"] }),
         });
       } catch { /* non-fatal */ }
       toast.success("Bot created!");
