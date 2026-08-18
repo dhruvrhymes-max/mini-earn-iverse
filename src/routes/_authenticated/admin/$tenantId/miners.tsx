@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { IconPicker } from "@/components/admin/IconPicker";
+import { MINER_ICON_PRESETS } from "@/lib/icon-presets";
 
 export const Route = createFileRoute("/_authenticated/admin/$tenantId/miners")({
   component: MinersPage,

@@ -14,6 +14,9 @@ import { Loader2, Trash2 } from "lucide-react";
 import { sanitizeShortName } from "@/lib/mini-admin";
 
 import { MiniAppLinks } from "@/components/admin/MiniAppLinks";
+import { IconPicker } from "@/components/admin/IconPicker";
+import { TOKEN_ICON_PRESETS } from "@/lib/icon-presets";
+import { buildAboutText } from "@/lib/about-text";
 
 const WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/telegram-webhook`;
 
