@@ -367,6 +367,15 @@ function Centered({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-6 text-center">{children}</div>;
 }
 
+function joinUrl(c: any) {
+  const raw = String(c?.url || c?.chat_id || "").trim();
+  if (!raw) return "#";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith("@")) return `https://t.me/${raw.slice(1)}`;
+  if (/^[A-Za-z0-9_]{4,}$/.test(raw)) return `https://t.me/${raw}`;
+  return "#";
+}
+
 function Onboarding({ tenant, userId, refetch }: { tenant: any; userId: string; refetch: () => void }) {
   const mark = useServerFn(markOnboarded);
   const check = useServerFn(checkChannelJoin);
@@ -444,7 +453,7 @@ function Onboarding({ tenant, userId, refetch }: { tenant: any; userId: string; 
                       <p className="text-xs text-white/45">{joined[n] ? "Joined" : requireJoin ? "Required" : "Optional"}</p>
                     </div>
                     <a
-                      href={c.url || "#"}
+                      href={joinUrl(c)}
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => setJoined((prev) => ({ ...prev, [n]: prev[n] ?? false }))}

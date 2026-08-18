@@ -723,7 +723,9 @@ export const checkChannelJoin = createServerFn({ method: "POST" })
     const chatIdOf = (c: any) => {
       const raw = String(c.chat_id || "").trim();
       if (raw) return raw.startsWith("-") || raw.startsWith("@") ? raw : `@${raw.replace(/^@/, "")}`;
-      const m = String(c.url || "").match(/t\.me\/(?:s\/)?([A-Za-z0-9_]{4,})/);
+      const url = String(c.url || "").trim();
+      if (url.startsWith("@")) return url;
+      const m = url.match(/t\.me\/(?:s\/)?([A-Za-z0-9_]{4,})/);
       return m ? `@${m[1]}` : null;
     };
 
