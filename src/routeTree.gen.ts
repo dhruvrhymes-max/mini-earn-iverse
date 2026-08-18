@@ -47,6 +47,7 @@ import { Route as AuthenticatedAdminTenantIdReferralsRouteImport } from './route
 import { Route as AuthenticatedAdminTenantIdMinersRouteImport } from './routes/_authenticated/admin/$tenantId/miners'
 import { Route as AuthenticatedAdminTenantIdMilestonesRouteImport } from './routes/_authenticated/admin/$tenantId/milestones'
 import { Route as AuthenticatedAdminTenantIdEconomicsRouteImport } from './routes/_authenticated/admin/$tenantId/economics'
+import { Route as AuthenticatedAdminTenantIdChannelsRouteImport } from './routes/_authenticated/admin/$tenantId/channels'
 import { Route as AuthenticatedAdminTenantIdBrandingRouteImport } from './routes/_authenticated/admin/$tenantId/branding'
 import { Route as AuthenticatedAdminTenantIdAdsRouteImport } from './routes/_authenticated/admin/$tenantId/ads'
 
@@ -250,6 +251,12 @@ const AuthenticatedAdminTenantIdEconomicsRoute =
     path: '/economics',
     getParentRoute: () => AuthenticatedAdminTenantIdRoute,
   } as any)
+const AuthenticatedAdminTenantIdChannelsRoute =
+  AuthenticatedAdminTenantIdChannelsRouteImport.update({
+    id: '/channels',
+    path: '/channels',
+    getParentRoute: () => AuthenticatedAdminTenantIdRoute,
+  } as any)
 const AuthenticatedAdminTenantIdBrandingRoute =
   AuthenticatedAdminTenantIdBrandingRouteImport.update({
     id: '/branding',
@@ -296,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/app/$tenantSlug/': typeof AppTenantSlugIndexRoute
   '/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
   '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
+  '/admin/$tenantId/channels': typeof AuthenticatedAdminTenantIdChannelsRoute
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
   '/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
@@ -334,6 +342,7 @@ export interface FileRoutesByTo {
   '/app/$tenantSlug': typeof AppTenantSlugIndexRoute
   '/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
   '/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
+  '/admin/$tenantId/channels': typeof AuthenticatedAdminTenantIdChannelsRoute
   '/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
   '/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
@@ -377,6 +386,7 @@ export interface FileRoutesById {
   '/app/$tenantSlug/': typeof AppTenantSlugIndexRoute
   '/_authenticated/admin/$tenantId/ads': typeof AuthenticatedAdminTenantIdAdsRoute
   '/_authenticated/admin/$tenantId/branding': typeof AuthenticatedAdminTenantIdBrandingRoute
+  '/_authenticated/admin/$tenantId/channels': typeof AuthenticatedAdminTenantIdChannelsRoute
   '/_authenticated/admin/$tenantId/economics': typeof AuthenticatedAdminTenantIdEconomicsRoute
   '/_authenticated/admin/$tenantId/milestones': typeof AuthenticatedAdminTenantIdMilestonesRoute
   '/_authenticated/admin/$tenantId/miners': typeof AuthenticatedAdminTenantIdMinersRoute
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/'
     | '/admin/$tenantId/ads'
     | '/admin/$tenantId/branding'
+    | '/admin/$tenantId/channels'
     | '/admin/$tenantId/economics'
     | '/admin/$tenantId/milestones'
     | '/admin/$tenantId/miners'
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug'
     | '/admin/$tenantId/ads'
     | '/admin/$tenantId/branding'
+    | '/admin/$tenantId/channels'
     | '/admin/$tenantId/economics'
     | '/admin/$tenantId/milestones'
     | '/admin/$tenantId/miners'
@@ -500,6 +512,7 @@ export interface FileRouteTypes {
     | '/app/$tenantSlug/'
     | '/_authenticated/admin/$tenantId/ads'
     | '/_authenticated/admin/$tenantId/branding'
+    | '/_authenticated/admin/$tenantId/channels'
     | '/_authenticated/admin/$tenantId/economics'
     | '/_authenticated/admin/$tenantId/milestones'
     | '/_authenticated/admin/$tenantId/miners'
@@ -788,6 +801,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTenantIdEconomicsRouteImport
       parentRoute: typeof AuthenticatedAdminTenantIdRoute
     }
+    '/_authenticated/admin/$tenantId/channels': {
+      id: '/_authenticated/admin/$tenantId/channels'
+      path: '/channels'
+      fullPath: '/admin/$tenantId/channels'
+      preLoaderRoute: typeof AuthenticatedAdminTenantIdChannelsRouteImport
+      parentRoute: typeof AuthenticatedAdminTenantIdRoute
+    }
     '/_authenticated/admin/$tenantId/branding': {
       id: '/_authenticated/admin/$tenantId/branding'
       path: '/branding'
@@ -827,6 +847,7 @@ const AuthenticatedSuperRouteWithChildren =
 interface AuthenticatedAdminTenantIdRouteChildren {
   AuthenticatedAdminTenantIdAdsRoute: typeof AuthenticatedAdminTenantIdAdsRoute
   AuthenticatedAdminTenantIdBrandingRoute: typeof AuthenticatedAdminTenantIdBrandingRoute
+  AuthenticatedAdminTenantIdChannelsRoute: typeof AuthenticatedAdminTenantIdChannelsRoute
   AuthenticatedAdminTenantIdEconomicsRoute: typeof AuthenticatedAdminTenantIdEconomicsRoute
   AuthenticatedAdminTenantIdMilestonesRoute: typeof AuthenticatedAdminTenantIdMilestonesRoute
   AuthenticatedAdminTenantIdMinersRoute: typeof AuthenticatedAdminTenantIdMinersRoute
@@ -841,6 +862,8 @@ const AuthenticatedAdminTenantIdRouteChildren: AuthenticatedAdminTenantIdRouteCh
     AuthenticatedAdminTenantIdAdsRoute: AuthenticatedAdminTenantIdAdsRoute,
     AuthenticatedAdminTenantIdBrandingRoute:
       AuthenticatedAdminTenantIdBrandingRoute,
+    AuthenticatedAdminTenantIdChannelsRoute:
+      AuthenticatedAdminTenantIdChannelsRoute,
     AuthenticatedAdminTenantIdEconomicsRoute:
       AuthenticatedAdminTenantIdEconomicsRoute,
     AuthenticatedAdminTenantIdMilestonesRoute:
