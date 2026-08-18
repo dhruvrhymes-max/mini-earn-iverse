@@ -459,6 +459,9 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     else if (data.previewTgId) telegramId = data.previewTgId;
     if (!telegramId) throw new Error("Telegram auth required");
 
+    const nets = withdrawNetworks(tenant.payout_config as any);
+    if (!nets[data.token]) throw new Error("This withdrawal token is currently disabled");
+
     if ((data.token === "usdt_bep20" || data.token === "usdt_polygon") && !/^0x[a-fA-F0-9]{40}$/.test(data.wallet)) {
       throw new Error("Enter a valid 0x EVM address");
     }
