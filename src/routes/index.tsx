@@ -2,7 +2,25 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Home — ZeroLabNetwork" }] }), component: IndexPage, });
+const HOME_TITLE = "ZeroLabNetwork — Gamified Telegram Mini App Platform";
+const HOME_DESC =
+  "ZeroLabNetwork is an amazing project working in webapps / saas / tma etc — build gamified Telegram Mini Apps with multi-tenant economy, ads and withdrawals.";
+
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: HOME_TITLE },
+      { name: "description", content: HOME_DESC },
+      { property: "og:title", content: HOME_TITLE },
+      { property: "og:description", content: HOME_DESC },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://zerolabnetwork.xyz/" },
+      { name: "twitter:card", content: "summary" },
+    ],
+    links: [{ rel: "canonical", href: "https://zerolabnetwork.xyz/" }],
+  }),
+  component: IndexPage,
+});
 
 function IndexPage() {
   const { session, loading } = useAuth();
