@@ -67,19 +67,49 @@ async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResul
   const chain = { id: chainId, name: cfg.chain_label || "EVM", nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: rpcUrls } } } as any;
   const wallet = createWalletClient({ account, chain, transport });
 
-  const decimals = Number(cfg.decimals ?? 6);
-  const value = toUnits(amount, cfg.contract ? decimals : 18);
+  let hash: `0x${string}`;
+  if (cfg.contract) {
+    const token = String(cfg.contract).trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(token)) throw new Error("Token contract address in payout settings is invalid");
+    const code = await publicClient.getCode({ address: token as `0x${string}` });
+    if (!code || code === "0x") throw new Error(`No token contract found at ${token} on ${cfg.chain_label || "this chain"}. Check the USDT contract address in payout settings.`);
 
-  const hash = cfg.contract
-    ? await wallet.writeContract({
-        address: cfg.contract as `0x${string}`,
+    // Trust on-chain decimals over the configured value.
+    let decimals = Number(cfg.decimals ?? 6);
+    try {
+      decimals = Number(await publicClient.readContract({ address: token as `0x${string}`, abi: TOKEN_META_ABI, functionName: "decimals" }));
+    } catch { /* keep configured decimals */ }
+    const value = toUnits(amount, decimals);
+
+    const [tokenBal, gasBal] = await Promise.all([
+      publicClient.readContract({ address: token as `0x${string}`, abi: TOKEN_META_ABI, functionName: "balanceOf", args: [account.address] }).catch(() => null),
+      publicClient.getBalance({ address: account.address }),
+    ]);
+    if (tokenBal !== null && (tokenBal as bigint) < value) {
+      throw new Error(`Payout wallet holds only ${Number(tokenBal) / 10 ** decimals} tokens but ${amount} is required. Top up ${account.address}.`);
+    }
+    if (gasBal === 0n) throw new Error(`Payout wallet ${account.address} has no native gas balance on ${cfg.chain_label || "this chain"}.`);
+
+    try {
+      const sim = await publicClient.simulateContract({
+        address: token as `0x${string}`,
         abi: ERC20_ABI,
         functionName: "transfer",
         args: [to as `0x${string}`, value],
-        chain,
         account,
-      })
-    : await wallet.sendTransaction({ to: to as `0x${string}`, value, chain, account });
+      });
+      hash = await wallet.writeContract(sim.request as any);
+    } catch (e: any) {
+      const msg = String(e?.shortMessage || e?.message || e);
+      throw new Error(`Token transfer rejected by the contract: ${msg}. Verify the contract address, decimals, and that the payout wallet has enough USDT and gas.`);
+    }
+  } else {
+    const value = toUnits(amount, 18);
+    if ((await publicClient.getBalance({ address: account.address })) < value) {
+      throw new Error(`Payout wallet ${account.address} has insufficient native balance.`);
+    }
+    hash = await wallet.sendTransaction({ to: to as `0x${string}`, value, chain, account });
+  }
   await publicClient.waitForTransactionReceipt({ hash, confirmations: 1, timeout: 90_000 });
   return { hash, explorer: cfg.explorer || null };
 }
