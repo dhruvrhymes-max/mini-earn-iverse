@@ -79,22 +79,11 @@ function CheckBots() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Required channels / groups</Label>
-            {edit.channels.map((c: any, i: number) => (
-              <div key={i} className="flex gap-2">
-                <Input placeholder="Title" value={c.title ?? ""} onChange={(e) => setEdit({ ...edit, channels: edit.channels.map((x: any, j: number) => j === i ? { ...x, title: e.target.value } : x) })} />
-                <Input placeholder="https://t.me/…" value={c.url ?? ""} onChange={(e) => setEdit({ ...edit, channels: edit.channels.map((x: any, j: number) => j === i ? { ...x, url: e.target.value } : x) })} />
-                <Input placeholder="@chat_id" value={c.chat_id ?? ""} onChange={(e) => setEdit({ ...edit, channels: edit.channels.map((x: any, j: number) => j === i ? { ...x, chat_id: e.target.value } : x) })} />
-                <Button variant="ghost" size="icon" onClick={() => setEdit({ ...edit, channels: edit.channels.filter((_: any, j: number) => j !== i) })}><Trash2 className="h-4 w-4" /></Button>
-              </div>
-            ))}
-            {edit.channels.length < 6 && (
-              <Button variant="outline" size="sm" onClick={() => setEdit({ ...edit, channels: [...edit.channels, { title: "", url: "", chat_id: "" }] })}>
-                <Plus className="h-4 w-4 mr-1" /> Add channel
-              </Button>
-            )}
-          </div>
+          <p className="text-xs text-muted-foreground">
+            This bot verifies membership for any channel or group it is an admin of. Add the actual required channels
+            per bot in that bot's admin panel → Check channels (web or in-app).
+          </p>
+
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={edit.active} onChange={(e) => setEdit({ ...edit, active: e.target.checked })} /> Active
