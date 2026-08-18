@@ -26,8 +26,7 @@ function toUnits(amount: number, decimals: number): bigint {
   return BigInt(i || "0") * 10n ** BigInt(decimals) + BigInt(frac || "0");
 }
 
-async function payEvm(payout: any, to: string, amount: number): Promise<PayoutResult> {
-  const cfg = payout?.evm || {};
+async function payEvm(cfg: any, to: string, amount: number): Promise<PayoutResult> {
   const enc = cfg.private_key_enc;
   if (!enc) throw new Error("EVM private key is not configured in payout settings");
   if (!cfg.rpc_url) throw new Error("EVM RPC URL is not configured in payout settings");
@@ -43,6 +42,9 @@ async function payEvm(payout: any, to: string, amount: number): Promise<PayoutRe
   const account = privateKeyToAccount(pk as `0x${string}`);
   const publicClient = createPublicClient({ transport: http(cfg.rpc_url) });
   const chainId = await publicClient.getChainId();
+  if (cfg.chain_id && Number(cfg.chain_id) !== chainId) {
+    throw new Error(`Configured RPC is chain ${chainId}, expected ${cfg.chain_id}`);
+  }
   const chain = { id: chainId, name: cfg.chain_label || "EVM", nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [cfg.rpc_url] } } } as any;
   const wallet = createWalletClient({ account, chain, transport: http(cfg.rpc_url) });
 
@@ -59,7 +61,7 @@ async function payEvm(payout: any, to: string, amount: number): Promise<PayoutRe
         account,
       })
     : await wallet.sendTransaction({ to: to as `0x${string}`, value, chain, account });
-
+  await publicClient.waitForTransactionReceipt({ hash, confirmations: 1, timeout: 90_000 });
   return { hash, explorer: cfg.explorer || null };
 }
 
@@ -106,12 +108,14 @@ async function payTon(payout: any, to: string, amount: number): Promise<PayoutRe
 
   await contract.sendTransfer({ seqno, secretKey: key.secretKey, messages });
 
-  // Wait for the seqno to advance so we know the transfer was accepted.
+  // Wait for seqno advancement; never report a fake hash as a successful payment.
+  let accepted = false;
   for (let i = 0; i < 20; i++) {
     await new Promise((r) => setTimeout(r, 1500));
     const now = await contract.getSeqno().catch(() => seqno);
-    if (now > seqno) break;
+    if (now > seqno) { accepted = true; break; }
   }
+  if (!accepted) throw new Error("TON transfer was not confirmed by the RPC endpoint");
 
   // Report the outgoing tx hash from the wallet's latest transaction.
   let hash = "";
@@ -121,7 +125,8 @@ async function payTon(payout: any, to: string, amount: number): Promise<PayoutRe
   } catch {
     /* explorer hash is best-effort */
   }
-  return { hash: hash || `seqno:${seqno + 1}`, explorer: cfg.explorer || null };
+  if (!hash) throw new Error("TON transfer was accepted but its transaction hash could not be resolved");
+  return { hash, explorer: cfg.explorer || "https://tonviewer.com/transaction/" };
 }
 
 /** Send a withdrawal on-chain. Throws with a readable message on failure. */
@@ -135,6 +140,10 @@ export async function sendPayout(
   if (!(amount > 0)) throw new Error("Invalid payout amount");
   const payout: any = tenant?.payout_config || {};
   const net = String(opts.network || "").toLowerCase();
-  if (net === "ton") return payTon(payout, to, amount);
-  return payEvm(payout, to, amount);
+  if (net === "gram_ton" || net === "ton") return payTon(payout, to, amount);
+  const key = net === "usdt_bep20" || net === "bep20" ? "bep20" : net === "usdt_polygon" || net === "polygon" ? "polygon" : "";
+  if (!key) throw new Error("Unsupported payout token");
+  const cfg = payout?.[key] || (payout?.evm?.chain_label?.toLowerCase().includes(key === "bep20" ? "bep" : "polygon") ? payout.evm : null);
+  if (!cfg) throw new Error(`${key === "bep20" ? "BEP20" : "Polygon"} payout is not configured`);
+  return payEvm(cfg, to, amount);
 }

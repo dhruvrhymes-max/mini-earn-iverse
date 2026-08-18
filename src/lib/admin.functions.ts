@@ -186,35 +186,63 @@ export const listWithdrawals = createServerFn({ method: "GET" })
 
 export const processWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ id: z.string().uuid(), approve: z.boolean() }).parse(i))
+  .inputValidator((i) => z.object({ id: z.string().uuid(), approve: z.boolean(), reason: z.string().trim().max(300).optional() }).parse(i))
   .handler(async ({ data, context }) => {
     const s = context.supabase;
-    const { data: tx, error: e1 } = await s.from("transactions").select("*").eq("id", data.id).single();
+    const { data: tx, error: e1 } = await s.from("transactions").select("id,tenant_id").eq("id", data.id).single();
     if (e1) throw new Error(e1.message);
-    if (tx.status !== "pending") throw new Error("Already processed");
-    if (data.approve) {
-      const { data: tenant } = await s.from("tenants").select("*").eq("id", tx.tenant_id).single();
-      const { sendPayout } = await import("./payout.server");
-      const res = await sendPayout(tenant, { network: tx.network, wallet: tx.wallet, amount: Number(tx.amount) });
-      const { error } = await s.from("transactions").update({
-        status: "paid",
-        tx_hash: res.hash,
-      }).eq("id", data.id);
-      if (error) throw new Error(error.message);
-      await (await import("./proof.server")).sendWithdrawalProof(tenant, tx, "paid", res.hash, null);
-      return { ok: true, tx_hash: res.hash };
+    const { data: tenant, error: tenantError } = await s.from("tenants").select("*").eq("id", tx.tenant_id).single();
+    if (tenantError) throw new Error(tenantError.message);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return (await import("./withdrawal-processing.server")).processWithdrawalSecurely(supabaseAdmin, tenant, data.id, data.approve, data.reason);
+  });
 
-    } else {
-      // Refund the user's USDT balance
-      const { error: refundErr } = await s.rpc as any; // skip rpc; just update
-      const { data: user } = await s.from("app_users").select("usd_balance").eq("id", tx.user_id).single();
-      await s.from("app_users").update({
-        usd_balance: Number(user?.usd_balance || 0) + Number(tx.amount),
-      }).eq("id", tx.user_id);
-      const { error } = await s.from("transactions").update({ status: "rejected" }).eq("id", data.id);
-      if (error) throw new Error(error.message);
-      return { ok: true };
-    }
+export const getPayoutSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ tenantId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: tenant, error } = await context.supabase.from("tenants").select("payout_config,proof_config").eq("id", data.tenantId).single();
+    if (error) throw new Error(error.message);
+    const { maskSecret } = await import("./wallet-crypto.server");
+    const p: any = tenant.payout_config || {};
+    const defaults: any = {
+      bep20: { chain_label: "BNB Smart Chain", chain_id: 56, rpc_url: "https://bsc-rpc.publicnode.com", contract: "0x55d398326f99059ff775485246999027b3197955", explorer: "https://bscscan.com/tx/", decimals: 18 },
+      polygon: { chain_label: "Polygon", chain_id: 137, rpc_url: "https://polygon-bor-rpc.publicnode.com", contract: "0xc2132D05D31c914a87C6611C10748AaCbAEd4C19", explorer: "https://polygonscan.com/tx/", decimals: 6 },
+    };
+    const read = (key: "bep20" | "polygon") => ({ ...defaults[key], ...(p[key] || {}), private_key_enc: undefined, key_preview: maskSecret(p[key]?.private_key_enc) });
+    return {
+      bep20: read("bep20"), polygon: read("polygon"),
+      ton: { endpoint: "https://toncenter.com/api/v2/jsonRPC", explorer: "https://tonviewer.com/transaction/", api_key: "", ...(p.ton || {}), phrase_enc: undefined, phrase_preview: maskSecret(p.ton?.phrase_enc) },
+      proof: { enabled: false, channel_id: "", template: "", footer: "", ...((tenant.proof_config as any) || {}) },
+    };
+  });
+
+export const savePayoutSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({
+    tenantId: z.string().uuid(),
+    payout: z.object({
+      bep20: z.object({ chain_label: z.string().max(40), chain_id: z.number().int().positive(), rpc_url: z.string().url(), contract: z.string().max(100), explorer: z.string().url(), decimals: z.number().int().min(0).max(24), private_key: z.string().max(200).optional().nullable() }),
+      polygon: z.object({ chain_label: z.string().max(40), chain_id: z.number().int().positive(), rpc_url: z.string().url(), contract: z.string().max(100), explorer: z.string().url(), decimals: z.number().int().min(0).max(24), private_key: z.string().max(200).optional().nullable() }),
+      ton: z.object({ endpoint: z.string().url(), explorer: z.string().url(), api_key: z.string().max(200), phrase: z.string().max(500).optional().nullable() }),
+    }),
+    proof: z.object({ enabled: z.boolean(), channel_id: z.string().max(80), template: z.string().max(2000), footer: z.string().max(300) }),
+  }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: tenant, error: readError } = await context.supabase.from("tenants").select("payout_config").eq("id", data.tenantId).single();
+    if (readError) throw new Error(readError.message);
+    const { encryptSecret } = await import("./wallet-crypto.server");
+    const current: any = tenant.payout_config || {};
+    const secureEvm = (key: "bep20" | "polygon", value: any) => {
+      const next = { ...current[key], ...value, private_key_enc: value.private_key?.trim() ? encryptSecret(value.private_key.trim()) : current[key]?.private_key_enc ?? null };
+      delete next.private_key;
+      return next;
+    };
+    const ton: any = { ...current.ton, ...data.payout.ton, phrase_enc: data.payout.ton.phrase?.trim() ? encryptSecret(data.payout.ton.phrase.trim()) : current.ton?.phrase_enc ?? null };
+    delete ton.phrase;
+    const { error } = await context.supabase.from("tenants").update({ payout_config: { ...current, bep20: secureEvm("bep20", data.payout.bep20), polygon: secureEvm("polygon", data.payout.polygon), ton }, proof_config: data.proof }).eq("id", data.tenantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const listMilestones = createServerFn({ method: "GET" })

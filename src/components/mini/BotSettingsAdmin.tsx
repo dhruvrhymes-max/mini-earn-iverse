@@ -34,36 +34,34 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
   const set = (path: string, key: string, value: any) => setS({ ...s, [path]: { ...s[path], [key]: value } });
 
   if (section === "payouts") {
-    const evm = s.payout.evm, ton = s.payout.ton;
+    const bep20 = s.payout.bep20, polygon = s.payout.polygon, ton = s.payout.ton;
+    const evmPayload = (v: any) => ({ chain_label: v.chain_label, chain_id: Number(v.chain_id), rpc_url: v.rpc_url, contract: v.contract, explorer: v.explorer, decimals: Number(v.decimals) || 18, private_key: v.private_key || null });
+    const setNetwork = (key: "bep20" | "polygon", field: string, value: any) => setS({ ...s, payout: { ...s.payout, [key]: { ...s.payout[key], [field]: value } } });
     return (
       <Box onSave={() => m.mutate({ payout: {
-        evm: { chain_label: evm.chain_label, rpc_url: evm.rpc_url, contract: evm.contract, explorer: evm.explorer, decimals: Number(evm.decimals) || 6, private_key: evm.private_key || null },
-        ton: { api_key: ton.api_key, explorer: ton.explorer, endpoint: ton.endpoint || null, jetton_master: ton.jetton_master || null, jetton_decimals: Number(ton.jetton_decimals) || 6, phrase: ton.phrase || null },
+        bep20: evmPayload(bep20), polygon: evmPayload(polygon),
+        ton: { api_key: ton.api_key, explorer: ton.explorer, endpoint: ton.endpoint || null, phrase: ton.phrase || null },
         auto_pay: !!s.payout.auto_pay,
       } })} pending={m.isPending}>
-        <Section title="EVM (USDT payouts)" />
-        <F label="Chain label"><Input value={evm.chain_label} onChange={(e) => setS({ ...s, payout: { ...s.payout, evm: { ...evm, chain_label: e.target.value } } })} /></F>
-        <F label="RPC URL"><Input value={evm.rpc_url} onChange={(e) => setS({ ...s, payout: { ...s.payout, evm: { ...evm, rpc_url: e.target.value } } })} /></F>
-        <F label="Token contract"><Input value={evm.contract} onChange={(e) => setS({ ...s, payout: { ...s.payout, evm: { ...evm, contract: e.target.value } } })} /></F>
-        <div className="grid grid-cols-2 gap-2">
-          <F label="Explorer tx base"><Input value={evm.explorer} onChange={(e) => setS({ ...s, payout: { ...s.payout, evm: { ...evm, explorer: e.target.value } } })} /></F>
-          <F label="Decimals"><Input type="number" value={evm.decimals} onChange={(e) => setS({ ...s, payout: { ...s.payout, evm: { ...evm, decimals: e.target.value } } })} /></F>
-        </div>
-        <F label={`Private key ${evm.key_preview ? `(saved ${evm.key_preview})` : "(not set)"}`}>
-          <Input type="password" placeholder="Enter to replace" value={evm.private_key ?? ""} onChange={(e) => setS({ ...s, payout: { ...s.payout, evm: { ...evm, private_key: e.target.value } } })} />
-        </F>
+        {(["bep20", "polygon"] as const).map((key) => {
+          const evm = s.payout[key];
+          return <div key={key} className="space-y-3 border-b border-white/10 pb-4">
+            <Section title={key === "bep20" ? "USDT BEP20" : "USDT Polygon"} />
+            <div className="grid grid-cols-2 gap-2"><F label="Chain ID"><Input type="number" value={evm.chain_id} onChange={(e) => setNetwork(key, "chain_id", e.target.value)} /></F><F label="Decimals"><Input type="number" value={evm.decimals} onChange={(e) => setNetwork(key, "decimals", e.target.value)} /></F></div>
+            <F label="RPC URL"><Input value={evm.rpc_url} onChange={(e) => setNetwork(key, "rpc_url", e.target.value)} /></F>
+            <F label="USDT contract"><Input value={evm.contract} onChange={(e) => setNetwork(key, "contract", e.target.value)} /></F>
+            <F label="Explorer tx base"><Input value={evm.explorer} onChange={(e) => setNetwork(key, "explorer", e.target.value)} /></F>
+            <F label={`Private key ${evm.key_preview ? `(saved ${evm.key_preview})` : "(not set)"}`}><Input type="password" placeholder="Enter to replace" value={evm.private_key ?? ""} onChange={(e) => setNetwork(key, "private_key", e.target.value)} /></F>
+          </div>;
+        })}
         <Section title="TON (Tonkeeper)" />
         <F label={`24-word phrase ${ton.phrase_preview ? `(saved ${ton.phrase_preview})` : "(not set)"}`}>
           <Textarea rows={2} placeholder="Enter to replace" value={ton.phrase ?? ""} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, phrase: e.target.value } } })} />
         </F>
         <F label="TON API key"><Input value={ton.api_key} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, api_key: e.target.value } } })} /></F>
         <F label="TON RPC endpoint"><Input value={ton.endpoint ?? ""} placeholder="https://toncenter.com/api/v2/jsonRPC" onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, endpoint: e.target.value } } })} /></F>
-        <div className="grid grid-cols-2 gap-2">
-          <F label="Jetton master (blank = native TON)"><Input value={ton.jetton_master ?? ""} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, jetton_master: e.target.value } } })} /></F>
-          <F label="Jetton decimals"><Input type="number" value={ton.jetton_decimals ?? 6} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, jetton_decimals: e.target.value } } })} /></F>
-        </div>
         <F label="TON explorer base"><Input value={ton.explorer} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, explorer: e.target.value } } })} /></F>
-        <p className="text-[11px] text-white/40">Keys are encrypted before storage and never sent back to the app. "Mark paid" signs and broadcasts the payment with these credentials.</p>
+        <p className="text-[11px] text-white/40">Keys are encrypted before storage and never sent back to the app. “Approve & send” signs, broadcasts, confirms, and records the real transaction.</p>
 
       </Box>
     );

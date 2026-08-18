@@ -38,6 +38,7 @@ export async function postProof(
 
 /** Render + post a withdrawal proof for a transaction row. */
 export async function sendWithdrawalProof(
+  supabaseAdmin: any,
   tenant: any,
   tx: any,
   status: "paid" | "rejected" | "requested",
@@ -47,7 +48,12 @@ export async function sendWithdrawalProof(
   const cfg: any = tenant.proof_config || {};
   if (!cfg.enabled || !cfg.channel_id) return { ok: false, skipped: true };
   const payout: any = tenant.payout_config || {};
-  const explorer = tx.network === "ton" ? payout?.ton?.explorer : payout?.evm?.explorer;
+  const network = String(tx.network || "").toLowerCase();
+  const explorer = network === "gram_ton" || network === "ton"
+    ? payout?.ton?.explorer
+    : network === "usdt_bep20" || network === "bep20"
+      ? payout?.bep20?.explorer ?? payout?.evm?.explorer
+      : payout?.polygon?.explorer ?? payout?.evm?.explorer;
   const text = renderProof(cfg.template || DEFAULT_PROOF_TEMPLATE, {
     status:
       status === "paid" ? "Withdrawal successful"
@@ -65,5 +71,12 @@ export async function sendWithdrawalProof(
     footer: cfg.footer || tenant.name || "",
     bot: tenant.bot_username ? `@${tenant.bot_username}` : "",
   });
-  return postProof(tenant.bot_token, cfg.channel_id, text);
+  const { data: checkBot } = await supabaseAdmin.from("check_bots")
+    .select("bot_token")
+    .eq("active", true)
+    .or(`tenant_id.eq.${tenant.id},tenant_id.is.null`)
+    .order("tenant_id", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+  return postProof(checkBot?.bot_token || tenant.bot_token, cfg.channel_id, text);
 }

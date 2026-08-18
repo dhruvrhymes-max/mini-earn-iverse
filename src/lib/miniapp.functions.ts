@@ -430,33 +430,47 @@ export const convertToUsdt = createServerFn({ method: "POST" })
 export const requestWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((i) =>
     z.object({
-      userId: z.string().uuid(),
+      tenantId: z.string().uuid(),
+      initData: z.string().nullable().optional(),
+      previewTgId: z.number().int().positive().nullable().optional(),
       amount_usdt: z.number().positive(),
-      network: z.enum(["polygon", "bep20", "ton"]),
+      token: z.enum(["usdt_bep20", "usdt_polygon", "gram_ton"]),
+      wallet: z.string().trim().min(10).max(120),
     }).parse(i),
   )
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
+    const { data: tenant, error: tenantError } = await supabaseAdmin.from("tenants")
+      .select("*").eq("id", data.tenantId).eq("status", "active").maybeSingle();
+    if (tenantError) throw new Error(tenantError.message);
+    if (!tenant) throw new Error("Bot not found");
+    let telegramId: number | null = null;
+    if (data.initData && tenant.bot_token) telegramId = validateTelegramInitData(data.initData, tenant.bot_token)?.id ?? null;
+    else if (data.previewTgId) telegramId = data.previewTgId;
+    if (!telegramId) throw new Error("Telegram auth required");
+
+    if ((data.token === "usdt_bep20" || data.token === "usdt_polygon") && !/^0x[a-fA-F0-9]{40}$/.test(data.wallet)) {
+      throw new Error("Enter a valid 0x EVM address");
+    }
+    if (data.token === "gram_ton") {
+      const { Address } = await import("@ton/core");
+      try { Address.parse(data.wallet); } catch { throw new Error("Enter a valid TON address"); }
+    }
     const { data: user } = await supabaseAdmin.from("app_users")
-      .select("*, tenants(economics)").eq("id", data.userId).single();
-    if (!user) throw new Error("Not found");
-    const econ = (user as any).tenants.economics as any;
-    const minW = Number(econ.min_withdraw_usdt || 0.1);
-    if (data.amount_usdt < minW) throw new Error(`Minimum withdrawal is ${minW} USDT`);
-    if (Number(user.usd_balance) < data.amount_usdt) throw new Error("Insufficient USDT balance");
-    const walletField = data.network === "polygon" ? "wallet_polygon"
-      : data.network === "bep20" ? "wallet_bep20" : "wallet_ton";
-    const wallet = (user as any)[walletField];
-    if (!wallet) throw new Error(`Set your ${data.network.toUpperCase()} wallet first`);
-    await supabaseAdmin.from("app_users").update({
-      usd_balance: Number(user.usd_balance) - data.amount_usdt,
-    }).eq("id", user.id);
-    await supabaseAdmin.from("transactions").insert({
-      tenant_id: user.tenant_id, user_id: user.id, type: "withdraw",
-      amount: data.amount_usdt, currency: "USDT", status: "pending",
-      wallet, network: data.network,
+      .select("id,tenant_id,telegram_id,username,first_name").eq("tenant_id", data.tenantId).eq("telegram_id", telegramId).maybeSingle();
+    if (!user) throw new Error("User not found");
+    const { data: reserved, error } = await supabaseAdmin.rpc("reserve_withdrawal", {
+      _tenant_id: data.tenantId,
+      _user_id: user.id,
+      _amount: data.amount_usdt,
+      _currency: "USDT",
+      _network: data.token,
+      _wallet: data.wallet,
     });
-    return { ok: true };
+    if (error) throw new Error(error.message);
+    const tx = { ...reserved, app_users: user };
+    await (await import("./withdrawal-notifications.server")).sendWithdrawalNotifications(supabaseAdmin, tenant, tx, "requested");
+    return { ok: true, id: reserved.id };
   });
 
 export const getMyHistory = createServerFn({ method: "GET" })
