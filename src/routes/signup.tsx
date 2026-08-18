@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Create account — MineCraft SaaS" }] }),
+  head: () => ({ meta: [{ title: "Create account — ZeroLabNetwork" }] }),
   component: Signup,
 });
 

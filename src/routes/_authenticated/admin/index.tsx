@@ -97,7 +97,7 @@ function AdminIndex() {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="font-bold">MineCraft SaaS</div>
+          <div className="font-bold">ZeroLabNetwork</div>
           <div className="flex items-center gap-2">
             {roles.includes("super_admin") && (
               <Button asChild variant="outline" size="sm"><Link to="/super"><Shield className="mr-1 h-4 w-4" />Super Admin</Link></Button>
