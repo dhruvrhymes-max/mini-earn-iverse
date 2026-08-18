@@ -15,7 +15,13 @@ export const Route = createFileRoute("/app/$tenantSlug/withdraw")({ component: W
 function Withdraw() {
   const { tenant, user, refetchUser, initData, previewTgId } = useMini();
   const [amount, setAmount] = useState("");
-  const [token, setToken] = useState<"usdt_bep20" | "usdt_polygon" | "gram_ton">("usdt_bep20");
+  const nets = ((tenant as any).withdraw_networks ?? {}) as Record<string, boolean>;
+  const tokens = ([
+    { id: "usdt_bep20", label: "USDT BEP20" },
+    { id: "usdt_polygon", label: "USDT POL" },
+    { id: "gram_ton", label: "GRAM (TON)" },
+  ] as const).filter((t) => nets[t.id] !== false);
+  const [token, setToken] = useState<"usdt_bep20" | "usdt_polygon" | "gram_ton">(tokens[0]?.id ?? "usdt_bep20");
   const [wallet, setWallet] = useState("");
   const fn = useServerFn(requestWithdrawal);
   const m = useMutation({
@@ -32,12 +38,13 @@ function Withdraw() {
         <div><Label>Select token</Label>
           <Select value={token} onValueChange={(v) => setToken(v as typeof token)}>
             <SelectTrigger className="bg-white/10 border-white/20"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="usdt_bep20">USDT BEP20</SelectItem><SelectItem value="usdt_polygon">USDT POL</SelectItem><SelectItem value="gram_ton">GRAM (TON)</SelectItem></SelectContent>
+            <SelectContent>{tokens.map((t) => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div><Label>Destination address</Label><Input value={wallet} onChange={(e) => setWallet(e.target.value)} placeholder={token === "gram_ton" ? "TON wallet address" : "0x…"} className="bg-white/10 border-white/20" /></div>
         <div><Label>Amount (USDT)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="bg-white/10 border-white/20" /></div>
-        <Button className="w-full" onClick={() => m.mutate()} disabled={m.isPending || !amount || !wallet.trim()}>{m.isPending ? "Submitting…" : "Request withdrawal"}</Button>
+        {tokens.length === 0 && <p className="text-xs text-white/50">Withdrawals are temporarily disabled.</p>}
+        <Button className="w-full" onClick={() => m.mutate()} disabled={m.isPending || !amount || !wallet.trim() || tokens.length === 0}>{m.isPending ? "Submitting…" : "Request withdrawal"}</Button>
       </div>
     </div>
   );

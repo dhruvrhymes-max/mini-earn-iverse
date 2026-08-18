@@ -49,11 +49,21 @@ async function getSupabaseAdmin() {
   return supabaseAdmin;
 }
 
+export function withdrawNetworks(payout: any) {
+  const on = (v: any) => v !== false;
+  return {
+    usdt_bep20: on(payout?.bep20?.enabled),
+    usdt_polygon: on(payout?.polygon?.enabled),
+    gram_ton: on(payout?.ton?.enabled),
+  };
+}
+
 function normalizeTenant(row: any) {
   if (!row || row.status !== "active") return null;
-  const { bot_token: _botToken, payout_config: _payout, ...safeRow } = row;
+  const { bot_token: _botToken, payout_config: payout, ...safeRow } = row;
   return {
     ...safeRow,
+    withdraw_networks: withdrawNetworks(payout),
     theme: { ...DEFAULT_THEME, ...((row.theme as any) || {}) },
     economics: { ...DEFAULT_ECON, ...((row.economics as any) || {}) },
     ad_config: { ...DEFAULT_AD, ...((row.ad_config as any) || {}) },
@@ -448,6 +458,9 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     if (data.initData && tenant.bot_token) telegramId = validateTelegramInitData(data.initData, tenant.bot_token)?.id ?? null;
     else if (data.previewTgId) telegramId = data.previewTgId;
     if (!telegramId) throw new Error("Telegram auth required");
+
+    const nets = withdrawNetworks(tenant.payout_config as any);
+    if (!nets[data.token]) throw new Error("This withdrawal token is currently disabled");
 
     if ((data.token === "usdt_bep20" || data.token === "usdt_polygon") && !/^0x[a-fA-F0-9]{40}$/.test(data.wallet)) {
       throw new Error("Enter a valid 0x EVM address");

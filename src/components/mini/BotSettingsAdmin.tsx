@@ -35,18 +35,19 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
 
   if (section === "payouts") {
     const bep20 = s.payout.bep20, polygon = s.payout.polygon, ton = s.payout.ton;
-    const evmPayload = (v: any) => ({ chain_label: v.chain_label, chain_id: Number(v.chain_id), rpc_url: v.rpc_url, contract: v.contract, explorer: v.explorer, decimals: Number(v.decimals) || 18, private_key: v.private_key || null });
+    const evmPayload = (v: any) => ({ chain_label: v.chain_label, chain_id: Number(v.chain_id), rpc_url: v.rpc_url, contract: v.contract, explorer: v.explorer, decimals: Number(v.decimals) || 18, enabled: v.enabled !== false, private_key: v.private_key || null });
     const setNetwork = (key: "bep20" | "polygon", field: string, value: any) => setS({ ...s, payout: { ...s.payout, [key]: { ...s.payout[key], [field]: value } } });
     return (
       <Box onSave={() => m.mutate({ payout: {
         bep20: evmPayload(bep20), polygon: evmPayload(polygon),
-        ton: { api_key: ton.api_key, explorer: ton.explorer, endpoint: ton.endpoint || null, phrase: ton.phrase || null },
+        ton: { api_key: ton.api_key, explorer: ton.explorer, endpoint: ton.endpoint || null, phrase: ton.phrase || null, enabled: ton.enabled !== false },
         auto_pay: !!s.payout.auto_pay,
       } })} pending={m.isPending}>
         {(["bep20", "polygon"] as const).map((key) => {
           const evm = s.payout[key];
           return <div key={key} className="space-y-3 border-b border-white/10 pb-4">
-            <Section title={key === "bep20" ? "USDT BEP20" : "USDT Polygon"} />
+            <Section title={key === "bep20" ? "USDT BEP20" : "USDT POL (Polygon)"} />
+            <Toggle label={`Allow ${key === "bep20" ? "USDT BEP20" : "USDT POL"} withdrawals`} checked={evm.enabled !== false} onChange={(v) => setNetwork(key, "enabled", v)} />
             <div className="grid grid-cols-2 gap-2"><F label="Chain ID"><Input type="number" value={evm.chain_id} onChange={(e) => setNetwork(key, "chain_id", e.target.value)} /></F><F label="Decimals"><Input type="number" value={evm.decimals} onChange={(e) => setNetwork(key, "decimals", e.target.value)} /></F></div>
             <F label="RPC URL"><Input value={evm.rpc_url} onChange={(e) => setNetwork(key, "rpc_url", e.target.value)} /></F>
             <F label="USDT contract"><Input value={evm.contract} onChange={(e) => setNetwork(key, "contract", e.target.value)} /></F>
@@ -55,6 +56,7 @@ export function BotSettingsAdmin({ tenantId, initData, previewTgId, section }: P
           </div>;
         })}
         <Section title="TON (Tonkeeper)" />
+        <Toggle label="Allow GRAM (TON) withdrawals" checked={ton.enabled !== false} onChange={(v) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, enabled: v } } })} />
         <F label={`24-word phrase ${ton.phrase_preview ? `(saved ${ton.phrase_preview})` : "(not set)"}`}>
           <Textarea rows={2} placeholder="Enter to replace" value={ton.phrase ?? ""} onChange={(e) => setS({ ...s, payout: { ...s.payout, ton: { ...ton, phrase: e.target.value } } })} />
         </F>
