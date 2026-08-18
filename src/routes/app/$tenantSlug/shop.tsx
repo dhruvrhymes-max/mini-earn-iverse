@@ -4,9 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { listMiners, myMiners, buyMiner, myReceipts } from "@/lib/miners.functions";
+import { TonPayDialog, type TonPayRequest } from "@/components/mini/TonPayDialog";
 import { useMini } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
 import { Zap, Timer, Gift, Receipt, ShoppingBag, Check } from "lucide-react";
+
 
 export const Route = createFileRoute("/app/$tenantSlug/shop")({
   head: () => ({
