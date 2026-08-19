@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
         await api("sendMessage", {
           chat_id: chatId,
           parse_mode: "HTML",
-          text: `📝 <b>Start message</b>\n\nCurrent:\n\n${renderWelcome(tenant, cb.from)}\n\nSend the new text (HTML allowed: <b>bold</b>, <i>italic</i>).\nSend /cancel to abort.`,
+          text: `📝 <b>Start message</b>\n\nCurrent:\n\n${renderWelcome(tenant, cb.from)}\n\nSend the new text (HTML allowed: <b>bold</b>, <i>italic</i>).\nOr send a <b>photo with a caption</b> to set the banner image and text together.\nSend <code>/nophoto</code> to remove the current image.\nSend /cancel to abort.`,
         });
       }
       return json({ ok: true });
