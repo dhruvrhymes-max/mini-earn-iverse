@@ -46,11 +46,34 @@ export function computeEnergy(user: any, cfg: ReturnType<typeof gameConfig>): nu
   return Math.max(0, Math.min(max, Math.floor(current + regen)));
 }
 
-/** Tokens waiting to be collected in idle mode (capped). */
+/**
+ * Per-day idle counters. They roll over at the shared 02:00 IST day boundary,
+ * so a stale `idle_day` is treated as "no usage yet today".
+ */
+export function idleDayCounters(user: any) {
+  const { dayStartISO } = require("./day-window") as typeof import("./day-window");
+  const day = dayStartISO();
+  const fresh = user?.idle_day ? new Date(user.idle_day).toISOString() === day : false;
+  return {
+    day,
+    fresh,
+    collects: fresh ? Number(user.idle_collects ?? 0) : 0,
+    adExtends: fresh ? Number(user.idle_ad_extends ?? 0) : 0,
+    bonusHours: fresh ? Number(user.idle_bonus_hours ?? 0) : 0,
+  };
+}
+
+/** Storage size for this user right now: base cap + today's ad bonuses. */
+export function idleCapHours(user: any, cfg: any): number {
+  const base = Math.max(0.1, Number(cfg.idle_cap_hours) || 8);
+  return round4(base + idleDayCounters(user).bonusHours);
+}
+
+/** Tokens waiting to be collected in idle mode (capped — production stops when full). */
 export function computeIdlePending(user: any, cfg: ReturnType<typeof gameConfig>, boostPerHour = 0): number {
   const since = user.idle_collected_at ? new Date(user.idle_collected_at).getTime() : null;
   if (!since) return 0;
-  const capHours = Number(cfg.idle_cap_hours) || 8;
+  const capHours = idleCapHours(user, cfg);
   const hours = Math.min(capHours, Math.max(0, (Date.now() - since) / 3_600_000));
   const rate = (Number(cfg.idle_rate_per_hour) || 0) + boostPerHour;
   return round4(hours * rate);
