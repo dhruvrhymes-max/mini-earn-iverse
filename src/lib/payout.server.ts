@@ -151,7 +151,7 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
   if (!enc) throw new Error("TON wallet phrase is not configured in payout settings");
 
   const { mnemonicToPrivateKey } = await import("@ton/crypto");
-  const { TonClient, WalletContractV4, internal, JettonMaster } = await import("@ton/ton");
+  const { TonClient, internal, JettonMaster } = await import("@ton/ton");
   const { Address, beginCell, toNano, fromNano } = await import("@ton/core");
 
   const words = decryptSecret(enc).trim().split(/\s+/);
@@ -168,28 +168,31 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
 
   const endpoint = cfg.endpoint || "https://toncenter.com/api/v2/jsonRPC";
   const client = new TonClient({ endpoint, apiKey: cfg.api_key || undefined });
-  const wallet = WalletContractV4.create({ workchain: 0, publicKey: key.publicKey });
+
+  // The phrase maps to a different address per wallet version (Tonkeeper W5 vs
+  // V4). Use the version that actually holds funds so payouts leave the wallet
+  // the owner funded.
+  const { pickTonWallet } = await import("./ton-wallet.server");
+  const picked = await pickTonWallet(client, key.publicKey, cfg.wallet_version);
+  const wallet = picked.wallet;
   const contract = client.open(wallet);
   const from = wallet.address.toString({ bounceable: false });
 
-  // Balance preflight — an unfunded wallet must fail with a readable reason,
-  // not a silent "not confirmed" timeout.
-  let nativeBalance: bigint;
-  try {
-    nativeBalance = await client.getBalance(wallet.address);
-  } catch (e: any) {
-    throw new Error(`TON RPC error while reading the payout wallet balance: ${String(e?.message || e)}`);
-  }
+  const nativeBalance: bigint = picked.balance;
 
   let seqno = 0;
   try {
     seqno = await contract.getSeqno();
   } catch {
     if (nativeBalance === 0n) {
-      throw new Error(`TON payout wallet ${from} is empty and not yet deployed. Fund it with TON before approving payouts.`);
+      const list = picked.candidates.map((c) => `${c.version.toUpperCase()}: ${c.address}`).join(" · ");
+      throw new Error(
+        `TON payout wallet is empty. This phrase maps to these addresses — fund the one you use in Tonkeeper: ${list}`,
+      );
     }
     throw new Error("Could not read the TON payout wallet state from the RPC endpoint");
   }
+
 
   let messages;
   if (cfg.jetton_master) {

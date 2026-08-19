@@ -27,10 +27,13 @@ export async function resolveReceiveConfig(tenant: any): Promise<TonReceiveConfi
   const words = decryptSecret(enc).trim().split(/\s+/);
   if (words.length < 12) throw new Error("Stored TON phrase is malformed");
   const { mnemonicToPrivateKey } = await import("@ton/crypto");
-  const { WalletContractV4 } = await import("@ton/ton");
+  const { TonClient } = await import("@ton/ton");
+  const { pickTonWallet, tonAddressString } = await import("./ton-wallet.server");
   const key = await mnemonicToPrivateKey(words);
-  const wallet = WalletContractV4.create({ workchain: 0, publicKey: key.publicKey });
-  return { address: wallet.address.toString({ bounceable: false, urlSafe: true }), apiKey, api };
+  const client = new TonClient({ endpoint: ton.endpoint || "https://toncenter.com/api/v2/jsonRPC", apiKey });
+  const picked = await pickTonWallet(client, key.publicKey, ton.wallet_version);
+  return { address: tonAddressString(picked.wallet), apiKey, api };
+
 }
 
 type Found = { hash: string; amountTon: number } | null;
