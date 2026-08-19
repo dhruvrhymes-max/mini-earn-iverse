@@ -30,12 +30,39 @@ export const getGameState = createServerFn({ method: "POST" })
       spin_credits: Number(user.spin_credits ?? 0),
       spin_ready_at: g.spinReadyAt(user, cfg),
       spin_rewards: cfg.spin_rewards,
-      idle_pending: g.computeIdlePending(user, cfg, boost),
-      idle_rate_per_hour: Number(cfg.idle_rate_per_hour) + boost,
-      idle_cap_hours: Number(cfg.idle_cap_hours),
+      ...idleState(g, user, cfg, boost),
       balance: Number(user.balance),
     };
   });
+
+/** Everything the idle/storage UI needs: fill, limits and ad-boost allowance. */
+function idleState(g: typeof import("./game.server"), user: any, cfg: any, boost: number) {
+  const counters = g.idleDayCounters(user);
+  const capHours = g.idleCapHours(user, cfg);
+  const rate = Number(cfg.idle_rate_per_hour) + boost;
+  const pending = g.computeIdlePending(user, cfg, boost);
+  const capacity = g.round4(rate * capHours);
+  const minPct = Math.min(100, Math.max(0, Number(cfg.idle_min_collect_pct) || 0));
+  const dailyLimit = Math.max(0, Math.round(Number(cfg.idle_daily_collects) || 0));
+  const adMax = Math.max(0, Math.round(Number(cfg.idle_ad_extend_max) || 0));
+  const blockId = String(cfg.idle_ad_block_id ?? "").trim();
+  return {
+    idle_pending: pending,
+    idle_rate_per_hour: rate,
+    idle_cap_hours: capHours,
+    idle_base_cap_hours: Number(cfg.idle_cap_hours),
+    idle_bonus_hours: counters.bonusHours,
+    idle_capacity: capacity,
+    idle_fill_pct: capacity > 0 ? Math.min(100, (pending / capacity) * 100) : 0,
+    idle_min_collect_pct: minPct,
+    idle_daily_collects: dailyLimit,
+    idle_collects_used: counters.collects,
+    idle_collects_left: dailyLimit === 0 ? null : Math.max(0, dailyLimit - counters.collects),
+    idle_ad_extend_hours: Number(cfg.idle_ad_extend_hours) || 0,
+    idle_ad_extends_left: blockId ? Math.max(0, adMax - counters.adExtends) : 0,
+    idle_ad_block_id: blockId || null,
+  };
+}
 
 /** Tap to earn. Each tap spends 1 energy; energy regenerates over time. */
 export const tapEarn = createServerFn({ method: "POST" })
