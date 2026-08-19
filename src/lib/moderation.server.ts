@@ -38,10 +38,11 @@ export async function screenJoin(
   // Any other member of this bot already seen on this address/device?
   const { data: others } = await supabaseAdmin
     .from("ip_logs")
-    .select("user_id")
+    .select("user_id, created_at")
     .eq("tenant_id", tenant.id)
     .in("ip", keys)
     .neq("user_id", user.id)
+    .order("created_at", { ascending: true })
     .limit(1);
 
   if (others && others.length > 0) {
@@ -50,13 +51,14 @@ export async function screenJoin(
     const reason =
       cfg.block_message ||
       "Multiple accounts are not allowed. Please continue with your original account.";
-    await supabaseAdmin.from("app_users").update({
+    const { error: banError } = await supabaseAdmin.from("app_users").update({
       banned: true,
       ban_reason: reason,
       ban_kind: "multi_account",
       banned_at: new Date().toISOString(),
       last_ip: ip ?? keys[0]!,
     }).eq("id", user.id);
+    if (banError) throw new Error(`Could not block duplicate account: ${banError.message}`);
     return {
       banned: true,
       reason,
@@ -75,13 +77,16 @@ export async function screenJoin(
   const logged = new Set((recent ?? []).map((r: any) => r.ip));
   const fresh = keys.filter((k) => !logged.has(k));
   if (fresh.length > 0) {
-    await supabaseAdmin.from("ip_logs").insert(
+    const { error: logError } = await supabaseAdmin.from("ip_logs").insert(
       fresh.map((k) => ({ tenant_id: tenant.id, user_id: user.id, ip: k })),
     );
+    if (logError) throw new Error(`Could not record join address: ${logError.message}`);
   }
   const primary = ip ?? keys[0]!;
   if (user.last_ip !== primary) {
-    await supabaseAdmin.from("app_users").update({ last_ip: primary }).eq("id", user.id);
+    const { error: updateError } = await supabaseAdmin.from("app_users").update({ last_ip: primary }).eq("id", user.id);
+    if (updateError) throw new Error(`Could not update join address: ${updateError.message}`);
+    user.last_ip = primary;
   }
   return { banned: false, reason: null, originalUsername: null };
 }

@@ -14,7 +14,7 @@ const bySlug = new Map<string, Entry>();
 const byId = new Map<string, string>(); // tenant id -> slug
 
 const TENANT_COLUMNS =
-  "id,slug,name,status,token_name,token_symbol,token_icon_url,about_text,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids,game_mode,payout_channel_url,bot_token";
+  "id,slug,name,status,token_name,token_symbol,token_icon_url,about_text,action_verb,theme,theme_preset,economics,ad_config,community,referral_config,bot_username,mini_app_short_name,admin_telegram_ids,game_mode,payout_channel_url,bot_token,onboarding,security,deposit_config,payout_config,welcome_text,welcome_cta_text,welcome_image_url";
 
 export async function loadTenantRow(supabaseAdmin: any, slug: string): Promise<any | null> {
   const hit = bySlug.get(slug);
