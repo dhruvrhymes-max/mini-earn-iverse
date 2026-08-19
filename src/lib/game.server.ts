@@ -8,6 +8,8 @@
  * show floating point noise in the UI. No mode is gated behind watching an ad.
  */
 
+import { dayStartISO } from "./day-window";
+
 export const GAME_DEFAULTS = {
   tap_reward: 1,
   energy_max: 500,
@@ -51,7 +53,6 @@ export function computeEnergy(user: any, cfg: ReturnType<typeof gameConfig>): nu
  * so a stale `idle_day` is treated as "no usage yet today".
  */
 export function idleDayCounters(user: any) {
-  const { dayStartISO } = require("./day-window") as typeof import("./day-window");
   const day = dayStartISO();
   const fresh = user?.idle_day ? new Date(user.idle_day).toISOString() === day : false;
   return {
