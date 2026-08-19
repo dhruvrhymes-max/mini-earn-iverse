@@ -119,6 +119,13 @@ function MiniAdmin() {
           mine_duration_seconds: Math.max(1, Number(form.mine_duration_seconds) || 1),
           token_per_usdt: Number(form.token_per_usdt) || 0,
           min_withdraw_usdt: Number(form.min_withdraw_usdt) || 0,
+          idle_rate_per_hour: Math.max(0, Number(form.idle_rate_per_hour) || 0),
+          idle_cap_hours: Math.min(240, Math.max(0.1, Number(form.idle_cap_hours) || 8)),
+          idle_min_collect_pct: Math.min(100, Math.max(0, Number(form.idle_min_collect_pct) || 0)),
+          idle_daily_collects: Math.min(100, Math.max(0, Math.floor(Number(form.idle_daily_collects) || 0))),
+          idle_ad_extend_hours: Math.min(24, Math.max(0, Number(form.idle_ad_extend_hours) || 0)),
+          idle_ad_extend_max: Math.min(50, Math.max(0, Math.floor(Number(form.idle_ad_extend_max) || 0))),
+          idle_ad_block_id: String(form.idle_ad_block_id || "").trim().slice(0, 60),
         },
         referral_config: {
           signup_reward: Number(form.signup_reward) || 0,
