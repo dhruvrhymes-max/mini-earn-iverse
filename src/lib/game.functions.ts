@@ -140,11 +140,30 @@ export const collectIdle = createServerFn({ method: "POST" })
       await supabaseAdmin.from("app_users").update({ idle_collected_at: new Date().toISOString() }).eq("id", user.id);
       return { started: true, collected: 0, balance: Number(user.balance) };
     }
+    const counters = g.idleDayCounters(user);
+    const dailyLimit = Math.max(0, Math.round(Number(cfg.idle_daily_collects) || 0));
+    if (dailyLimit > 0 && counters.collects >= dailyLimit) {
+      throw new Error(`Daily collect limit reached (${dailyLimit}/day). Come back tomorrow.`);
+    }
     const pending = g.computeIdlePending(user, cfg, boost);
+    const capHours = g.idleCapHours(user, cfg);
+    const capacity = g.round4((Number(cfg.idle_rate_per_hour) + boost) * capHours);
+    const minPct = Math.min(100, Math.max(0, Number(cfg.idle_min_collect_pct) || 0));
+    const fill = capacity > 0 ? (pending / capacity) * 100 : 0;
     if (pending <= 0) return { started: false, collected: 0, balance: Number(user.balance) };
+    if (fill + 0.001 < minPct) {
+      throw new Error(`Storage must be at least ${minPct}% full to collect (now ${fill.toFixed(0)}%).`);
+    }
     const balance = g.round4(Number(user.balance) + pending);
-    await supabaseAdmin.from("app_users")
-      .update({ balance, idle_collected_at: new Date().toISOString() }).eq("id", user.id);
+    await supabaseAdmin.from("app_users").update({
+      balance,
+      idle_collected_at: new Date().toISOString(),
+      idle_day: counters.day,
+      idle_collects: counters.collects + 1,
+      idle_ad_extends: counters.adExtends,
+      // Ad-bought storage is consumed by the collect.
+      idle_bonus_hours: 0,
+    }).eq("id", user.id);
     await supabaseAdmin.from("transactions").insert({
       tenant_id: user.tenant_id, user_id: user.id, type: "mine", amount: pending, status: "approved",
     });
@@ -152,6 +171,42 @@ export const collectIdle = createServerFn({ method: "POST" })
     await ref.payLifetimeCut(supabaseAdmin, user, pending);
     return { started: false, collected: pending, balance };
   });
+
+/**
+ * Watch a rewarded ad to enlarge storage for the rest of the current cycle.
+ * Server-side guards: the bot must have an Adsgram block configured, the per-day
+ * allowance is enforced against the shared day window, and the granted hours
+ * come from tenant config only — never from the client.
+ */
+export const extendIdleStorage = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin, user, boost } = await loadPlayer(data.userId);
+    const g = await import("./game.server");
+    const cfg = g.gameConfig(user.tenants?.economics);
+    const blockId = String(cfg.idle_ad_block_id ?? "").trim();
+    if (!blockId) throw new Error("Storage boost is not available right now");
+    const perAd = Number(cfg.idle_ad_extend_hours) || 0;
+    if (perAd <= 0) throw new Error("Storage boost is disabled");
+    const max = Math.max(0, Math.round(Number(cfg.idle_ad_extend_max) || 0));
+    const counters = g.idleDayCounters(user);
+    if (counters.adExtends >= max) throw new Error("No storage boosts left today");
+    const bonusHours = g.round4(counters.bonusHours + perAd);
+    await supabaseAdmin.from("app_users").update({
+      idle_day: counters.day,
+      idle_collects: counters.collects,
+      idle_ad_extends: counters.adExtends + 1,
+      idle_bonus_hours: bonusHours,
+    }).eq("id", user.id);
+    const next = { ...user, idle_day: counters.day, idle_bonus_hours: bonusHours, idle_ad_extends: counters.adExtends + 1, idle_collects: counters.collects };
+    return {
+      added_hours: perAd,
+      cap_hours: g.idleCapHours(next, cfg),
+      extends_left: Math.max(0, max - (counters.adExtends + 1)),
+      pending: g.computeIdlePending(next, cfg, boost),
+    };
+  });
+
 
 /** Public payout proof — recent paid withdrawals for a tenant (no PII). */
 export const getPayoutProof = createServerFn({ method: "POST" })
