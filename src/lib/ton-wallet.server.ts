@@ -11,20 +11,32 @@
  * deployed or funded, so payouts and deposits use the owner's real wallet.
  */
 
-export type TonWalletVersion = "v5r1" | "v4" | "v3r2" | "v3r1";
+export type TonWalletVersion =
+  | "v5r1" | "v5beta" | "v4"
+  | "v3r2" | "v3r1"
+  | "v2r2" | "v2r1"
+  | "v1r3" | "v1r2" | "v1r1";
 
-const ORDER: TonWalletVersion[] = ["v5r1", "v4", "v3r2", "v3r1"];
+/** Preference order when several versions look equal — W5 first, then W4, W3… */
+const ORDER: TonWalletVersion[] = ["v5r1", "v5beta", "v4", "v3r2", "v3r1", "v2r2", "v2r1", "v1r3", "v1r2", "v1r1"];
 
 export async function deriveTonWallets(publicKey: Buffer) {
-  const { WalletContractV5R1, WalletContractV4, WalletContractV3R2, WalletContractV3R1 } = await import("@ton/ton");
+  const t = await import("@ton/ton");
   const make: Record<TonWalletVersion, any> = {
-    v5r1: WalletContractV5R1.create({ workchain: 0, publicKey }),
-    v4: WalletContractV4.create({ workchain: 0, publicKey }),
-    v3r2: WalletContractV3R2.create({ workchain: 0, publicKey }),
-    v3r1: WalletContractV3R1.create({ workchain: 0, publicKey }),
+    v5r1: t.WalletContractV5R1.create({ workchain: 0, publicKey }),
+    v5beta: t.WalletContractV5Beta.create({ workchain: 0, publicKey }),
+    v4: t.WalletContractV4.create({ workchain: 0, publicKey }),
+    v3r2: t.WalletContractV3R2.create({ workchain: 0, publicKey }),
+    v3r1: t.WalletContractV3R1.create({ workchain: 0, publicKey }),
+    v2r2: t.WalletContractV2R2.create({ workchain: 0, publicKey }),
+    v2r1: t.WalletContractV2R1.create({ workchain: 0, publicKey }),
+    v1r3: t.WalletContractV1R3.create({ workchain: 0, publicKey }),
+    v1r2: t.WalletContractV1R2.create({ workchain: 0, publicKey }),
+    v1r1: t.WalletContractV1R1.create({ workchain: 0, publicKey }),
   };
   return ORDER.map((version) => ({ version, wallet: make[version] }));
 }
+
 
 /** Friendly (non-bounceable) address string used everywhere in the UI. */
 export function tonAddressString(wallet: any): string {
