@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ThemeScene } from "./ThemeScene";
 import type { SceneKind } from "@/lib/theme-presets";
-import { collectIdle, getGameState, spinWheel, tapEarn } from "@/lib/game.functions";
+import { collectIdle, extendIdleStorage, getGameState, spinWheel, tapEarn } from "@/lib/game.functions";
 import { formatCompact, formatClock, formatTokens, formatUsd } from "@/lib/format";
 import { ListChecks, Pickaxe, Users, Wallet } from "lucide-react";
 
