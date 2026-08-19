@@ -260,7 +260,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
       const { getRequest } = await import("@tanstack/react-start/server");
       ip = clientIpFromHeaders(getRequest().headers);
     } catch { /* no request context */ }
-    const screen = await screenJoin(supabaseAdmin, tenantRow, user, ip);
+    const screen = await screenJoin(supabaseAdmin, tenantRow, user, ip, data.deviceId ?? null);
     if (screen.banned) {
       return { tenant, user: null, blocked: { reason: screen.reason, originalUsername: screen.originalUsername } };
     }
