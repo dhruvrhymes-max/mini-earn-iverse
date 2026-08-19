@@ -588,6 +588,13 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
           mine_duration_seconds: z.number().min(1).optional(),
           token_per_usdt: z.number().min(0).optional(),
           min_withdraw_usdt: z.number().min(0).optional(),
+          idle_rate_per_hour: z.number().min(0).optional(),
+          idle_cap_hours: z.number().min(0.1).max(240).optional(),
+          idle_min_collect_pct: z.number().min(0).max(100).optional(),
+          idle_daily_collects: z.number().int().min(0).max(100).optional(),
+          idle_ad_extend_hours: z.number().min(0).max(24).optional(),
+          idle_ad_extend_max: z.number().int().min(0).max(50).optional(),
+          idle_ad_block_id: z.string().max(60).optional(),
         }).partial().optional(),
         referral_config: z.object({
           signup_reward: z.number().min(0).optional(),
