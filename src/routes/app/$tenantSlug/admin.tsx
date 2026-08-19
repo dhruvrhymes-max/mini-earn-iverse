@@ -134,7 +134,6 @@ function MiniAdmin() {
         },
         ad_config: {
           daily_watch_limit: Number(form.daily_watch_limit) || 0,
-          startup_ad_enabled: !!form.startup_ad_enabled,
           task_tabs: {
             social: !!form.tab_social,
             partner: !!form.tab_partner,
