@@ -16,7 +16,7 @@ const BOOT_TIMEOUT_MS = 12_000;
 function getDeviceId(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    let id = localStorage.getItem("zl_device_id");
+    let id = localStorage.getItem("zl_device_id") ?? "";
     if (!id) {
       id = (crypto as any)?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
       localStorage.setItem("zl_device_id", id);
