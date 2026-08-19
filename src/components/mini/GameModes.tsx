@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ThemeScene } from "./ThemeScene";
 import type { SceneKind } from "@/lib/theme-presets";
-import { collectIdle, getGameState, spinWheel, tapEarn } from "@/lib/game.functions";
+import { collectIdle, extendIdleStorage, getGameState, spinWheel, tapEarn } from "@/lib/game.functions";
 import { formatCompact, formatClock, formatTokens, formatUsd } from "@/lib/format";
 import { ListChecks, Pickaxe, Users, Wallet } from "lucide-react";
 
@@ -252,21 +252,30 @@ export function IdleHome({ tenant, user, refetchUser }: Props) {
   const theme = tenant.theme || {};
   const state = useServerFn(getGameState);
   const collect = useServerFn(collectIdle);
+  const extend = useServerFn(extendIdleStorage);
   const [pending, setPending] = useState(0);
-  const [rate, setRate] = useState(0);
-  const [capHours, setCapHours] = useState(8);
+  const [info, setInfo] = useState<any>(null);
   const [started, setStarted] = useState(Boolean(user.idle_collected_at));
+  const [adBusy, setAdBusy] = useState(false);
+
+  const rate = Number(info?.idle_rate_per_hour ?? 0);
+  const capHours = Number(info?.idle_cap_hours ?? 0);
+  const capacity = Number(info?.idle_capacity ?? 0);
+  const minPct = Number(info?.idle_min_collect_pct ?? 0);
+  const collectsLeft = info?.idle_collects_left ?? null;
+  const extendsLeft = Number(info?.idle_ad_extends_left ?? 0);
+  const blockId = info?.idle_ad_block_id as string | null;
 
   const load = () => state({ data: { userId: user.id } }).then((s: any) => {
-    setPending(s.idle_pending); setRate(s.idle_rate_per_hour); setCapHours(s.idle_cap_hours);
+    setInfo(s); setPending(s.idle_pending);
   }).catch(() => {});
 
   useEffect(() => {
     load();
-    const id = window.setInterval(() => setPending((p) => p + rate / 3600), 1000);
+    const id = window.setInterval(() => setPending((p) => (capacity ? Math.min(capacity, p + rate / 3600) : p)), 1000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.id, rate]);
+  }, [user.id, rate, capacity]);
 
   const m = useMutation({
     mutationFn: () => collect({ data: { userId: user.id } }),
@@ -279,8 +288,27 @@ export function IdleHome({ tenant, user, refetchUser }: Props) {
     onError: (e: any) => toast.error(e?.message ?? "Collect failed"),
   });
 
-  const capped = rate * capHours;
-  const fill = capped ? Math.min(100, (pending / capped) * 100) : 0;
+  const fill = capacity ? Math.min(100, (pending / capacity) * 100) : 0;
+  const full = fill >= 99.9;
+  const limitReached = collectsLeft !== null && collectsLeft <= 0;
+  const belowMin = fill + 0.001 < minPct;
+  const canCollect = started && !belowMin && !limitReached;
+
+  const watchAdForStorage = async () => {
+    if (!blockId || extendsLeft <= 0 || adBusy) return;
+    setAdBusy(true);
+    try {
+      const { runAd } = await import("./AdRunner");
+      await runAd({ id: `idle-storage-${tenant.id}`, kind: "adsgram", label: "Storage boost", config: { block_id: blockId }, reward_tokens: 0, daily_cap: 0 });
+      const r: any = await extend({ data: { userId: user.id } });
+      toast.success(`+${r.added_hours}h storage — now ${r.cap_hours}h`);
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Ad not completed");
+    } finally {
+      setAdBusy(false);
+    }
+  };
 
   return (
     <Shell tenant={tenant}>
@@ -292,22 +320,48 @@ export function IdleHome({ tenant, user, refetchUser }: Props) {
             style={{ height: `${fill}%`, background: `linear-gradient(180deg, ${theme.accent}cc, ${theme.primary})` }} />
           <div className="relative z-10 mb-8 text-center">
             <p className="text-3xl font-black text-white drop-shadow">{formatTokens(pending)}</p>
-            <p className="text-xs text-white/70">{tenant.token_symbol} ready</p>
+            <p className="text-xs text-white/70">{tenant.token_symbol} · {fill.toFixed(0)}% full</p>
           </div>
         </div>
         <p className="mt-4 text-sm text-white/70">
           {formatTokens(rate)} {tenant.token_symbol}/hour · storage {capHours}h
+          {Number(info?.idle_bonus_hours) > 0 ? ` (+${info.idle_bonus_hours}h bonus)` : ""}
         </p>
+        {full && <p className="mt-1 text-xs font-semibold" style={{ color: theme.accent }}>Storage full — production paused</p>}
+
         <button
           onClick={() => m.mutate()}
-          disabled={m.isPending}
+          disabled={m.isPending || (started && !canCollect)}
           onContextMenu={(e) => e.preventDefault()}
           className="mt-6 w-full rounded-2xl py-4 font-bold text-black disabled:opacity-50 active:scale-95 transition"
           style={{ background: `linear-gradient(90deg, ${theme.accent}, ${theme.primary})` }}
         >
-          {!started ? `Start ${tenant.action_verb || "Farming"}` : m.isPending ? "Collecting…" : "Collect"}
+          {!started
+            ? `Start ${tenant.action_verb || "Farming"}`
+            : m.isPending ? "Collecting…"
+            : limitReached ? "Daily limit reached"
+            : belowMin ? `Collect at ${minPct}% full`
+            : "Collect"}
         </button>
-        <p className="text-[11px] text-white/40 mt-2">Collecting is always free — ads are optional bonuses.</p>
+
+        {started && (
+          <p className="text-[11px] text-white/40 mt-2 text-center">
+            {minPct > 0 ? `Collect unlocks at ${minPct}% storage. ` : ""}
+            {collectsLeft !== null ? `${collectsLeft} collect${collectsLeft === 1 ? "" : "s"} left today.` : "Unlimited collects today."}
+          </p>
+        )}
+
+        {blockId && extendsLeft > 0 && (
+          <button
+            onClick={watchAdForStorage}
+            disabled={adBusy}
+            onContextMenu={(e) => e.preventDefault()}
+            className="mt-3 w-full rounded-2xl py-3 text-sm font-semibold border disabled:opacity-50 active:scale-95 transition"
+            style={{ borderColor: `${theme.primary}66`, color: theme.accent, background: `${theme.primary}12` }}
+          >
+            {adBusy ? "Loading ad…" : `Watch ad · +${info?.idle_ad_extend_hours}h storage (${extendsLeft} left)`}
+          </button>
+        )}
       </div>
       <QuickTiles tenantSlug={tenant.slug} primary={theme.primary} />
       <style>{`.idle-wave{animation:idleWave 4s ease-in-out infinite}@keyframes idleWave{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}`}</style>

@@ -30,12 +30,39 @@ export const getGameState = createServerFn({ method: "POST" })
       spin_credits: Number(user.spin_credits ?? 0),
       spin_ready_at: g.spinReadyAt(user, cfg),
       spin_rewards: cfg.spin_rewards,
-      idle_pending: g.computeIdlePending(user, cfg, boost),
-      idle_rate_per_hour: Number(cfg.idle_rate_per_hour) + boost,
-      idle_cap_hours: Number(cfg.idle_cap_hours),
+      ...idleState(g, user, cfg, boost),
       balance: Number(user.balance),
     };
   });
+
+/** Everything the idle/storage UI needs: fill, limits and ad-boost allowance. */
+function idleState(g: typeof import("./game.server"), user: any, cfg: any, boost: number) {
+  const counters = g.idleDayCounters(user);
+  const capHours = g.idleCapHours(user, cfg);
+  const rate = Number(cfg.idle_rate_per_hour) + boost;
+  const pending = g.computeIdlePending(user, cfg, boost);
+  const capacity = g.round4(rate * capHours);
+  const minPct = Math.min(100, Math.max(0, Number(cfg.idle_min_collect_pct) || 0));
+  const dailyLimit = Math.max(0, Math.round(Number(cfg.idle_daily_collects) || 0));
+  const adMax = Math.max(0, Math.round(Number(cfg.idle_ad_extend_max) || 0));
+  const blockId = String(cfg.idle_ad_block_id ?? "").trim();
+  return {
+    idle_pending: pending,
+    idle_rate_per_hour: rate,
+    idle_cap_hours: capHours,
+    idle_base_cap_hours: Number(cfg.idle_cap_hours),
+    idle_bonus_hours: counters.bonusHours,
+    idle_capacity: capacity,
+    idle_fill_pct: capacity > 0 ? Math.min(100, (pending / capacity) * 100) : 0,
+    idle_min_collect_pct: minPct,
+    idle_daily_collects: dailyLimit,
+    idle_collects_used: counters.collects,
+    idle_collects_left: dailyLimit === 0 ? null : Math.max(0, dailyLimit - counters.collects),
+    idle_ad_extend_hours: Number(cfg.idle_ad_extend_hours) || 0,
+    idle_ad_extends_left: blockId ? Math.max(0, adMax - counters.adExtends) : 0,
+    idle_ad_block_id: blockId || null,
+  };
+}
 
 /** Tap to earn. Each tap spends 1 energy; energy regenerates over time. */
 export const tapEarn = createServerFn({ method: "POST" })
@@ -113,11 +140,30 @@ export const collectIdle = createServerFn({ method: "POST" })
       await supabaseAdmin.from("app_users").update({ idle_collected_at: new Date().toISOString() }).eq("id", user.id);
       return { started: true, collected: 0, balance: Number(user.balance) };
     }
+    const counters = g.idleDayCounters(user);
+    const dailyLimit = Math.max(0, Math.round(Number(cfg.idle_daily_collects) || 0));
+    if (dailyLimit > 0 && counters.collects >= dailyLimit) {
+      throw new Error(`Daily collect limit reached (${dailyLimit}/day). Come back tomorrow.`);
+    }
     const pending = g.computeIdlePending(user, cfg, boost);
+    const capHours = g.idleCapHours(user, cfg);
+    const capacity = g.round4((Number(cfg.idle_rate_per_hour) + boost) * capHours);
+    const minPct = Math.min(100, Math.max(0, Number(cfg.idle_min_collect_pct) || 0));
+    const fill = capacity > 0 ? (pending / capacity) * 100 : 0;
     if (pending <= 0) return { started: false, collected: 0, balance: Number(user.balance) };
+    if (fill + 0.001 < minPct) {
+      throw new Error(`Storage must be at least ${minPct}% full to collect (now ${fill.toFixed(0)}%).`);
+    }
     const balance = g.round4(Number(user.balance) + pending);
-    await supabaseAdmin.from("app_users")
-      .update({ balance, idle_collected_at: new Date().toISOString() }).eq("id", user.id);
+    await supabaseAdmin.from("app_users").update({
+      balance,
+      idle_collected_at: new Date().toISOString(),
+      idle_day: counters.day,
+      idle_collects: counters.collects + 1,
+      idle_ad_extends: counters.adExtends,
+      // Ad-bought storage is consumed by the collect.
+      idle_bonus_hours: 0,
+    }).eq("id", user.id);
     await supabaseAdmin.from("transactions").insert({
       tenant_id: user.tenant_id, user_id: user.id, type: "mine", amount: pending, status: "approved",
     });
@@ -125,6 +171,42 @@ export const collectIdle = createServerFn({ method: "POST" })
     await ref.payLifetimeCut(supabaseAdmin, user, pending);
     return { started: false, collected: pending, balance };
   });
+
+/**
+ * Watch a rewarded ad to enlarge storage for the rest of the current cycle.
+ * Server-side guards: the bot must have an Adsgram block configured, the per-day
+ * allowance is enforced against the shared day window, and the granted hours
+ * come from tenant config only — never from the client.
+ */
+export const extendIdleStorage = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin, user, boost } = await loadPlayer(data.userId);
+    const g = await import("./game.server");
+    const cfg = g.gameConfig(user.tenants?.economics);
+    const blockId = String(cfg.idle_ad_block_id ?? "").trim();
+    if (!blockId) throw new Error("Storage boost is not available right now");
+    const perAd = Number(cfg.idle_ad_extend_hours) || 0;
+    if (perAd <= 0) throw new Error("Storage boost is disabled");
+    const max = Math.max(0, Math.round(Number(cfg.idle_ad_extend_max) || 0));
+    const counters = g.idleDayCounters(user);
+    if (counters.adExtends >= max) throw new Error("No storage boosts left today");
+    const bonusHours = g.round4(counters.bonusHours + perAd);
+    await supabaseAdmin.from("app_users").update({
+      idle_day: counters.day,
+      idle_collects: counters.collects,
+      idle_ad_extends: counters.adExtends + 1,
+      idle_bonus_hours: bonusHours,
+    }).eq("id", user.id);
+    const next = { ...user, idle_day: counters.day, idle_bonus_hours: bonusHours, idle_ad_extends: counters.adExtends + 1, idle_collects: counters.collects };
+    return {
+      added_hours: perAd,
+      cap_hours: g.idleCapHours(next, cfg),
+      extends_left: Math.max(0, max - (counters.adExtends + 1)),
+      pending: g.computeIdlePending(next, cfg, boost),
+    };
+  });
+
 
 /** Public payout proof — recent paid withdrawals for a tenant (no PII). */
 export const getPayoutProof = createServerFn({ method: "POST" })

@@ -200,7 +200,11 @@ export type Database = {
           forecast_state: Json
           has_activity: boolean
           id: string
+          idle_ad_extends: number
+          idle_bonus_hours: number
           idle_collected_at: string | null
+          idle_collects: number
+          idle_day: string | null
           language: string
           last_checkin_at: string | null
           last_claim_at: string | null
@@ -243,7 +247,11 @@ export type Database = {
           forecast_state?: Json
           has_activity?: boolean
           id?: string
+          idle_ad_extends?: number
+          idle_bonus_hours?: number
           idle_collected_at?: string | null
+          idle_collects?: number
+          idle_day?: string | null
           language?: string
           last_checkin_at?: string | null
           last_claim_at?: string | null
@@ -286,7 +294,11 @@ export type Database = {
           forecast_state?: Json
           has_activity?: boolean
           id?: string
+          idle_ad_extends?: number
+          idle_bonus_hours?: number
           idle_collected_at?: string | null
+          idle_collects?: number
+          idle_day?: string | null
           language?: string
           last_checkin_at?: string | null
           last_claim_at?: string | null
