@@ -105,6 +105,12 @@ Deno.serve(async (req) => {
       const tgId = cb.from?.id as number;
       const chatId = cb.message?.chat?.id;
       const data = String(cb.data ?? "");
+      // Public close button (e.g. withdrawal notifications) — available to any user.
+      if (data === "x:close") {
+        await api("answerCallbackQuery", { callback_query_id: cb.id });
+        await api("deleteMessage", { chat_id: chatId, message_id: cb.message.message_id }).catch(() => {});
+        return json({ ok: true });
+      }
       if (!isAdmin(tgId)) {
         await api("answerCallbackQuery", { callback_query_id: cb.id, text: "Not allowed", show_alert: true });
         return json({ ok: true });

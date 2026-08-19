@@ -95,7 +95,19 @@ function Payouts() {
                 {p.tx_hash ? ` · ${String(p.tx_hash).slice(0, 10)}…` : ""}
               </p>
             </div>
-            <p className="font-black" style={{ color: theme.primary }}>${formatUsd(p.amount, 2)}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-black" style={{ color: theme.primary }}>${formatUsd(p.amount, 2)}</p>
+              {data?.channel_url ? (
+                <button
+                  onClick={() => openChannel(data.channel_url as string)}
+                  aria-label="Join payout channel"
+                  title="Join payout channel"
+                  className="rounded-full p-1.5 border border-white/10 bg-white/5 text-white/70"
+                >
+                  <Megaphone className="h-3.5 w-3.5" />
+                </button>
+              ) : null}
+            </div>
           </div>
         ))}
       </div>
