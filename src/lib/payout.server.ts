@@ -151,7 +151,7 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
   if (!enc) throw new Error("TON wallet phrase is not configured in payout settings");
 
   const { mnemonicToPrivateKey } = await import("@ton/crypto");
-  const { TonClient, WalletContractV4, internal, JettonMaster } = await import("@ton/ton");
+  const { TonClient, internal, JettonMaster } = await import("@ton/ton");
   const { Address, beginCell, toNano, fromNano } = await import("@ton/core");
 
   const words = decryptSecret(enc).trim().split(/\s+/);
