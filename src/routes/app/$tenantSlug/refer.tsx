@@ -18,11 +18,14 @@ function Refer() {
   const startParam = `ref_${user.telegram_id}`;
 
   // Telegram deep link — opens the mini app directly inside Telegram (t.me/<bot>/<shortname>?startapp=…)
-  const tgLink = botUsername && shortName
-    ? `https://t.me/${botUsername}/${shortName}?startapp=${startParam}`
-    : botUsername
-      ? `https://t.me/${botUsername}?start=${startParam}`
-      : "";
+  // `startapp` opens the Mini App and starts the bot chat at the same time.
+  // With a short name it targets that app directly; without one Telegram opens
+  // the bot's main Mini App.
+  const tgLink = botUsername
+    ? shortName
+      ? `https://t.me/${botUsername}/${shortName}?startapp=${startParam}`
+      : `https://t.me/${botUsername}?startapp=${startParam}`
+    : "";
 
   // Web fallback (browser preview without Telegram)
   const webLink = typeof window !== "undefined"
@@ -65,7 +68,7 @@ function Refer() {
         <div className="font-mono text-xs break-all text-white/90">{link}</div>
         {botUsername && !shortName && (
           <p className="text-[10px] text-white/50">
-            Tip for the owner: add the Mini App short name in Manage → Bot so invite links open the app directly.
+            Tip for the owner: set the bot's Main Mini App in BotFather (or add the short name in Manage → Bot) so this link opens the app instantly.
           </p>
         )}
         <div className="flex gap-2">
