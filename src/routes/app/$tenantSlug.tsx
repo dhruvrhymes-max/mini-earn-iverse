@@ -319,7 +319,7 @@ function MiniLayout() {
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       >
-        {!user.onboarded && <Onboarding tenant={tenant} userId={user.id} refetch={refetch} />}
+        {needsOnboarding(tenant, user) && <Onboarding tenant={tenant} userId={user.id} refetch={refetch} />}
         <div className="relative z-10"><Outlet /></div>
         <BottomNav slug={tenantSlug} verb={tenant.action_verb} primary={theme.primary} tenant={tenant} />
       </div>
