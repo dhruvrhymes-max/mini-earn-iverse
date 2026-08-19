@@ -198,7 +198,7 @@ function MiniLayout() {
     const refTg = getSearchValue(loc.search, "ref");
     setBootState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const result = await boot({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null } });
+      const result = await boot({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null, deviceId: getDeviceId() } });
       if ((result as any).blocked) {
         localStorage.removeItem(`mini_boot_${tenantSlug}`);
         localStorage.removeItem(`uid_${tenantSlug}`);
