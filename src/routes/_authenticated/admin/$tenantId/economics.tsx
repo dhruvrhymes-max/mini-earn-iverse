@@ -35,6 +35,18 @@ function Economics() {
         <Field label="Minimum withdrawal (USDT)"><Input type="number" step="0.01" value={form.min_withdraw_usdt ?? ""} onChange={(e) => setForm({ ...form, min_withdraw_usdt: Number(e.target.value) })} /></Field>
         <Field label="Mining rate (tokens/hour)"><Input type="number" value={form.mining_rate_per_hour ?? ""} onChange={(e) => setForm({ ...form, mining_rate_per_hour: Number(e.target.value) })} /></Field>
         <Field label="Mining cycle (hours)"><Input type="number" value={form.mining_cycle_hours ?? ""} onChange={(e) => setForm({ ...form, mining_cycle_hours: Number(e.target.value) })} /></Field>
+
+        <h2 className="text-lg font-semibold pt-6">Storage (idle / farm mode)</h2>
+        <p className="text-sm text-muted-foreground">Production stops once storage is full. Users can enlarge storage by watching a rewarded ad.</p>
+        <Field label="Production rate (tokens/hour)"><Input type="number" value={form.idle_rate_per_hour ?? ""} placeholder="60" onChange={(e) => setForm({ ...form, idle_rate_per_hour: Number(e.target.value) })} /></Field>
+        <Field label="Storage size (hours)"><Input type="number" step="0.5" value={form.idle_cap_hours ?? ""} placeholder="8" onChange={(e) => setForm({ ...form, idle_cap_hours: Number(e.target.value) })} /></Field>
+        <Field label="Collect unlocks at (% full)"><Input type="number" min={0} max={100} value={form.idle_min_collect_pct ?? ""} placeholder="60" onChange={(e) => setForm({ ...form, idle_min_collect_pct: Number(e.target.value) })} /></Field>
+        <Field label="Collects allowed per day (0 = unlimited)"><Input type="number" min={0} value={form.idle_daily_collects ?? ""} placeholder="1" onChange={(e) => setForm({ ...form, idle_daily_collects: Number(e.target.value) })} /></Field>
+        <Field label="Extra storage per watched ad (hours)"><Input type="number" step="0.5" min={0} value={form.idle_ad_extend_hours ?? ""} placeholder="1" onChange={(e) => setForm({ ...form, idle_ad_extend_hours: Number(e.target.value) })} /></Field>
+        <Field label="Storage-boost ads allowed per day"><Input type="number" min={0} value={form.idle_ad_extend_max ?? ""} placeholder="3" onChange={(e) => setForm({ ...form, idle_ad_extend_max: Number(e.target.value) })} /></Field>
+        <Field label="Adsgram block ID for storage boost"><Input value={form.idle_ad_block_id ?? ""} placeholder="int-1234" onChange={(e) => setForm({ ...form, idle_ad_block_id: e.target.value })} /></Field>
+        <p className="text-xs text-muted-foreground">Leave the block ID empty to hide the storage-boost button. Limits are enforced on the server.</p>
+
         <Button onClick={() => m.mutate()} disabled={m.isPending}>Save</Button>
       </div>
     </div>
