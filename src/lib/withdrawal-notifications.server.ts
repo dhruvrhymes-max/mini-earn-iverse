@@ -11,6 +11,15 @@ const TOKEN_LABELS: Record<string, string> = {
   ton: "GRAM (TON)",
 };
 
+/** Turn "@channel", "t.me/x" or a full link into an https://t.me URL. */
+export function payoutChannelUrl(tenant: any): string | null {
+  const raw = String(tenant?.payout_channel_url ?? "").trim();
+  if (!raw) return null;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith("t.me/")) return `https://${raw}`;
+  return `https://t.me/${raw.replace(/^@/, "")}`;
+}
+
 async function notifyUser(tenant: any, tx: any, status: "requested" | "paid" | "rejected", hash?: string | null, reason?: string | null) {
   if (!tenant?.bot_token || !tx?.app_users?.telegram_id) return { ok: false, skipped: true };
   const label = TOKEN_LABELS[String(tx.network)] ?? String(tx.network || "Token").toUpperCase();
@@ -19,11 +28,24 @@ async function notifyUser(tenant: any, tx: any, status: "requested" | "paid" | "
   if (hash) lines.push(`<b>Transaction:</b> <b><code>${esc(hash)}</code></b>`);
   if (reason) lines.push(`<b>Reason:</b> <b>${esc(reason)}</b>`);
 
+  const channel = payoutChannelUrl(tenant);
+  if (channel && status !== "rejected") {
+    lines.push("", `<b>Payout channel:</b> <b>${esc(channel)}</b>`);
+  }
+  const reply_markup = channel
+    ? {
+        inline_keyboard: [
+          [{ text: "📢 Join payout channel", url: channel }],
+          ...(status === "requested" ? [[{ text: "✖ Close", callback_data: "x:close" }]] : []),
+        ],
+      }
+    : undefined;
+
   try {
     const response = await fetch(`https://api.telegram.org/bot${tenant.bot_token}/sendMessage`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ chat_id: tx.app_users.telegram_id, text: lines.join("\n"), parse_mode: "HTML" }),
+      body: JSON.stringify({ chat_id: tx.app_users.telegram_id, text: lines.join("\n"), parse_mode: "HTML", disable_web_page_preview: true, ...(reply_markup ? { reply_markup } : {}) }),
     });
     const body: any = await response.json();
     return { ok: response.ok && !!body?.ok, error: body?.description ?? null };
