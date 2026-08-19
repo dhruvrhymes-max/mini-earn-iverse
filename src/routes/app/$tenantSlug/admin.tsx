@@ -9,6 +9,7 @@ import { AdProvidersAdmin } from "@/components/mini/AdProvidersAdmin";
 import { BakesAdmin } from "@/components/mini/BakesAdmin";
 import { PromosAdmin } from "@/components/mini/PromosAdmin";
 import { MembersAdmin } from "@/components/mini/MembersAdmin";
+import { TasksAdmin } from "@/components/mini/TasksAdmin";
 import { WithdrawalsAdmin } from "@/components/mini/WithdrawalsAdmin";
 import { BotSettingsAdmin } from "@/components/mini/BotSettingsAdmin";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
 const TABS = [
   { id: "bot", label: "Bot" },
   { id: "bakes", label: "Bakes" },
+  { id: "tasks", label: "Tasks" },
   { id: "members", label: "Members" },
   { id: "promos", label: "Promos" },
   { id: "withdrawals", label: "Withdrawals" },
@@ -68,6 +70,7 @@ function MiniAdmin() {
       action_verb: t.action_verb || "",
       welcome_text: t.welcome_text || "",
       welcome_cta_text: t.welcome_cta_text || "",
+      welcome_image_url: t.welcome_image_url || "",
       theme_primary: th.primary || "#f59e0b",
       theme_background: th.background || "#0a0a0a",
       theme_accent: th.accent || "#fbbf24",
@@ -107,6 +110,7 @@ function MiniAdmin() {
         action_verb: form.action_verb,
         welcome_text: form.welcome_text,
         welcome_cta_text: form.welcome_cta_text,
+        welcome_image_url: form.welcome_image_url?.trim() ? form.welcome_image_url.trim() : null,
         theme: {
           primary: form.theme_primary,
           background: form.theme_background,
@@ -181,6 +185,7 @@ function MiniAdmin() {
       </div>
 
       {tab === "bakes" && <Section title="Bakes / miners"><BakesAdmin {...tabProps} tokenSymbol={t.token_symbol || "TKN"} /></Section>}
+      {tab === "tasks" && <Section title="Task hub"><TasksAdmin {...tabProps} tokenSymbol={t.token_symbol || "TKN"} /></Section>}
       {tab === "members" && <Section title="Members"><MembersAdmin {...tabProps} tokenSymbol={t.token_symbol || "TKN"} /></Section>}
       {tab === "withdrawals" && <Section title="Withdrawal requests"><WithdrawalsAdmin {...tabProps} /></Section>}
       {tab === "payouts" && <Section title="Payout wallets"><BotSettingsAdmin {...tabProps} section="payouts" /></Section>}
@@ -284,6 +289,12 @@ function MiniAdmin() {
       <Section title="Welcome message">
         <Row><Label>Welcome text</Label><Textarea rows={3} value={form.welcome_text ?? ""} onChange={(e) => setForm({ ...form, welcome_text: e.target.value })} /></Row>
         <Row><Label>CTA button text</Label><Input value={form.welcome_cta_text ?? ""} onChange={(e) => setForm({ ...form, welcome_cta_text: e.target.value })} /></Row>
+        <Row>
+          <Label>Welcome image URL</Label>
+          <Input value={form.welcome_image_url ?? ""} placeholder="https://…/banner.jpg" onChange={(e) => setForm({ ...form, welcome_image_url: e.target.value })} />
+          <p className="text-xs text-white/50">Shown above the /start message. You can also send a photo from the bot: /panel → Start Message.</p>
+        </Row>
+        {form.welcome_image_url ? <img src={form.welcome_image_url} alt="" className="w-full rounded-lg object-cover max-h-40" /> : null}
       </Section>
 
       <Section title="Admin Telegram IDs (comma-separated)">

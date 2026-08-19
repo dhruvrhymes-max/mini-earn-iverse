@@ -12,6 +12,20 @@ import { installClientErrorReporter, setTenantContext, reportClientError } from 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null; blocked?: { reason: string | null; originalUsername: string | null } | null };
 const BOOT_TIMEOUT_MS = 12_000;
 
+/** Stable per-device id used for multi-account screening when the client IP is hidden. */
+function getDeviceId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    let id = localStorage.getItem("zl_device_id") ?? "";
+    if (!id) {
+      id = (crypto as any)?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem("zl_device_id", id);
+    }
+    return id;
+  } catch { return null; }
+}
+
+
 async function readTelegramInitData(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   const read = () => {
@@ -198,7 +212,7 @@ function MiniLayout() {
     const refTg = getSearchValue(loc.search, "ref");
     setBootState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const result = await boot({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null } });
+      const result = await boot({ data: { tenantSlug, initData, previewTgId: tgId, referrerTgId: refTg ? Number(refTg) : null, deviceId: getDeviceId() } });
       if ((result as any).blocked) {
         localStorage.removeItem(`mini_boot_${tenantSlug}`);
         localStorage.removeItem(`uid_${tenantSlug}`);
@@ -305,7 +319,7 @@ function MiniLayout() {
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       >
-        {!user.onboarded && <Onboarding tenant={tenant} userId={user.id} refetch={refetch} />}
+        {needsOnboarding(tenant, user) && <Onboarding tenant={tenant} userId={user.id} refetch={refetch} />}
         <div className="relative z-10"><Outlet /></div>
         <BottomNav slug={tenantSlug} verb={tenant.action_verb} primary={theme.primary} tenant={tenant} />
       </div>
@@ -376,6 +390,23 @@ function joinUrl(c: any) {
   return "#";
 }
 
+/** Signature of the currently required channels — changes force a re-verify. */
+function joinSignature(tenant: any): string {
+  const ob: any = tenant?.onboarding || {};
+  const channels: any[] = Array.isArray(ob.channels) ? ob.channels : [];
+  return channels.map((c: any) => String(c?.chat_id || c?.url || "")).join("|");
+}
+
+function needsOnboarding(tenant: any, user: any): boolean {
+  if (!user?.onboarded) return true;
+  const ob: any = tenant?.onboarding || {};
+  const channels: any[] = Array.isArray(ob.channels) ? ob.channels.filter((c: any) => c?.url || c?.chat_id) : [];
+  if (!ob.enabled || !ob.require_join || channels.length === 0) return false;
+  try {
+    return localStorage.getItem(`ob_${tenant.id}`) !== joinSignature(tenant);
+  } catch { return false; }
+}
+
 function Onboarding({ tenant, userId, refetch }: { tenant: any; userId: string; refetch: () => void }) {
   const mark = useServerFn(markOnboarded);
   const check = useServerFn(checkChannelJoin);
@@ -399,8 +430,10 @@ function Onboarding({ tenant, userId, refetch }: { tenant: any; userId: string; 
           const flags: boolean[] = r?.results ?? [];
           setJoined(Object.fromEntries(flags.map((v, n) => [n, v])));
           if (!r?.ok) { setNote("You are not in every channel yet. Join them all, then tap check again."); return; }
+          try { localStorage.setItem(`ob_${tenant.id}`, joinSignature(tenant)); } catch { /* storage unavailable */ }
         } else {
           await mark({ data: { userId } });
+          try { localStorage.setItem(`ob_${tenant.id}`, joinSignature(tenant)); } catch { /* storage unavailable */ }
         }
         refetch();
       } catch (e: any) {

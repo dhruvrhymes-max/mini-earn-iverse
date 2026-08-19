@@ -359,3 +359,77 @@ export const adminProcessWithdrawal = createServerFn({ method: "POST" })
       supabaseAdmin, tenant, data.txId, data.approve, data.reason,
     );
   });
+
+// ── Task hub (in-app admin) ───────────────────────────────────────
+export const tgListTasks = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object(Auth).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await gate(data);
+    const { data: rows, error } = await supabaseAdmin.from("tasks")
+      .select("*").eq("tenant_id", data.tenantId)
+      .order("kind").order("sort_order").order("created_at");
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const tgSaveTask = createServerFn({ method: "POST" })
+  .inputValidator((i) =>
+    z.object({
+      ...Auth,
+      id: z.string().uuid().optional().nullable(),
+      kind: z.enum(["social", "partner", "watch"]),
+      title: z.string().trim().min(1).max(120),
+      url: z.string().trim().max(300).optional().nullable(),
+      reward: z.number().min(0),
+      daily_limit: z.number().int().min(0).max(100).optional().nullable(),
+      active: z.boolean().optional(),
+      sort_order: z.number().int().min(0).max(999).optional(),
+    }).parse(i),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await gate(data);
+    const row: any = {
+      tenant_id: data.tenantId,
+      kind: data.kind,
+      title: data.title,
+      url: data.url?.trim() ? data.url.trim() : null,
+      reward: data.reward,
+      daily_limit: data.daily_limit ? data.daily_limit : null,
+      active: data.active ?? true,
+      sort_order: data.sort_order ?? 0,
+    };
+    if (data.id) row.id = data.id;
+    const { error } = await supabaseAdmin.from("tasks").upsert(row);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const tgDeleteTask = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({ ...Auth, id: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await gate(data);
+    const { error } = await supabaseAdmin.from("tasks").delete()
+      .eq("id", data.id).eq("tenant_id", data.tenantId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Reports whether the check bot can verify membership for each task channel. */
+export const tgTaskChannelStatus = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object(Auth).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin, tenant } = await gate(data);
+    const { chatIdFromLink, checkBotToken, verifyMembership } = await import("./channel-check.server");
+    const token = await checkBotToken(supabaseAdmin, data.tenantId, tenant.bot_token);
+    const { data: rows } = await supabaseAdmin.from("tasks")
+      .select("id,url,kind").eq("tenant_id", data.tenantId).in("kind", ["social", "partner"]);
+    const out: Record<string, "verifiable" | "no_admin" | "no_channel"> = {};
+    for (const t of rows ?? []) {
+      const chat = chatIdFromLink((t as any).url);
+      if (!chat || !token) { out[(t as any).id] = "no_channel"; continue; }
+      // Probing with the bot itself: only an admin bot can read chat members.
+      const status = await verifyMembership(token, chat, 777000);
+      out[(t as any).id] = status === "unavailable" ? "no_admin" : "verifiable";
+    }
+    return out;
+  });

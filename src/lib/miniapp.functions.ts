@@ -177,6 +177,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
       initData: z.string().nullable().optional(),
       previewTgId: z.number().int().positive().nullable().optional(),
       referrerTgId: z.number().int().positive().nullable().optional(),
+      deviceId: z.string().max(80).nullable().optional(),
     }).parse(i),
   )
   .handler(async ({ data }) => {
@@ -259,7 +260,7 @@ export const bootMiniApp = createServerFn({ method: "POST" })
       const { getRequest } = await import("@tanstack/react-start/server");
       ip = clientIpFromHeaders(getRequest().headers);
     } catch { /* no request context */ }
-    const screen = await screenJoin(supabaseAdmin, tenantRow, user, ip);
+    const screen = await screenJoin(supabaseAdmin, tenantRow, user, ip, data.deviceId ?? null);
     if (screen.banned) {
       return { tenant, user: null, blocked: { reason: screen.reason, originalUsername: screen.originalUsername } };
     }
@@ -316,6 +317,24 @@ export const completeTask = createServerFn({ method: "POST" })
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
     if (!task || !user) throw new Error("Not found");
     if (!data.isGlobal && (task as any).tenant_id !== user.tenant_id) throw new Error("Not found");
+
+    // Telegram channel/group tasks (social & partner) are verified with the check
+    // bot when it is an admin of that chat. If it cannot check, the task passes.
+    const kind = String((task as any).kind || "");
+    if (kind === "social" || kind === "partner") {
+      const { chatIdFromLink, checkBotToken, verifyMembership } = await import("./channel-check.server");
+      const chat = chatIdFromLink((task as any).url);
+      if (chat) {
+        const { data: tenantRow } = await supabaseAdmin.from("tenants")
+          .select("bot_token").eq("id", user.tenant_id).maybeSingle();
+        const token = await checkBotToken(supabaseAdmin, user.tenant_id, tenantRow?.bot_token);
+        if (token) {
+          const status = await verifyMembership(token, chat, Number(user.telegram_id));
+          if (status === "not_member") throw new Error("Join the channel first, then tap Claim again.");
+        }
+      }
+    }
+
     const { data: existing } = await supabaseAdmin.from(compTable)
       .select("*").eq("user_id", user.id).eq("task_id", task.id).maybeSingle();
     const today = new Date(); today.setUTCHours(0, 0, 0, 0);
@@ -576,6 +595,7 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
         action_verb: z.string().max(20).optional(),
         welcome_text: z.string().max(2000).nullable().optional(),
         welcome_cta_text: z.string().max(60).nullable().optional(),
+        welcome_image_url: z.string().max(500).nullable().optional(),
         theme: z.object({
           primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
           background: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
@@ -646,6 +666,7 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
     if (p.action_verb != null) dbPatch.action_verb = p.action_verb;
     if (p.welcome_text !== undefined) dbPatch.welcome_text = p.welcome_text;
     if (p.welcome_cta_text !== undefined) dbPatch.welcome_cta_text = p.welcome_cta_text;
+    if (p.welcome_image_url !== undefined) dbPatch.welcome_image_url = p.welcome_image_url;
     if (p.admin_telegram_ids) dbPatch.admin_telegram_ids = p.admin_telegram_ids;
     if (p.theme) {
       dbPatch.theme = { ...((tenantRow.theme as any) || {}), ...p.theme };
