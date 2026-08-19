@@ -12,6 +12,20 @@ import { installClientErrorReporter, setTenantContext, reportClientError } from 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null; blocked?: { reason: string | null; originalUsername: string | null } | null };
 const BOOT_TIMEOUT_MS = 12_000;
 
+/** Stable per-device id used for multi-account screening when the client IP is hidden. */
+function getDeviceId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    let id = localStorage.getItem("zl_device_id");
+    if (!id) {
+      id = (crypto as any)?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem("zl_device_id", id);
+    }
+    return id;
+  } catch { return null; }
+}
+
+
 async function readTelegramInitData(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   const read = () => {
