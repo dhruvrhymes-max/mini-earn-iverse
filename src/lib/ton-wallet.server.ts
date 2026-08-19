@@ -24,7 +24,7 @@ export async function deriveTonWallets(publicKey: Buffer) {
   const t = await import("@ton/ton");
   const make: Record<TonWalletVersion, any> = {
     v5r1: t.WalletContractV5R1.create({ workchain: 0, publicKey }),
-    v5beta: t.WalletContractV5Beta.create({ workchain: 0, publicKey }),
+    v5beta: t.WalletContractV5Beta.create({ publicKey }),
     v4: t.WalletContractV4.create({ workchain: 0, publicKey }),
     v3r2: t.WalletContractV3R2.create({ workchain: 0, publicKey }),
     v3r1: t.WalletContractV3R1.create({ workchain: 0, publicKey }),
