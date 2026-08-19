@@ -603,7 +603,6 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
         }).partial().optional(),
         ad_config: z.object({
           daily_watch_limit: z.number().min(0).optional(),
-          startup_ad_enabled: z.boolean().optional(),
           task_tabs: z.object({
             social: z.boolean(),
             partner: z.boolean(),
