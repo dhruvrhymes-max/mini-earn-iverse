@@ -317,6 +317,24 @@ export const completeTask = createServerFn({ method: "POST" })
     const { data: user } = await supabaseAdmin.from("app_users").select("*").eq("id", data.userId).single();
     if (!task || !user) throw new Error("Not found");
     if (!data.isGlobal && (task as any).tenant_id !== user.tenant_id) throw new Error("Not found");
+
+    // Telegram channel/group tasks (social & partner) are verified with the check
+    // bot when it is an admin of that chat. If it cannot check, the task passes.
+    const kind = String((task as any).kind || "");
+    if (kind === "social" || kind === "partner") {
+      const { chatIdFromLink, checkBotToken, verifyMembership } = await import("./channel-check.server");
+      const chat = chatIdFromLink((task as any).url);
+      if (chat) {
+        const { data: tenantRow } = await supabaseAdmin.from("tenants")
+          .select("bot_token").eq("id", user.tenant_id).maybeSingle();
+        const token = await checkBotToken(supabaseAdmin, user.tenant_id, tenantRow?.bot_token);
+        if (token) {
+          const status = await verifyMembership(token, chat, Number(user.telegram_id));
+          if (status === "not_member") throw new Error("Join the channel first, then tap Claim again.");
+        }
+      }
+    }
+
     const { data: existing } = await supabaseAdmin.from(compTable)
       .select("*").eq("user_id", user.id).eq("task_id", task.id).maybeSingle();
     const today = new Date(); today.setUTCHours(0, 0, 0, 0);
