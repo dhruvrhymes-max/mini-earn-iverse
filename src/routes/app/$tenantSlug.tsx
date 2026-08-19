@@ -390,6 +390,23 @@ function joinUrl(c: any) {
   return "#";
 }
 
+/** Signature of the currently required channels — changes force a re-verify. */
+function joinSignature(tenant: any): string {
+  const ob: any = tenant?.onboarding || {};
+  const channels: any[] = Array.isArray(ob.channels) ? ob.channels : [];
+  return channels.map((c: any) => String(c?.chat_id || c?.url || "")).join("|");
+}
+
+function needsOnboarding(tenant: any, user: any): boolean {
+  if (!user?.onboarded) return true;
+  const ob: any = tenant?.onboarding || {};
+  const channels: any[] = Array.isArray(ob.channels) ? ob.channels.filter((c: any) => c?.url || c?.chat_id) : [];
+  if (!ob.enabled || !ob.require_join || channels.length === 0) return false;
+  try {
+    return localStorage.getItem(`ob_${tenant.id}`) !== joinSignature(tenant);
+  } catch { return false; }
+}
+
 function Onboarding({ tenant, userId, refetch }: { tenant: any; userId: string; refetch: () => void }) {
   const mark = useServerFn(markOnboarded);
   const check = useServerFn(checkChannelJoin);
@@ -413,8 +430,10 @@ function Onboarding({ tenant, userId, refetch }: { tenant: any; userId: string; 
           const flags: boolean[] = r?.results ?? [];
           setJoined(Object.fromEntries(flags.map((v, n) => [n, v])));
           if (!r?.ok) { setNote("You are not in every channel yet. Join them all, then tap check again."); return; }
+          try { localStorage.setItem(`ob_${tenant.id}`, joinSignature(tenant)); } catch { /* storage unavailable */ }
         } else {
           await mark({ data: { userId } });
+          try { localStorage.setItem(`ob_${tenant.id}`, joinSignature(tenant)); } catch { /* storage unavailable */ }
         }
         refetch();
       } catch (e: any) {
