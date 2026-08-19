@@ -43,9 +43,17 @@ export function tonAddressString(wallet: any): string {
   return wallet.address.toString({ bounceable: false, urlSafe: true });
 }
 
+const ALIASES: Record<string, TonWalletVersion> = {
+  w5: "v5r1", v5: "v5r1", v5r1: "v5r1", v5beta: "v5beta",
+  w4: "v4", v4: "v4", v4r2: "v4",
+  w3: "v3r2", v3: "v3r2", v3r2: "v3r2", v3r1: "v3r1",
+  w2: "v2r2", v2: "v2r2", v2r2: "v2r2", v2r1: "v2r1",
+  w1: "v1r3", v1: "v1r3", v1r3: "v1r3", v1r2: "v1r2", v1r1: "v1r1",
+};
+
 /**
- * Pick the wallet the owner actually uses: highest balance among derived
- * versions, falling back to a deployed one, else the preferred/default version.
+ * Pick the wallet the owner actually uses: an explicitly configured version if
+ * set, otherwise the first funded one in W5 → W4 → W3 → W2 → W1 order.
  */
 export async function pickTonWallet(
   client: any,
@@ -53,26 +61,35 @@ export async function pickTonWallet(
   preferred?: string | null,
 ): Promise<{ wallet: any; version: TonWalletVersion; balance: bigint; candidates: { version: TonWalletVersion; address: string; balance: bigint }[] }> {
   const derived = await deriveTonWallets(publicKey);
-  const pref = String(preferred || "").toLowerCase() as TonWalletVersion;
+  const pref = ALIASES[String(preferred || "").toLowerCase().replace(/[^a-z0-9]/g, "")];
 
-  const candidates: { version: TonWalletVersion; address: string; balance: bigint; wallet: any }[] = [];
-  for (const { version, wallet } of derived) {
-    let balance = 0n;
+  const balanceOf = async (wallet: any): Promise<bigint> => {
     try {
-      balance = await client.getBalance(wallet.address);
+      return await client.getBalance(wallet.address);
     } catch {
-      balance = 0n;
+      return 0n;
     }
-    candidates.push({ version, address: tonAddressString(wallet), balance, wallet });
+  };
+
+  if (pref) {
+    const hit = derived.find((d) => d.version === pref)!;
+    const balance = await balanceOf(hit.wallet);
+    return {
+      wallet: hit.wallet,
+      version: hit.version,
+      balance,
+      candidates: [{ version: hit.version, address: tonAddressString(hit.wallet), balance }],
+    };
   }
 
-  const explicit = candidates.find((c) => c.version === pref);
-  const best = explicit ?? candidates.slice().sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0))[0]!;
+  const candidates: { version: TonWalletVersion; address: string; balance: bigint }[] = [];
+  for (const { version, wallet } of derived) {
+    const balance = await balanceOf(wallet);
+    candidates.push({ version, address: tonAddressString(wallet), balance });
+    if (balance > 0n) return { wallet, version, balance, candidates };
+  }
 
-  return {
-    wallet: best.wallet,
-    version: best.version,
-    balance: best.balance,
-    candidates: candidates.map(({ version, address, balance }) => ({ version, address, balance })),
-  };
+  const fallback = derived[0]!; // W5R1 — the current Tonkeeper default
+  return { wallet: fallback.wallet, version: fallback.version, balance: 0n, candidates };
 }
+
