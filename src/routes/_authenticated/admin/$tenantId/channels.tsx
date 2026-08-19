@@ -43,7 +43,12 @@ function Channels() {
       upd({
         data: {
           id: tenantId,
-          patch: { onboarding: { ...form, channels: form.channels.filter((c) => c.url?.trim()) } },
+          patch: {
+            onboarding: {
+              ...form,
+              channels: form.channels.filter((c) => c.url?.trim() || c.chat_id?.trim()),
+            },
+          },
         },
       }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenant", tenantId] }); toast.success("Saved"); },
