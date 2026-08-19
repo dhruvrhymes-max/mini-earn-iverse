@@ -577,6 +577,7 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
         action_verb: z.string().max(20).optional(),
         welcome_text: z.string().max(2000).nullable().optional(),
         welcome_cta_text: z.string().max(60).nullable().optional(),
+        welcome_image_url: z.string().max(500).nullable().optional(),
         theme: z.object({
           primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
           background: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
@@ -647,6 +648,7 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
     if (p.action_verb != null) dbPatch.action_verb = p.action_verb;
     if (p.welcome_text !== undefined) dbPatch.welcome_text = p.welcome_text;
     if (p.welcome_cta_text !== undefined) dbPatch.welcome_cta_text = p.welcome_cta_text;
+    if (p.welcome_image_url !== undefined) dbPatch.welcome_image_url = p.welcome_image_url;
     if (p.admin_telegram_ids) dbPatch.admin_telegram_ids = p.admin_telegram_ids;
     if (p.theme) {
       dbPatch.theme = { ...((tenantRow.theme as any) || {}), ...p.theme };
