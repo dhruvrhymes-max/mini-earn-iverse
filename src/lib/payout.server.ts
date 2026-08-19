@@ -180,18 +180,39 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
 
   const nativeBalance: bigint = picked.balance;
 
+  // Public RPC endpoints rate-limit aggressively, so retry before giving up.
   let seqno = 0;
-  try {
-    seqno = await contract.getSeqno();
-  } catch {
+  let seqnoErr: any = null;
+  let seqnoRead = false;
+  for (let attempt = 0; attempt < 4 && !seqnoRead; attempt++) {
+    try {
+      seqno = await contract.getSeqno();
+      seqnoRead = true;
+    } catch (e) {
+      seqnoErr = e;
+      await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+    }
+  }
+  if (!seqnoRead) {
     if (nativeBalance === 0n) {
       const list = picked.candidates.map((c) => `${c.version.toUpperCase()}: ${c.address}`).join(" · ");
       throw new Error(
         `TON payout wallet is empty. This phrase maps to these addresses — fund the one you use in Tonkeeper: ${list}`,
       );
     }
-    throw new Error("Could not read the TON payout wallet state from the RPC endpoint");
+    // A funded but not-yet-deployed wallet has no seqno; it deploys itself on
+    // the first outgoing transfer, so start at 0 instead of failing.
+    const msg = String(seqnoErr?.message || seqnoErr || "");
+    if (/exit_code|not (deployed|initialized)|uninit|method|-13|4294967282/i.test(msg)) {
+      seqno = 0;
+    } else {
+      throw new Error(
+        `Could not read the TON payout wallet state from the RPC endpoint (${msg || "no response"}). ` +
+          `Add a toncenter API key in payout settings to avoid rate limits, then try again.`,
+      );
+    }
   }
+
 
 
   let messages;
