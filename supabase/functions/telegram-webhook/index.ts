@@ -202,8 +202,30 @@ Deno.serve(async (req) => {
     const clear = () => supa.from("bot_admin_sessions").delete().eq("tenant_id", tenant.id).eq("tg_id", tgId);
 
     if (session.mode === "start_msg") {
+      const photos = msg.photo as Array<{ file_id: string }> | undefined;
+      const caption: string = typeof msg.caption === "string" ? msg.caption.trim() : "";
+      if (text === "/nophoto") {
+        await supa.from("tenants").update({ welcome_image_url: null }).eq("id", tenant.id);
+        await clear();
+        await api("sendMessage", { chat_id: chatId, text: "✅ Welcome image removed." });
+        return json({ ok: true });
+      }
+      if (photos?.length) {
+        const fileId = photos[photos.length - 1].file_id;
+        const patch: Record<string, unknown> = { welcome_image_url: fileId };
+        if (caption) patch.welcome_text = caption;
+        await supa.from("tenants").update(patch).eq("id", tenant.id);
+        await clear();
+        await api("sendPhoto", {
+          chat_id: chatId,
+          photo: fileId,
+          caption: `✅ Start message updated.\n\n${caption || renderWelcome(tenant, msg.from)}`,
+          parse_mode: "HTML",
+        });
+        return json({ ok: true });
+      }
       if (!text) {
-        await api("sendMessage", { chat_id: chatId, text: "Please send text." });
+        await api("sendMessage", { chat_id: chatId, text: "Please send text, or a photo with a caption." });
         return json({ ok: true });
       }
       await supa.from("tenants").update({ welcome_text: text }).eq("id", tenant.id);
