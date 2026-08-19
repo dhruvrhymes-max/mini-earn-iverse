@@ -250,12 +250,20 @@ function MiniAdmin() {
         <Row><Label>Lifetime cut (%)</Label><Input type="number" value={form.lifetime_pct ?? 0} onChange={(e) => setForm({ ...form, lifetime_pct: e.target.value })} /></Row>
       </Section>
 
+      <Section title="Storage (idle / farm mode)">
+        <p className="text-xs text-white/50">Production stops once storage is full. Users can enlarge storage by watching a rewarded ad.</p>
+        <Row><Label>Production rate (tokens/hour)</Label><Input type="number" value={form.idle_rate_per_hour ?? 60} onChange={(e) => setForm({ ...form, idle_rate_per_hour: e.target.value })} /></Row>
+        <Row><Label>Storage size (hours)</Label><Input type="number" step="0.5" value={form.idle_cap_hours ?? 8} onChange={(e) => setForm({ ...form, idle_cap_hours: e.target.value })} /></Row>
+        <Row><Label>Collect unlocks at (% full)</Label><Input type="number" min={0} max={100} value={form.idle_min_collect_pct ?? 60} onChange={(e) => setForm({ ...form, idle_min_collect_pct: e.target.value })} /></Row>
+        <Row><Label>Collects per day (0 = unlimited)</Label><Input type="number" min={0} value={form.idle_daily_collects ?? 0} onChange={(e) => setForm({ ...form, idle_daily_collects: e.target.value })} /></Row>
+        <Row><Label>Extra storage per watched ad (hours)</Label><Input type="number" step="0.5" min={0} value={form.idle_ad_extend_hours ?? 1} onChange={(e) => setForm({ ...form, idle_ad_extend_hours: e.target.value })} /></Row>
+        <Row><Label>Storage-boost ads per day</Label><Input type="number" min={0} value={form.idle_ad_extend_max ?? 3} onChange={(e) => setForm({ ...form, idle_ad_extend_max: e.target.value })} /></Row>
+        <Row><Label>Adsgram block ID for storage boost</Label><Input value={form.idle_ad_block_id ?? ""} placeholder="int-1234" onChange={(e) => setForm({ ...form, idle_ad_block_id: e.target.value })} /></Row>
+        <p className="text-xs text-white/50">Leave the block ID empty to hide the boost button. Limits are enforced server-side.</p>
+      </Section>
+
       <Section title="Ads">
         <Row><Label>Daily ad limit</Label><Input type="number" value={form.daily_watch_limit ?? 20} onChange={(e) => setForm({ ...form, daily_watch_limit: e.target.value })} /></Row>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!!form.startup_ad_enabled} onChange={(e) => setForm({ ...form, startup_ad_enabled: e.target.checked })} />
-          Show ad on app open
-        </label>
         <p className="text-xs text-white/50">Daily counters reset at 2:00 AM.</p>
       </Section>
 
