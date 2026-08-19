@@ -64,12 +64,16 @@ export async function pickTonWallet(
   const pref = ALIASES[String(preferred || "").toLowerCase().replace(/[^a-z0-9]/g, "")];
 
   const balanceOf = async (wallet: any): Promise<bigint> => {
-    try {
-      return await client.getBalance(wallet.address);
-    } catch {
-      return 0n;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await client.getBalance(wallet.address);
+      } catch {
+        await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+      }
     }
+    return 0n;
   };
+
 
   if (pref) {
     const hit = derived.find((d) => d.version === pref)!;
