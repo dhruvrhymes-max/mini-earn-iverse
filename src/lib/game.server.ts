@@ -16,6 +16,16 @@ export const GAME_DEFAULTS = {
   spin_rewards: [5, 10, 25, 50, 100, 250] as number[],
   idle_rate_per_hour: 60,
   idle_cap_hours: 8,
+  /** Storage must be this % full before collecting is allowed. */
+  idle_min_collect_pct: 60,
+  /** Max collects per day. 0 = unlimited. */
+  idle_daily_collects: 0,
+  /** Extra storage hours granted per rewarded ad. */
+  idle_ad_extend_hours: 1,
+  /** How many storage-extend ads a user may watch per day. 0 = disabled. */
+  idle_ad_extend_max: 3,
+  /** Adsgram block id used for the storage-extend ad. */
+  idle_ad_block_id: "",
 };
 
 export function round4(n: number): number {
