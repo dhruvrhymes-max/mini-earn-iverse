@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { bootMiniApp, getTenantBySlug, getUser, markOnboarded, checkChannelJoin } from "@/lib/miniapp.functions";
 import { EMPTY_MINI_TENANT, EMPTY_MINI_USER, MiniCtx } from "@/lib/miniapp-context";
 import { skinOf, familyOf } from "@/lib/theme-family";
+import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User, Wallet, ShieldCheck, Send, Check, AlertCircle } from "lucide-react";
 
