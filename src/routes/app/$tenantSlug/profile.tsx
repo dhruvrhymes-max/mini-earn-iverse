@@ -164,6 +164,7 @@ function Pfp({ photo, initial, className, style, alt }: { photo: string | null; 
 function ProfileHeader({ family, tenant, user }: { family: string; tenant: any; user: any }) {
   const theme = tenant.theme as any;
   const photo = useTelegramPhoto();
+  const t = useT();
   const name = user.first_name || user.username || `User ${user.telegram_id}`;
   const bal = `${Number(user.balance).toFixed(2)} ${tenant.token_symbol}`;
   const usd = `$${Number(user.usd_balance).toFixed(4)}`;
