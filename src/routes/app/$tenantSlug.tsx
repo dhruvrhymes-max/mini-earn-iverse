@@ -550,13 +550,14 @@ function BottomNav({ slug, verb, primary, tenant }: { slug: string; verb: string
   const nav = useNavigate();
   const matchRoute = useMatchRoute();
   const skin = skinOf(tenant);
+  const t = useT();
   const DEST: Record<string, { to: string; label: string; Icon: any; exact?: boolean }> = {
-    home: { to: "/app/$tenantSlug", label: "Home", Icon: Home, exact: true },
-    tasks: { to: "/app/$tenantSlug/tasks", label: "Tasks", Icon: ListChecks },
+    home: { to: "/app/$tenantSlug", label: t("Home"), Icon: Home, exact: true },
+    tasks: { to: "/app/$tenantSlug/tasks", label: t("Tasks"), Icon: ListChecks },
     miners: { to: "/app/$tenantSlug/miners", label: verb, Icon: Pickaxe },
-    refer: { to: "/app/$tenantSlug/refer", label: "Refer", Icon: Users },
-    profile: { to: "/app/$tenantSlug/profile", label: "Profile", Icon: User },
-    wallet: { to: "/app/$tenantSlug/withdraw", label: "Cash", Icon: Wallet },
+    refer: { to: "/app/$tenantSlug/refer", label: t("Refer"), Icon: Users },
+    profile: { to: "/app/$tenantSlug/profile", label: t("Profile"), Icon: User },
+    wallet: { to: "/app/$tenantSlug/withdraw", label: t("Cash"), Icon: Wallet },
   };
   const keys = skin.navKeys;
   const centerIndex = skin.centerAction ? Math.floor(keys.length / 2) : -1;
