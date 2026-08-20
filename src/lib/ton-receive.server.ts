@@ -4,6 +4,7 @@
  * unique memo (comment) attached to the transfer.
  */
 import { decryptSecret } from "./wallet-crypto.server";
+import { tonFetchAdapter } from "./ton-http-adapter.server";
 
 export type TonReceiveConfig = { address: string; apiKey?: string; api: string };
 
@@ -30,7 +31,11 @@ export async function resolveReceiveConfig(tenant: any): Promise<TonReceiveConfi
   const { TonClient } = await import("@ton/ton");
   const { pickTonWallet, tonAddressString } = await import("./ton-wallet.server");
   const key = await mnemonicToPrivateKey(words);
-  const client = new TonClient({ endpoint: ton.endpoint || "https://toncenter.com/api/v2/jsonRPC", apiKey });
+  const client = new TonClient({
+    endpoint: ton.endpoint || "https://toncenter.com/api/v2/jsonRPC",
+    apiKey,
+    httpAdapter: tonFetchAdapter,
+  });
   const picked = await pickTonWallet(client, key.publicKey, ton.wallet_version);
   return { address: tonAddressString(picked.wallet), apiKey, api };
 
