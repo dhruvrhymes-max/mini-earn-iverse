@@ -7,6 +7,7 @@ import { isMiniAdmin } from "@/lib/mini-admin";
 import { setLanguage } from "@/lib/miniapp.functions";
 import { redeemPromo } from "@/lib/promo.functions";
 import { LANGUAGES } from "@/lib/languages";
+import { useT } from "@/lib/i18n";
 import { useTelegramPhoto } from "@/lib/tg-photo";
 import { familyOf, skinOf, hexA } from "@/lib/theme-family";
 import { Ticket, ChevronRight, ReceiptText, ArrowDownToLine, ArrowLeftRight, History, MessageCircle, Globe, ShieldCheck, Pickaxe, ShoppingBag } from "lucide-react";
@@ -22,14 +23,15 @@ function Profile() {
   const skin = skinOf(tenant);
   const family = familyOf(tenant);
   const theme = tenant.theme as any;
+  const t = useT();
   const items = [
-    { to: "/app/$tenantSlug/shop", label: "Bake shop", icon: ShoppingBag },
-    { to: "/app/$tenantSlug/miners", label: "Miners", icon: Pickaxe },
-    { to: "/app/$tenantSlug/withdraw", label: "Withdraw USDT", icon: ArrowDownToLine },
-    { to: "/app/$tenantSlug/convert", label: "Convert to USDT", icon: ArrowLeftRight },
-    { to: "/app/$tenantSlug/payouts", label: "Withdrawal receipts", icon: ReceiptText },
-    { to: "/app/$tenantSlug/history", label: "Transaction history", icon: History },
-    { to: "/app/$tenantSlug/deposit", label: "Deposit", icon: ShieldCheck },
+    { to: "/app/$tenantSlug/shop", label: t("Bake shop"), icon: ShoppingBag },
+    { to: "/app/$tenantSlug/miners", label: t("Miners"), icon: Pickaxe },
+    { to: "/app/$tenantSlug/withdraw", label: t("Withdraw USDT"), icon: ArrowDownToLine },
+    { to: "/app/$tenantSlug/convert", label: t("Convert to USDT"), icon: ArrowLeftRight },
+    { to: "/app/$tenantSlug/payouts", label: t("Withdrawal receipts"), icon: ReceiptText },
+    { to: "/app/$tenantSlug/history", label: t("Transaction history"), icon: History },
+    { to: "/app/$tenantSlug/deposit", label: t("Deposit"), icon: ShieldCheck },
   ] as const;
   const c = tenant.community as any;
   const go = (to: any) => nav({ to, params: { tenantSlug: tenant.slug } as any });
@@ -42,16 +44,16 @@ function Profile() {
       <ProfileHeader family={family} tenant={tenant} user={user} />
 
       {isAdmin && (
-        <Section skin={skin} primary={theme.primary} title="Admin">
+        <Section skin={skin} primary={theme.primary} title={t("Admin")}>
           <button onClick={() => go("/app/$tenantSlug/admin")} className={`${skin.card} w-full flex items-center gap-3 text-left mb-2`} style={skin.cardStyle(theme.primary, theme.accent)}>
             <ShieldCheck className="h-5 w-5" style={{ color: theme.primary }} />
-            <span className="flex-1 font-semibold">Open admin panel</span>
+            <span className="flex-1 font-semibold">{t("Open admin panel")}</span>
             <ChevronRight className="h-4 w-4 text-white/40" />
           </button>
         </Section>
       )}
 
-      <Section skin={skin} primary={theme.primary} title="Finance">
+      <Section skin={skin} primary={theme.primary} title={t("Finance")}>
         <div className={asGrid ? "grid grid-cols-2 gap-2.5" : "space-y-2"}>
           {items.map((it) => (
             <button
@@ -69,17 +71,17 @@ function Profile() {
       </Section>
 
 
-      <Section skin={skin} primary={theme.primary} title="Promo code">
+      <Section skin={skin} primary={theme.primary} title={t("Promo code")}>
         <PromoRedeem skin={skin} theme={theme} user={user} tokenSymbol={tenant.token_symbol} />
       </Section>
 
-      <Section skin={skin} primary={theme.primary} title="Community">
-        {c.channel_url && <CommunityRow skin={skin} theme={theme} url={c.channel_url} label="Official channel" />}
-        {c.support_url && <CommunityRow skin={skin} theme={theme} url={c.support_url} label="Support" />}
-        {!c.channel_url && !c.support_url && <p className="text-xs text-white/40">Not configured</p>}
+      <Section skin={skin} primary={theme.primary} title={t("Community")}>
+        {c.channel_url && <CommunityRow skin={skin} theme={theme} url={c.channel_url} label={t("Official channel")} />}
+        {c.support_url && <CommunityRow skin={skin} theme={theme} url={c.support_url} label={t("Support")} />}
+        {!c.channel_url && !c.support_url && <p className="text-xs text-white/40">{t("Not configured")}</p>}
       </Section>
 
-      <Section skin={skin} primary={theme.primary} title="Settings">
+      <Section skin={skin} primary={theme.primary} title={t("Settings")}>
         <LanguagePicker skin={skin} theme={theme} user={user} />
       </Section>
     </div>
@@ -89,6 +91,7 @@ function Profile() {
 function PromoRedeem({ skin, theme, user, tokenSymbol }: any) {
   const { refetchUser } = useMini();
   const redeem = useServerFn(redeemPromo);
+  const t = useT();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -101,7 +104,7 @@ function PromoRedeem({ skin, theme, user, tokenSymbol }: any) {
       setCode("");
       refetchUser();
     } catch (e: any) {
-      toast.error(e?.message ?? "Could not redeem that code");
+      toast.error(e?.message ?? t("Could not redeem that code"));
     } finally {
       setBusy(false);
     }
@@ -111,13 +114,13 @@ function PromoRedeem({ skin, theme, user, tokenSymbol }: any) {
     <div className={skin.card} style={skin.cardStyle(theme.primary, theme.accent)}>
       <div className="flex items-center gap-3">
         <Ticket className="h-5 w-5" style={{ color: theme.primary }} />
-        <span className="flex-1 font-semibold">Redeem a promo code</span>
+        <span className="flex-1 font-semibold">{t("Redeem a promo code")}</span>
       </div>
       <div className="flex gap-2 mt-3">
         <input
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="ENTER CODE"
+          placeholder={t("ENTER CODE")}
           className="flex-1 rounded-xl px-3 py-2 text-sm font-mono bg-white/5 outline-none"
           style={{ border: "1px solid rgba(255,255,255,0.12)" }}
         />
@@ -127,10 +130,10 @@ function PromoRedeem({ skin, theme, user, tokenSymbol }: any) {
           className="px-4 rounded-xl text-sm font-bold disabled:opacity-50"
           style={{ background: theme.primary, color: "#000" }}
         >
-          {busy ? "…" : "Claim"}
+          {busy ? "…" : t("Claim")}
         </button>
       </div>
-      <p className="text-[11px] text-white/40 mt-2">Each code can be claimed once per account.</p>
+      <p className="text-[11px] text-white/40 mt-2">{t("Each code can be claimed once per account.")}</p>
     </div>
   );
 }
@@ -185,7 +188,7 @@ function ProfileHeader({ family, tenant, user }: { family: string; tenant: any; 
           className="w-14 h-14 flex items-center justify-center font-black text-black text-xl [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]"
           style={{ background: theme.primary }} />
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-white/50">Explorer</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-white/50">{t("Explorer")}</p>
           <p className="text-xl font-extrabold mt-1">{name}</p>
           <div className="flex gap-4 mt-2 text-sm">
             <span className="font-bold" style={{ color: theme.primary }}>{bal}</span>
@@ -249,6 +252,7 @@ function Section({ title, children, skin, primary }: any) {
 function LanguagePicker({ skin, theme, user }: any) {
   const { refetchUser } = useMini();
   const save = useServerFn(setLanguage);
+  const t = useT();
   const [lang, setLang] = useState<string>(user.language || "en");
   const pick = async (code: string) => {
     const prev = lang;
@@ -258,13 +262,13 @@ function LanguagePicker({ skin, theme, user }: any) {
       refetchUser();
     } catch (e: any) {
       setLang(prev);
-      toast.error(e?.message ?? "Couldn't change language");
+      toast.error(e?.message ?? t("Couldn't change language"));
     }
   };
   return (
     <div className={skin.card} style={skin.cardStyle(theme.primary, theme.accent)}>
       <div className="flex items-center gap-3">
-        <Globe className="h-5 w-5" /><span className="flex-1 font-semibold">Language</span>
+        <Globe className="h-5 w-5" /><span className="flex-1 font-semibold">{t("Language")}</span>
       </div>
       <div className="grid grid-cols-2 gap-2 mt-3">
         {LANGUAGES.map((l) => {
