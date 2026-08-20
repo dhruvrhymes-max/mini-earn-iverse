@@ -64,14 +64,17 @@ export async function pickTonWallet(
   const pref = ALIASES[String(preferred || "").toLowerCase().replace(/[^a-z0-9]/g, "")];
 
   const balanceOf = async (wallet: any): Promise<bigint> => {
+    let lastError: unknown = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         return await client.getBalance(wallet.address);
-      } catch {
+      } catch (error) {
+        lastError = error;
         await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
       }
     }
-    return 0n;
+    const message = lastError instanceof Error ? lastError.message : String(lastError || "no response");
+    throw new Error(`TON RPC balance lookup failed: ${message}`);
   };
 
 

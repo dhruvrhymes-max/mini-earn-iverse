@@ -4,6 +4,7 @@
  * TON: native TON or jetton transfer signed with the tenant's stored 24-word phrase.
  */
 import { decryptSecret } from "./wallet-crypto.server";
+import { tonFetchAdapter } from "./ton-http-adapter.server";
 
 export type PayoutResult = { hash: string; explorer: string | null };
 
@@ -167,7 +168,11 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
   }
 
   const endpoint = cfg.endpoint || "https://toncenter.com/api/v2/jsonRPC";
-  const client = new TonClient({ endpoint, apiKey: cfg.api_key || undefined });
+  const client = new TonClient({
+    endpoint,
+    apiKey: cfg.api_key || undefined,
+    httpAdapter: tonFetchAdapter,
+  });
 
   // The phrase maps to a different address per wallet version (Tonkeeper W5 vs
   // V4). Use the version that actually holds funds so payouts leave the wallet
@@ -206,9 +211,11 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
     if (/exit_code|not (deployed|initialized)|uninit|method|-13|4294967282/i.test(msg)) {
       seqno = 0;
     } else {
+      const rateLimited = /\b429\b|rate.?limit|too many requests/i.test(msg);
       throw new Error(
-        `Could not read the TON payout wallet state from the RPC endpoint (${msg || "no response"}). ` +
-          `Add a toncenter API key in payout settings to avoid rate limits, then try again.`,
+        rateLimited
+          ? "The TON RPC endpoint is rate-limited. Add a toncenter API key in payout settings, then try again."
+          : `Could not connect to the TON RPC endpoint (${msg || "no response"}). Check the endpoint and try again.`,
       );
     }
   }
