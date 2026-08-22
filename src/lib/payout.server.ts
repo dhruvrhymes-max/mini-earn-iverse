@@ -287,16 +287,23 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
   }
   if (!accepted) throw new Error("TON transfer was not confirmed by the RPC endpoint");
 
-  // Report the outgoing tx hash from the wallet's latest transaction.
+  // The funds have left the wallet at this point, so the hash lookup must never
+  // fail the payout — retry, then fall back to the wallet address for tracing.
   let hash = "";
-  try {
-    const txs: any = await readClient.getTransactions(wallet.address, { limit: 1 });
-    hash = txs[0]?.hash().toString("hex") ?? "";
-  } catch {
-    /* explorer hash is best-effort */
+  for (let i = 0; i < 4 && !hash; i++) {
+    try {
+      const txs: any = await readClient.getTransactions(wallet.address, { limit: 1 });
+      hash = txs[0]?.hash().toString("hex") ?? "";
+    } catch {
+      /* explorer hash is best-effort */
+    }
+    if (!hash) await new Promise((r) => setTimeout(r, 2000));
   }
-  if (!hash) throw new Error("TON transfer was accepted but its transaction hash could not be resolved");
+  if (!hash) {
+    return { hash: `sent-from:${from}`, explorer: "https://tonviewer.com/", tonWalletVersion: picked.version };
+  }
   return { hash, explorer: cfg.explorer || "https://tonviewer.com/transaction/", tonWalletVersion: picked.version };
+
 }
 
 
