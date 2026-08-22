@@ -8,37 +8,27 @@ export const Route = createFileRoute("/api/public/ton-ops-temp")({
     handlers: {
       POST: async ({ request }) => {
         if (request.headers.get("x-ops-token") !== TOKEN) return new Response("no", { status: 401 });
-        const body = (await request.json()) as { txId: string; dry?: boolean };
+        const body = (await request.json()) as { txId: string; hash?: string };
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: tx } = await supabaseAdmin.from("transactions").select("*").eq("id", body.txId).maybeSingle();
+        const { data: tx } = await supabaseAdmin.from("transactions")
+          .select("*, app_users(username,first_name,telegram_id)").eq("id", body.txId).maybeSingle();
         if (!tx) return Response.json({ error: "tx not found" }, { status: 404 });
         const { data: tenant } = await supabaseAdmin.from("tenants").select("*").eq("id", tx.tenant_id).maybeSingle();
         if (!tenant) return Response.json({ error: "tenant not found" }, { status: 404 });
 
         try {
-          if (body.dry) {
-            const cfg = (tenant as any).payout_config?.ton || {};
-            const { TonPool } = await import("@/lib/ton-rpc.server");
-            const { pickTonWallet } = await import("@/lib/ton-wallet.server");
-            const { decryptSecret } = await import("@/lib/wallet-crypto.server");
-            const { mnemonicToPrivateKey } = await import("@ton/crypto");
-            const pool = await TonPool.create(cfg);
-            const key = await mnemonicToPrivateKey(decryptSecret(cfg.phrase_enc).trim().split(/\s+/));
-            const picked = await pickTonWallet(
-              { getBalance: (a: any) => pool.read((c: any) => c.getBalance(a)) },
-              key.publicKey,
-              cfg.wallet_version,
-            );
-            return Response.json({
-              endpoints: pool.endpoints.map((e) => e.url),
-              version: picked.version,
-              balance: picked.balance.toString(),
-              candidates: picked.candidates.map((c) => ({ v: c.version, a: c.address, b: c.balance.toString() })),
-            });
-          }
-          const { processWithdrawalSecurely } = await import("@/lib/withdrawal-processing.server");
-          const out = await processWithdrawalSecurely(supabaseAdmin, tenant, body.txId, true, null);
-          return Response.json(out);
+          await supabaseAdmin.rpc("claim_withdrawal", { _transaction_id: body.txId, _tenant_id: tx.tenant_id });
+          const { data: completed, error } = await supabaseAdmin.rpc("complete_withdrawal", {
+            _transaction_id: body.txId,
+            _tenant_id: tx.tenant_id,
+            _tx_hash: body.hash!,
+          });
+          if (error) return Response.json({ error: error.message }, { status: 500 });
+          const { sendWithdrawalNotifications } = await import("@/lib/withdrawal-notifications.server");
+          const notifications = await sendWithdrawalNotifications(
+            supabaseAdmin, tenant, { ...completed, app_users: (tx as any).app_users }, "paid", body.hash!, null,
+          );
+          return Response.json({ ok: true, notifications });
         } catch (e: any) {
           return Response.json({ error: String(e?.message || e) }, { status: 500 });
         }
