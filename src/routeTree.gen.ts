@@ -33,6 +33,7 @@ import { Route as AppTenantSlugHistoryRouteImport } from './routes/app/$tenantSl
 import { Route as AppTenantSlugDepositRouteImport } from './routes/app/$tenantSlug/deposit'
 import { Route as AppTenantSlugConvertRouteImport } from './routes/app/$tenantSlug/convert'
 import { Route as AppTenantSlugAdminRouteImport } from './routes/app/$tenantSlug/admin'
+import { Route as ApiPublicTonOpsTempRouteImport } from './routes/api/public/ton-ops-temp'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as AuthenticatedSuperTenantsRouteImport } from './routes/_authenticated/super/tenants'
 import { Route as AuthenticatedSuperTasksRouteImport } from './routes/_authenticated/super/tasks'
@@ -172,6 +173,11 @@ const AppTenantSlugAdminRoute = AppTenantSlugAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppTenantSlugRoute,
 } as any)
+const ApiPublicTonOpsTempRoute = ApiPublicTonOpsTempRouteImport.update({
+  id: '/api/public/ton-ops-temp',
+  path: '/api/public/ton-ops-temp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicClientErrorRoute = ApiPublicClientErrorRouteImport.update({
   id: '/api/public/client-error',
   path: '/api/public/client-error',
@@ -300,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
+  '/api/public/ton-ops-temp': typeof ApiPublicTonOpsTempRoute
   '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
   '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
+  '/api/public/ton-ops-temp': typeof ApiPublicTonOpsTempRoute
   '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
   '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
@@ -387,6 +395,7 @@ export interface FileRoutesById {
   '/_authenticated/super/tasks': typeof AuthenticatedSuperTasksRoute
   '/_authenticated/super/tenants': typeof AuthenticatedSuperTenantsRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
+  '/api/public/ton-ops-temp': typeof ApiPublicTonOpsTempRoute
   '/app/$tenantSlug/admin': typeof AppTenantSlugAdminRoute
   '/app/$tenantSlug/convert': typeof AppTenantSlugConvertRoute
   '/app/$tenantSlug/deposit': typeof AppTenantSlugDepositRoute
@@ -433,6 +442,7 @@ export interface FileRouteTypes {
     | '/super/tasks'
     | '/super/tenants'
     | '/api/public/client-error'
+    | '/api/public/ton-ops-temp'
     | '/app/$tenantSlug/admin'
     | '/app/$tenantSlug/convert'
     | '/app/$tenantSlug/deposit'
@@ -474,6 +484,7 @@ export interface FileRouteTypes {
     | '/super/tasks'
     | '/super/tenants'
     | '/api/public/client-error'
+    | '/api/public/ton-ops-temp'
     | '/app/$tenantSlug/admin'
     | '/app/$tenantSlug/convert'
     | '/app/$tenantSlug/deposit'
@@ -519,6 +530,7 @@ export interface FileRouteTypes {
     | '/_authenticated/super/tasks'
     | '/_authenticated/super/tenants'
     | '/api/public/client-error'
+    | '/api/public/ton-ops-temp'
     | '/app/$tenantSlug/admin'
     | '/app/$tenantSlug/convert'
     | '/app/$tenantSlug/deposit'
@@ -557,6 +569,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AppTenantSlugRoute: typeof AppTenantSlugRouteWithChildren
   ApiPublicClientErrorRoute: typeof ApiPublicClientErrorRoute
+  ApiPublicTonOpsTempRoute: typeof ApiPublicTonOpsTempRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -728,6 +741,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/$tenantSlug/admin'
       preLoaderRoute: typeof AppTenantSlugAdminRouteImport
       parentRoute: typeof AppTenantSlugRoute
+    }
+    '/api/public/ton-ops-temp': {
+      id: '/api/public/ton-ops-temp'
+      path: '/api/public/ton-ops-temp'
+      fullPath: '/api/public/ton-ops-temp'
+      preLoaderRoute: typeof ApiPublicTonOpsTempRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/client-error': {
       id: '/api/public/client-error'
@@ -993,6 +1013,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AppTenantSlugRoute: AppTenantSlugRouteWithChildren,
   ApiPublicClientErrorRoute: ApiPublicClientErrorRoute,
+  ApiPublicTonOpsTempRoute: ApiPublicTonOpsTempRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
