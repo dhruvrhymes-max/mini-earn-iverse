@@ -152,7 +152,7 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
   if (!enc) throw new Error("TON wallet phrase is not configured in payout settings");
 
   const { mnemonicToPrivateKey } = await import("@ton/crypto");
-  const { TonClient, internal, JettonMaster } = await import("@ton/ton");
+  const { internal, JettonMaster } = await import("@ton/ton");
   const { Address, beginCell, toNano, fromNano } = await import("@ton/core");
 
   const words = decryptSecret(enc).trim().split(/\s+/);
@@ -167,36 +167,35 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
     throw new Error("Destination TON address is invalid");
   }
 
-  const endpoint = cfg.endpoint || "https://toncenter.com/api/v2/jsonRPC";
-  const client = new TonClient({
-    endpoint,
-    apiKey: cfg.api_key || undefined,
-    httpAdapter: tonFetchAdapter,
-  });
+  const { TonPool } = await import("./ton-rpc.server");
+  const pool = await TonPool.create(cfg);
+  // Failover-aware read client handed to helpers that only need reads.
+  const readClient = {
+    getBalance: (a: any) => pool.read((c) => c.getBalance(a)),
+    runMethod: (a: any, m: string, s?: any) => pool.read((c) => c.runMethod(a, m, s)),
+    getTransactions: (a: any, o: any) => pool.read((c) => c.getTransactions(a, o)),
+    open: (x: any) => pool.current.open(x),
+  };
 
   // The phrase maps to a different address per wallet version (Tonkeeper W5 vs
   // V4). Use the version that actually holds funds so payouts leave the wallet
   // the owner funded.
   const { pickTonWallet } = await import("./ton-wallet.server");
-  const picked = await pickTonWallet(client, key.publicKey, cfg.wallet_version);
+  const picked = await pickTonWallet(readClient, key.publicKey, cfg.wallet_version);
   const wallet = picked.wallet;
-  const contract = client.open(wallet);
   const from = wallet.address.toString({ bounceable: false });
-
   const nativeBalance: bigint = picked.balance;
 
-  // Public RPC endpoints rate-limit aggressively, so retry before giving up.
+  const getSeqno = () => pool.read((c) => c.open(wallet).getSeqno() as Promise<number>);
+
   let seqno = 0;
   let seqnoErr: any = null;
   let seqnoRead = false;
-  for (let attempt = 0; attempt < 4 && !seqnoRead; attempt++) {
-    try {
-      seqno = await contract.getSeqno();
-      seqnoRead = true;
-    } catch (e) {
-      seqnoErr = e;
-      await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
-    }
+  try {
+    seqno = await getSeqno();
+    seqnoRead = true;
+  } catch (e) {
+    seqnoErr = e;
   }
   if (!seqnoRead) {
     if (nativeBalance === 0n) {
@@ -214,13 +213,11 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
       const rateLimited = /\b429\b|rate.?limit|too many requests/i.test(msg);
       throw new Error(
         rateLimited
-          ? "The TON RPC endpoint is rate-limited. Add a toncenter API key in payout settings, then try again."
-          : `Could not connect to the TON RPC endpoint (${msg || "no response"}). Check the endpoint and try again.`,
+          ? "Every TON RPC endpoint is rate-limited right now. Add a toncenter API key in payout settings, then try again."
+          : `Could not connect to any TON RPC endpoint (${msg || "no response"}). Check the endpoint and try again.`,
       );
     }
   }
-
-
 
   let messages;
   if (cfg.jetton_master) {
@@ -229,15 +226,15 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
     if (nativeBalance < gasNeeded) {
       throw new Error(`TON payout wallet ${from} has only ${fromNano(nativeBalance)} TON — at least 0.08 TON is required for gas on a jetton transfer.`);
     }
-    const master = client.open(JettonMaster.create(Address.parse(cfg.jetton_master)));
-    const jettonWallet = await master.getWalletAddress(wallet.address);
+    const master = JettonMaster.create(Address.parse(cfg.jetton_master));
+    const jettonWallet: any = await pool.read((c) => c.open(master).getWalletAddress(wallet.address));
     const decimals = Number(cfg.jetton_decimals ?? 6);
     const value = toUnits(amount, decimals);
     if (value <= 0n) throw new Error("Computed payout amount is zero — check the amount and jetton decimals.");
 
     let jettonBalance: bigint | null = null;
     try {
-      const res = await client.runMethod(jettonWallet, "get_wallet_data");
+      const res: any = await readClient.runMethod(jettonWallet, "get_wallet_data");
       jettonBalance = res.stack.readBigNumber();
     } catch {
       jettonBalance = 0n;
@@ -270,17 +267,22 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
     messages = [internal({ to: dest, value, bounce: false, body: memo || cfg.comment || "" })];
   }
 
+  // Broadcast through exactly one endpoint — a TON external message is not
+  // idempotent, so re-sending elsewhere could pay twice.
   try {
-    await contract.sendTransfer({ seqno, secretKey: key.secretKey, messages });
+    await pool.current.open(wallet).sendTransfer({ seqno, secretKey: key.secretKey, messages });
   } catch (e: any) {
-    throw new Error(`TON transfer was rejected by the network: ${String(e?.message || e)}`);
+    const msg = String(e?.message || e);
+    // Confirm the broadcast really did not land before surfacing a failure.
+    const now = await getSeqno().catch(() => seqno);
+    if (now <= seqno) throw new Error(`TON transfer was rejected by the network: ${msg}`);
   }
 
   // Wait for seqno advancement; never report a fake hash as a successful payment.
   let accepted = false;
   for (let i = 0; i < 20; i++) {
     await new Promise((r) => setTimeout(r, 1500));
-    const now = await contract.getSeqno().catch(() => seqno);
+    const now = await getSeqno().catch(() => seqno);
     if (now > seqno) { accepted = true; break; }
   }
   if (!accepted) throw new Error("TON transfer was not confirmed by the RPC endpoint");
@@ -288,14 +290,15 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
   // Report the outgoing tx hash from the wallet's latest transaction.
   let hash = "";
   try {
-    const txs = await client.getTransactions(wallet.address, { limit: 1 });
+    const txs: any = await readClient.getTransactions(wallet.address, { limit: 1 });
     hash = txs[0]?.hash().toString("hex") ?? "";
   } catch {
     /* explorer hash is best-effort */
   }
   if (!hash) throw new Error("TON transfer was accepted but its transaction hash could not be resolved");
-  return { hash, explorer: cfg.explorer || "https://tonviewer.com/transaction/" };
+  return { hash, explorer: cfg.explorer || "https://tonviewer.com/transaction/", tonWalletVersion: picked.version };
 }
+
 
 
 /** Send a withdrawal on-chain. Throws with a readable message on failure. */
