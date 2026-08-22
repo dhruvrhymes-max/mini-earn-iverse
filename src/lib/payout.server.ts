@@ -6,7 +6,7 @@
 import { decryptSecret } from "./wallet-crypto.server";
 import { tonFetchAdapter } from "./ton-http-adapter.server";
 
-export type PayoutResult = { hash: string; explorer: string | null };
+export type PayoutResult = { hash: string; explorer: string | null; tonWalletVersion?: string };
 
 const ERC20_ABI = [
   {

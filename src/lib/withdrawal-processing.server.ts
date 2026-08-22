@@ -38,7 +38,13 @@ export async function processWithdrawalSecurely(
       wallet: claimed.wallet,
       amount: Number(claimed.amount),
     });
+    // Remember the funded TON wallet version so later payouts skip the probe.
+    if (result.tonWalletVersion && tenant?.payout_config?.ton && !tenant.payout_config.ton.wallet_version) {
+      const next = { ...tenant.payout_config, ton: { ...tenant.payout_config.ton, wallet_version: result.tonWalletVersion } };
+      await supabaseAdmin.from("tenants").update({ payout_config: next }).eq("id", tenant.id);
+    }
     const { data: completed, error: completeError } = await supabaseAdmin.rpc("complete_withdrawal", {
+
       _transaction_id: transactionId,
       _tenant_id: tenant.id,
       _tx_hash: result.hash,
