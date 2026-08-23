@@ -135,6 +135,11 @@ function MiniAdmin() {
           idle_ad_extend_hours: Math.min(24, Math.max(0, Number(form.idle_ad_extend_hours) || 0)),
           idle_ad_extend_max: Math.min(50, Math.max(0, Math.floor(Number(form.idle_ad_extend_max) || 0))),
           idle_ad_block_id: String(form.idle_ad_block_id || "").trim().slice(0, 60),
+          withdraw_req_enabled: !!form.withdraw_req_enabled,
+          withdraw_min_ads: Math.max(0, Math.floor(Number(form.withdraw_min_ads) || 0)),
+          withdraw_min_tasks: Math.max(0, Math.floor(Number(form.withdraw_min_tasks) || 0)),
+          withdraw_min_refs: Math.max(0, Math.floor(Number(form.withdraw_min_refs) || 0)),
+
         },
         referral_config: {
           signup_reward: Number(form.signup_reward) || 0,
