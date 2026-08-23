@@ -14,17 +14,44 @@ export type AdProvider = {
 const loaded = new Set<string>();
 
 function loadScript(src: string, attrs: Record<string, string> = {}) {
-  const key = src + JSON.stringify(attrs);
+  const url = src.startsWith("//") || src.startsWith("http") ? src : `https://${src}`;
+  const key = url + JSON.stringify(attrs);
   if (loaded.has(key)) return Promise.resolve();
+  // A matching tag may already exist (pasted snippet, earlier mount) — reuse it.
+  const existing = document.querySelector<HTMLScriptElement>(`script[src="${url}"]`);
+  if (existing) {
+    loaded.add(key);
+    return Promise.resolve();
+  }
   return new Promise<void>((resolve, reject) => {
     const s = document.createElement("script");
-    s.src = src.startsWith("//") || src.startsWith("http") ? src : `https://${src}`;
+    s.src = url;
     s.async = true;
     Object.entries(attrs).forEach(([k, v]) => v && s.setAttribute(k, v));
     s.onload = () => { loaded.add(key); resolve(); };
-    s.onerror = () => reject(new Error("Ad script failed to load"));
+    s.onerror = () => reject(new Error("Ad script blocked or failed to load"));
     document.head.appendChild(s);
   });
+}
+
+/** SDKs register their global a tick or two after the script loads. */
+async function waitForFn(name: string, timeoutMs = 12000): Promise<(...a: any[]) => any> {
+  const started = Date.now();
+  for (;;) {
+    const fn = (window as any)[name];
+    if (typeof fn === "function") return fn;
+    if (Date.now() - started > timeoutMs) throw new Error("Ad network did not respond, try again");
+    await new Promise((r) => setTimeout(r, 200));
+  }
+}
+
+/** Accepts a raw zone id or a pasted Monetag snippet and extracts the zone. */
+function monetagZone(c: Record<string, any>): string {
+  const direct = String(c.zone_id ?? "").trim();
+  if (/^\d+$/.test(direct)) return direct;
+  const blob = `${c.code ?? ""} ${direct}`;
+  const m = blob.match(/data-zone\s*=\s*['"]?(\d+)/i) || blob.match(/show_(\d+)/i) || blob.match(/\b(\d{6,9})\b/);
+  return m?.[1] ?? "";
 }
 
 function injectCss(id: string, css?: string) {
@@ -50,14 +77,15 @@ export async function runAd(p: AdProvider, mount?: HTMLElement | null): Promise<
 
   switch (p.kind) {
     case "monetag": {
-      const zone = String(c.zone_id ?? "").trim();
+      const zone = monetagZone(c);
       if (!zone) throw new Error("Monetag zone id missing");
-      await loadScript(c.script_url || `//libtl.com/sdk.js`, { "data-zone": zone, "data-sdk": `show_${zone}` });
-      const fn = (window as any)[`show_${zone}`];
-      if (typeof fn !== "function") throw new Error("Monetag not ready, try again");
+      const sdk = String(c.sdk_name ?? "").trim() || `show_${zone}`;
+      await loadScript(String(c.script_url || "").trim() || "//libtl.com/sdk.js", { "data-zone": zone, "data-sdk": sdk });
+      const fn = await waitForFn(sdk);
       await fn();
       return;
     }
+
     case "adsgram": {
       const blockId = String(c.block_id ?? "").trim();
       if (!blockId) throw new Error("Adsgram block id missing");
