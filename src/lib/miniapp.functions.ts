@@ -662,6 +662,11 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
           idle_ad_extend_hours: z.number().min(0).max(24).optional(),
           idle_ad_extend_max: z.number().int().min(0).max(50).optional(),
           idle_ad_block_id: z.string().max(60).optional(),
+          withdraw_req_enabled: z.boolean().optional(),
+          withdraw_min_ads: z.number().int().min(0).max(100000).optional(),
+          withdraw_min_tasks: z.number().int().min(0).max(1000).optional(),
+          withdraw_min_refs: z.number().int().min(0).max(1000).optional(),
+
         }).partial().optional(),
         referral_config: z.object({
           signup_reward: z.number().min(0).optional(),
