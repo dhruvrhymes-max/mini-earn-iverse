@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMini } from "@/lib/miniapp-context";
 import { Button } from "@/components/ui/button";
-import { Copy, Share2, Gift, TrendingUp, Users } from "lucide-react";
+import { Copy, Share2, TrendingUp, Users, UserCheck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getWithdrawEligibility } from "@/lib/miniapp.functions";
 import { toast } from "sonner";
 import { sanitizeShortName } from "@/lib/mini-admin";
 
@@ -16,6 +19,11 @@ function Refer() {
   const botUsername = t.bot_username || "";
   const shortName = sanitizeShortName(t.mini_app_short_name);
   const startParam = `ref_${user.telegram_id}`;
+  const eligFn = useServerFn(getWithdrawEligibility);
+  const { data: stats } = useQuery({
+    queryKey: ["withdraw-eligibility", user.id],
+    queryFn: () => eligFn({ data: { tenantId: t.id, userId: user.id } }),
+  });
 
   // Telegram deep link — opens the mini app directly inside Telegram (t.me/<bot>/<shortname>?startapp=…)
   // `startapp` opens the Mini App and starts the bot chat at the same time.
@@ -58,8 +66,8 @@ function Refer() {
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <Stat icon={<Users className="h-4 w-4" />} value={user.referral_count} label="Friends" />
-        <Stat icon={<Gift className="h-4 w-4" />} value={`${Number(cfg.inviter_reward ?? 0)}`} label={`per ${t.token_symbol}`} />
+        <Stat icon={<Users className="h-4 w-4" />} value={stats?.totalRefs ?? user.referral_count} label="Friends" />
+        <Stat icon={<UserCheck className="h-4 w-4" />} value={stats?.activeRefs ?? 0} label="active" />
         <Stat icon={<TrendingUp className="h-4 w-4" />} value={`${Number(cfg.lifetime_pct ?? 0)}%`} label="lifetime" />
       </div>
 
@@ -80,6 +88,10 @@ function Refer() {
           </Button>
         </div>
       </div>
+
+      <p className="text-xs text-white/50 -mt-3">
+        Active invites are friends who mined, completed a task or watched an ad at least once.
+      </p>
 
       <div className="space-y-2 text-sm text-white/70">
         <div className="flex justify-between">
