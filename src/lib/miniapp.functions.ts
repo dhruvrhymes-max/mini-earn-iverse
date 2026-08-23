@@ -533,6 +533,16 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("id,tenant_id,telegram_id,username,first_name").eq("tenant_id", data.tenantId).eq("telegram_id", telegramId).maybeSingle();
     if (!user) throw new Error("User not found");
+
+    const progress = await withdrawProgress(supabaseAdmin, (tenant.economics as any) || {}, user.id);
+    if (!progress.eligible) {
+      const missing: string[] = [];
+      if (progress.ads < progress.req.ads) missing.push(`${progress.req.ads - progress.ads} more ad${progress.req.ads - progress.ads === 1 ? "" : "s"}`);
+      if (progress.tasks < progress.req.tasks) missing.push(`${progress.req.tasks - progress.tasks} more task${progress.req.tasks - progress.tasks === 1 ? "" : "s"}`);
+      if (progress.activeRefs < progress.req.refs) missing.push(`${progress.req.refs - progress.activeRefs} more active invite${progress.req.refs - progress.activeRefs === 1 ? "" : "s"}`);
+      throw new Error(`Not eligible yet — complete ${missing.join(" and ")}`);
+    }
+
     const { data: reserved, error } = await supabaseAdmin.rpc("reserve_withdrawal", {
       _tenant_id: data.tenantId,
       _user_id: user.id,
