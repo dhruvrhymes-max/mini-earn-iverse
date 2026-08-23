@@ -78,6 +78,43 @@ function normalizeTenant(row: any) {
   };
 }
 
+/** Withdrawal eligibility criteria, stored on tenants.economics. */
+export function withdrawRequirements(econ: any) {
+  return {
+    enabled: !!econ?.withdraw_req_enabled,
+    ads: Math.max(0, Math.floor(Number(econ?.withdraw_min_ads ?? 0)) || 0),
+    tasks: Math.max(0, Math.floor(Number(econ?.withdraw_min_tasks ?? 0)) || 0),
+    refs: Math.max(0, Math.floor(Number(econ?.withdraw_min_refs ?? 0)) || 0),
+  };
+}
+
+/** Count lifetime ads, task completions and active referrals for one user. */
+async function withdrawProgress(supabaseAdmin: any, econ: any, userId: string) {
+  const req = withdrawRequirements(econ);
+  const [adsRes, tasksRes, globalRes, refsRes] = await Promise.all([
+    supabaseAdmin.from("ad_logs").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabaseAdmin.from("user_tasks").select("count").eq("user_id", userId),
+    supabaseAdmin.from("user_global_tasks").select("count").eq("user_id", userId),
+    supabaseAdmin.from("app_users").select("id,has_activity").eq("referrer_id", userId),
+  ]);
+  const sum = (rows: any[] | null) => (rows ?? []).reduce((s, r) => s + Math.max(1, Number(r.count) || 1), 0);
+  const ads = adsRes.count ?? 0;
+  const tasks = sum(tasksRes.data) + sum(globalRes.data);
+  const refRows = refsRes.data ?? [];
+  const activeRefs = refRows.filter((r: any) => r.has_activity).length;
+  const eligible = !req.enabled || (ads >= req.ads && tasks >= req.tasks && activeRefs >= req.refs);
+  return { req, ads, tasks, activeRefs, totalRefs: refRows.length, eligible };
+}
+
+/** Public — the mini app shows the user's withdrawal criteria progress. */
+export const getWithdrawEligibility = createServerFn({ method: "GET" })
+  .inputValidator((i) => z.object({ tenantId: z.string().uuid(), userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { data: tenant } = await supabaseAdmin.from("tenants").select("economics").eq("id", data.tenantId).maybeSingle();
+    return withdrawProgress(supabaseAdmin, (tenant?.economics as any) || {}, data.userId);
+  });
+
 
 // Public — no auth required (mini-app boot)
 export const getTenantBySlug = createServerFn({ method: "GET" })
