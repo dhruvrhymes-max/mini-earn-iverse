@@ -259,6 +259,18 @@ function MiniAdmin() {
         <Row><Label>Min withdraw (USDT)</Label><Input type="number" step="0.01" value={form.min_withdraw_usdt ?? 0.1} onChange={(e) => setForm({ ...form, min_withdraw_usdt: e.target.value })} /></Row>
       </Section>
 
+      <Section title="Withdrawal criteria">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={!!form.withdraw_req_enabled} onChange={(e) => setForm({ ...form, withdraw_req_enabled: e.target.checked })} />
+          Require users to qualify before withdrawing
+        </label>
+        <Row><Label>Ads to watch (0 = off)</Label><Input type="number" min={0} value={form.withdraw_min_ads ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_ads: e.target.value })} /></Row>
+        <Row><Label>Tasks to complete (watch + social + partner)</Label><Input type="number" min={0} value={form.withdraw_min_tasks ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_tasks: e.target.value })} /></Row>
+        <Row><Label>Active invites required</Label><Input type="number" min={0} value={form.withdraw_min_refs ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_refs: e.target.value })} /></Row>
+        <p className="text-xs text-white/50">All set requirements must be met. Users see their progress on the Withdraw screen. Checked server-side.</p>
+      </Section>
+
+
       <Section title="Referrals">
         <Row><Label>Signup reward</Label><Input type="number" value={form.signup_reward ?? 0} onChange={(e) => setForm({ ...form, signup_reward: e.target.value })} /></Row>
         <Row><Label>Inviter reward</Label><Input type="number" value={form.inviter_reward ?? 0} onChange={(e) => setForm({ ...form, inviter_reward: e.target.value })} /></Row>
