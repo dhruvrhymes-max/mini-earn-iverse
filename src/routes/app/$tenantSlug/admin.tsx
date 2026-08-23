@@ -91,6 +91,11 @@ function MiniAdmin() {
       idle_ad_extend_hours: econ.idle_ad_extend_hours ?? 1,
       idle_ad_extend_max: econ.idle_ad_extend_max ?? 3,
       idle_ad_block_id: econ.idle_ad_block_id ?? "",
+      withdraw_req_enabled: !!econ.withdraw_req_enabled,
+      withdraw_min_ads: econ.withdraw_min_ads ?? 0,
+      withdraw_min_tasks: econ.withdraw_min_tasks ?? 0,
+      withdraw_min_refs: econ.withdraw_min_refs ?? 0,
+
       tab_social: ad.task_tabs?.social !== false,
       tab_partner: ad.task_tabs?.partner !== false,
       tab_watch: ad.task_tabs?.watch !== false,
