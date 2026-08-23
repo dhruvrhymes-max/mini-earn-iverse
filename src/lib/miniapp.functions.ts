@@ -78,6 +78,43 @@ function normalizeTenant(row: any) {
   };
 }
 
+/** Withdrawal eligibility criteria, stored on tenants.economics. */
+export function withdrawRequirements(econ: any) {
+  return {
+    enabled: !!econ?.withdraw_req_enabled,
+    ads: Math.max(0, Math.floor(Number(econ?.withdraw_min_ads ?? 0)) || 0),
+    tasks: Math.max(0, Math.floor(Number(econ?.withdraw_min_tasks ?? 0)) || 0),
+    refs: Math.max(0, Math.floor(Number(econ?.withdraw_min_refs ?? 0)) || 0),
+  };
+}
+
+/** Count lifetime ads, task completions and active referrals for one user. */
+async function withdrawProgress(supabaseAdmin: any, econ: any, userId: string) {
+  const req = withdrawRequirements(econ);
+  const [adsRes, tasksRes, globalRes, refsRes] = await Promise.all([
+    supabaseAdmin.from("ad_logs").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabaseAdmin.from("user_tasks").select("count").eq("user_id", userId),
+    supabaseAdmin.from("user_global_tasks").select("count").eq("user_id", userId),
+    supabaseAdmin.from("app_users").select("id,has_activity").eq("referrer_id", userId),
+  ]);
+  const sum = (rows: any[] | null) => (rows ?? []).reduce((s, r) => s + Math.max(1, Number(r.count) || 1), 0);
+  const ads = adsRes.count ?? 0;
+  const tasks = sum(tasksRes.data) + sum(globalRes.data);
+  const refRows = refsRes.data ?? [];
+  const activeRefs = refRows.filter((r: any) => r.has_activity).length;
+  const eligible = !req.enabled || (ads >= req.ads && tasks >= req.tasks && activeRefs >= req.refs);
+  return { req, ads, tasks, activeRefs, totalRefs: refRows.length, eligible };
+}
+
+/** Public — the mini app shows the user's withdrawal criteria progress. */
+export const getWithdrawEligibility = createServerFn({ method: "GET" })
+  .inputValidator((i) => z.object({ tenantId: z.string().uuid(), userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { data: tenant } = await supabaseAdmin.from("tenants").select("economics").eq("id", data.tenantId).maybeSingle();
+    return withdrawProgress(supabaseAdmin, (tenant?.economics as any) || {}, data.userId);
+  });
+
 
 // Public — no auth required (mini-app boot)
 export const getTenantBySlug = createServerFn({ method: "GET" })
@@ -496,6 +533,16 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     const { data: user } = await supabaseAdmin.from("app_users")
       .select("id,tenant_id,telegram_id,username,first_name").eq("tenant_id", data.tenantId).eq("telegram_id", telegramId).maybeSingle();
     if (!user) throw new Error("User not found");
+
+    const progress = await withdrawProgress(supabaseAdmin, (tenant.economics as any) || {}, user.id);
+    if (!progress.eligible) {
+      const missing: string[] = [];
+      if (progress.ads < progress.req.ads) missing.push(`${progress.req.ads - progress.ads} more ad${progress.req.ads - progress.ads === 1 ? "" : "s"}`);
+      if (progress.tasks < progress.req.tasks) missing.push(`${progress.req.tasks - progress.tasks} more task${progress.req.tasks - progress.tasks === 1 ? "" : "s"}`);
+      if (progress.activeRefs < progress.req.refs) missing.push(`${progress.req.refs - progress.activeRefs} more active invite${progress.req.refs - progress.activeRefs === 1 ? "" : "s"}`);
+      throw new Error(`Not eligible yet — complete ${missing.join(" and ")}`);
+    }
+
     const { data: reserved, error } = await supabaseAdmin.rpc("reserve_withdrawal", {
       _tenant_id: data.tenantId,
       _user_id: user.id,
@@ -615,6 +662,11 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
           idle_ad_extend_hours: z.number().min(0).max(24).optional(),
           idle_ad_extend_max: z.number().int().min(0).max(50).optional(),
           idle_ad_block_id: z.string().max(60).optional(),
+          withdraw_req_enabled: z.boolean().optional(),
+          withdraw_min_ads: z.number().int().min(0).max(100000).optional(),
+          withdraw_min_tasks: z.number().int().min(0).max(1000).optional(),
+          withdraw_min_refs: z.number().int().min(0).max(1000).optional(),
+
         }).partial().optional(),
         referral_config: z.object({
           signup_reward: z.number().min(0).optional(),

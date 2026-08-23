@@ -91,6 +91,11 @@ function MiniAdmin() {
       idle_ad_extend_hours: econ.idle_ad_extend_hours ?? 1,
       idle_ad_extend_max: econ.idle_ad_extend_max ?? 3,
       idle_ad_block_id: econ.idle_ad_block_id ?? "",
+      withdraw_req_enabled: !!econ.withdraw_req_enabled,
+      withdraw_min_ads: econ.withdraw_min_ads ?? 0,
+      withdraw_min_tasks: econ.withdraw_min_tasks ?? 0,
+      withdraw_min_refs: econ.withdraw_min_refs ?? 0,
+
       tab_social: ad.task_tabs?.social !== false,
       tab_partner: ad.task_tabs?.partner !== false,
       tab_watch: ad.task_tabs?.watch !== false,
@@ -130,6 +135,11 @@ function MiniAdmin() {
           idle_ad_extend_hours: Math.min(24, Math.max(0, Number(form.idle_ad_extend_hours) || 0)),
           idle_ad_extend_max: Math.min(50, Math.max(0, Math.floor(Number(form.idle_ad_extend_max) || 0))),
           idle_ad_block_id: String(form.idle_ad_block_id || "").trim().slice(0, 60),
+          withdraw_req_enabled: !!form.withdraw_req_enabled,
+          withdraw_min_ads: Math.max(0, Math.floor(Number(form.withdraw_min_ads) || 0)),
+          withdraw_min_tasks: Math.max(0, Math.floor(Number(form.withdraw_min_tasks) || 0)),
+          withdraw_min_refs: Math.max(0, Math.floor(Number(form.withdraw_min_refs) || 0)),
+
         },
         referral_config: {
           signup_reward: Number(form.signup_reward) || 0,
@@ -248,6 +258,18 @@ function MiniAdmin() {
         <Row><Label>Tokens per 1 USDT</Label><Input type="number" value={form.token_per_usdt ?? 10000} onChange={(e) => setForm({ ...form, token_per_usdt: e.target.value })} /></Row>
         <Row><Label>Min withdraw (USDT)</Label><Input type="number" step="0.01" value={form.min_withdraw_usdt ?? 0.1} onChange={(e) => setForm({ ...form, min_withdraw_usdt: e.target.value })} /></Row>
       </Section>
+
+      <Section title="Withdrawal criteria">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={!!form.withdraw_req_enabled} onChange={(e) => setForm({ ...form, withdraw_req_enabled: e.target.checked })} />
+          Require users to qualify before withdrawing
+        </label>
+        <Row><Label>Ads to watch (0 = off)</Label><Input type="number" min={0} value={form.withdraw_min_ads ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_ads: e.target.value })} /></Row>
+        <Row><Label>Tasks to complete (watch + social + partner)</Label><Input type="number" min={0} value={form.withdraw_min_tasks ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_tasks: e.target.value })} /></Row>
+        <Row><Label>Active invites required</Label><Input type="number" min={0} value={form.withdraw_min_refs ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_refs: e.target.value })} /></Row>
+        <p className="text-xs text-white/50">All set requirements must be met. Users see their progress on the Withdraw screen. Checked server-side.</p>
+      </Section>
+
 
       <Section title="Referrals">
         <Row><Label>Signup reward</Label><Input type="number" value={form.signup_reward ?? 0} onChange={(e) => setForm({ ...form, signup_reward: e.target.value })} /></Row>
