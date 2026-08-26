@@ -8,13 +8,24 @@ export const Route = createFileRoute("/api/public/ton-ops-temp")({
     handlers: {
       POST: async ({ request }) => {
         if (request.headers.get("x-ops-token") !== TOKEN) return new Response("no", { status: 401 });
-        const body = (await request.json()) as { txId: string; hash?: string };
+        const body = (await request.json()) as { txId: string; hash?: string; action?: string };
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: tx } = await supabaseAdmin.from("transactions")
           .select("*, app_users(username,first_name,telegram_id)").eq("id", body.txId).maybeSingle();
         if (!tx) return Response.json({ error: "tx not found" }, { status: 404 });
         const { data: tenant } = await supabaseAdmin.from("tenants").select("*").eq("id", tx.tenant_id).maybeSingle();
         if (!tenant) return Response.json({ error: "tenant not found" }, { status: 404 });
+
+        if (body.action === "approve") {
+          try {
+            const { processWithdrawalSecurely } = await import("@/lib/withdrawal-processing.server");
+            const res = await processWithdrawalSecurely(supabaseAdmin, tenant, body.txId, true, null);
+            return Response.json({ ok: true, res });
+          } catch (e: any) {
+            return Response.json({ error: String(e?.message || e), stack: String(e?.stack || "") }, { status: 500 });
+          }
+        }
+
 
         try {
           await supabaseAdmin.rpc("claim_withdrawal", { _transaction_id: body.txId, _tenant_id: tx.tenant_id });
