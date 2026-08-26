@@ -275,7 +275,7 @@ async function payTon(payout: any, toRaw: string, amount: number): Promise<Payou
     const msg = String(e?.message || e);
     // Confirm the broadcast really did not land before surfacing a failure.
     const now = await getSeqno().catch(() => seqno);
-    if (now <= seqno) throw new Error(`TON transfer was rejected by the network: ${msg}`);
+    if (now <= seqno) throw new Error(`TON transfer was rejected by the network [seqno=${seqno} version=${picked.version} from=${from}]: ${msg}`);
   }
 
   // Wait for seqno advancement; never report a fake hash as a successful payment.
