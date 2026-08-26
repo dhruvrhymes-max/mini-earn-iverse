@@ -26,6 +26,30 @@ export const Route = createFileRoute("/api/public/ton-ops-temp")({
           }
         }
 
+
+        if (body.action === "diag2") {
+          try {
+            const cfg = (tenant as any).payout_config?.ton || {};
+            const { decryptSecret } = await import("@/lib/wallet-crypto.server");
+            const { mnemonicToPrivateKey } = await import("@ton/crypto");
+            const key = await mnemonicToPrivateKey(decryptSecret(cfg.phrase_enc).trim().split(/\s+/));
+            const { TonPool } = await import("@/lib/ton-rpc.server");
+            const { WalletContractV5R1 } = await import("@ton/ton");
+            const pool = await TonPool.create(cfg);
+            const w = WalletContractV5R1.create({ workchain: 0, publicKey: key.publicKey });
+            const out: any = { address: w.address.toString({ bounceable: false }), libWalletId: JSON.parse(JSON.stringify(w.walletId, (_k, v) => typeof v === "bigint" ? String(v) : v)) };
+            for (const m of ["seqno", "get_subwallet_id", "is_signature_allowed", "get_public_key"]) {
+              try {
+                const r: any = await pool.read((c: any) => c.runMethod(w.address, m));
+                out[m] = String(r.stack.readBigNumber());
+              } catch (e: any) { out[m] = "ERR " + String(e?.message || e).slice(0, 120); }
+            }
+            return Response.json(out);
+          } catch (e: any) {
+            return Response.json({ error: String(e?.message || e) }, { status: 500 });
+          }
+        }
+
         if (body.action === "diag") {
           try {
             const cfg = (tenant as any).payout_config?.ton || {};
