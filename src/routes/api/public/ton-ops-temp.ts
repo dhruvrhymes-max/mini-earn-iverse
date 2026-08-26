@@ -26,6 +26,21 @@ export const Route = createFileRoute("/api/public/ton-ops-temp")({
           }
         }
 
+        if (body.action === "diag") {
+          try {
+            const cfg = (tenant as any).payout_config?.ton || {};
+            const { decryptSecret } = await import("@/lib/wallet-crypto.server");
+            const { mnemonicToPrivateKey } = await import("@ton/crypto");
+            const key = await mnemonicToPrivateKey(decryptSecret(cfg.phrase_enc).trim().split(/\s+/));
+            const { TonPool } = await import("@/lib/ton-rpc.server");
+            const pool = await TonPool.create(cfg);
+            const { diagnoseTonWallets } = await import("@/lib/ton-wallet.server");
+            return Response.json({ wallets: await diagnoseTonWallets(pool, key.publicKey) });
+          } catch (e: any) {
+            return Response.json({ error: String(e?.message || e) }, { status: 500 });
+          }
+        }
+
 
         try {
           await supabaseAdmin.rpc("claim_withdrawal", { _transaction_id: body.txId, _tenant_id: tx.tenant_id });
