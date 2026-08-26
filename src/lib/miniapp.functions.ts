@@ -80,31 +80,44 @@ function normalizeTenant(row: any) {
 
 /** Withdrawal eligibility criteria, stored on tenants.economics. */
 export function withdrawRequirements(econ: any) {
+  const int = (v: any) => Math.max(0, Math.floor(Number(v ?? 0)) || 0);
   return {
     enabled: !!econ?.withdraw_req_enabled,
-    ads: Math.max(0, Math.floor(Number(econ?.withdraw_min_ads ?? 0)) || 0),
-    tasks: Math.max(0, Math.floor(Number(econ?.withdraw_min_tasks ?? 0)) || 0),
-    refs: Math.max(0, Math.floor(Number(econ?.withdraw_min_refs ?? 0)) || 0),
+    ads: int(econ?.withdraw_min_ads),
+    tasks: int(econ?.withdraw_min_tasks),
+    refs: int(econ?.withdraw_min_refs),
+    /** Minimum account age, in days since the member joined. */
+    days: int(econ?.withdraw_min_account_days),
+    /** Minimum number of daily collects/claims the member has completed. */
+    collects: int(econ?.withdraw_min_collects),
   };
 }
 
-/** Count lifetime ads, task completions and active referrals for one user. */
+/** Count lifetime ads, task completions, collects and active referrals for one user. */
 async function withdrawProgress(supabaseAdmin: any, econ: any, userId: string) {
   const req = withdrawRequirements(econ);
-  const [adsRes, tasksRes, globalRes, refsRes] = await Promise.all([
+  const [adsRes, tasksRes, globalRes, refsRes, meRes, collectRes] = await Promise.all([
     supabaseAdmin.from("ad_logs").select("id", { count: "exact", head: true }).eq("user_id", userId),
     supabaseAdmin.from("user_tasks").select("count").eq("user_id", userId),
     supabaseAdmin.from("user_global_tasks").select("count").eq("user_id", userId),
     supabaseAdmin.from("app_users").select("id,has_activity").eq("referrer_id", userId),
+    supabaseAdmin.from("app_users").select("created_at").eq("id", userId).maybeSingle(),
+    supabaseAdmin.from("transactions").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("type", "mine"),
   ]);
   const sum = (rows: any[] | null) => (rows ?? []).reduce((s, r) => s + Math.max(1, Number(r.count) || 1), 0);
   const ads = adsRes.count ?? 0;
   const tasks = sum(tasksRes.data) + sum(globalRes.data);
   const refRows = refsRes.data ?? [];
   const activeRefs = refRows.filter((r: any) => r.has_activity).length;
-  const eligible = !req.enabled || (ads >= req.ads && tasks >= req.tasks && activeRefs >= req.refs);
-  return { req, ads, tasks, activeRefs, totalRefs: refRows.length, eligible };
+  const collects = collectRes.count ?? 0;
+  const createdAt = meRes.data?.created_at ? new Date(meRes.data.created_at).getTime() : Date.now();
+  const accountDays = Math.max(0, Math.floor((Date.now() - createdAt) / 86400000));
+  const eligible = !req.enabled
+    || (ads >= req.ads && tasks >= req.tasks && activeRefs >= req.refs
+      && accountDays >= req.days && collects >= req.collects);
+  return { req, ads, tasks, activeRefs, totalRefs: refRows.length, accountDays, collects, eligible };
 }
+
 
 /** Public — the mini app shows the user's withdrawal criteria progress. */
 export const getWithdrawEligibility = createServerFn({ method: "GET" })
