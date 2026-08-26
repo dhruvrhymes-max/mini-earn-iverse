@@ -97,3 +97,24 @@ export async function pickTonWallet(
   return { wallet: fallback.wallet, version: fallback.version, balance: 0n, candidates };
 }
 
+
+/** Diagnostic: derived addresses, balances and on-chain state per version. */
+export async function diagnoseTonWallets(pool: any, publicKey: Buffer) {
+  const derived = await deriveTonWallets(publicKey);
+  const out: any[] = [];
+  for (const { version, wallet } of derived) {
+    try {
+      const state: any = await pool.read((c: any) => c.getContractState(wallet.address));
+      out.push({
+        version,
+        address: tonAddressString(wallet),
+        balance: String(state.balance),
+        state: state.state,
+        codeHash: state.code ? Buffer.from(state.code).subarray(0, 8).toString("hex") : null,
+      });
+    } catch (e: any) {
+      out.push({ version, address: tonAddressString(wallet), error: String(e?.message || e) });
+    }
+  }
+  return out;
+}
