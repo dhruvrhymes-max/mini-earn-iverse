@@ -3,7 +3,10 @@ export type AdKindDef = { id: string; label: string; hint: string; fields: AdFie
 
 export const AD_KINDS: AdKindDef[] = [
   { id: "monetag", label: "Monetag (rewarded)", hint: "Paste your Monetag zone ID.", fields: [{ name: "zone_id", label: "Zone ID", placeholder: "1234567" }] },
-  { id: "adsgram", label: "Adsgram", hint: "Paste your Adsgram block ID.", fields: [{ name: "block_id", label: "Block ID", placeholder: "int-1234" }] },
+  { id: "adsgram", label: "Adsgram (rewarded video)", hint: "Paste your Adsgram block ID.", fields: [{ name: "block_id", label: "Block ID", placeholder: "int-1234" }] },
+  { id: "adsgram_task", label: "Adsgram task (subscribe & earn)", hint: "Paste the Adsgram TASK block ID. The user completes a task (e.g. subscribe) and is rewarded once Adsgram confirms it.", fields: [
+    { name: "block_id", label: "Task block ID", placeholder: "task-1234" },
+  ] },
   { id: "onclicka", label: "Onclicka", hint: "Paste your Onclicka spot/zone ID.", fields: [{ name: "zone_id", label: "Zone / Spot ID", placeholder: "123456" }] },
   { id: "direct_link", label: "Direct link (smart link)", hint: "User opens the link and is rewarded after the wait time.", fields: [
     { name: "url", label: "Direct link URL", placeholder: "https://…" },
