@@ -695,6 +695,10 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
             watch: z.boolean(),
             refer: z.boolean(),
           }).partial().optional(),
+          startup_ad: z.object({
+            enabled: z.boolean().optional(),
+            block_id: z.string().max(60).optional(),
+          }).partial().optional(),
         }).partial().optional(),
         admin_telegram_ids: z.array(z.number().int().positive()).optional(),
       }),
