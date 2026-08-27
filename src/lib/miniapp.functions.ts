@@ -679,7 +679,8 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
           withdraw_min_ads: z.number().int().min(0).max(100000).optional(),
           withdraw_min_tasks: z.number().int().min(0).max(1000).optional(),
           withdraw_min_refs: z.number().int().min(0).max(1000).optional(),
-
+          withdraw_min_account_days: z.number().int().min(0).max(3650).optional(),
+          withdraw_min_collects: z.number().int().min(0).max(10000).optional(),
         }).partial().optional(),
         referral_config: z.object({
           signup_reward: z.number().min(0).optional(),
@@ -693,6 +694,10 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
             partner: z.boolean(),
             watch: z.boolean(),
             refer: z.boolean(),
+          }).partial().optional(),
+          startup_ad: z.object({
+            enabled: z.boolean().optional(),
+            block_id: z.string().max(60).optional(),
           }).partial().optional(),
         }).partial().optional(),
         admin_telegram_ids: z.array(z.number().int().positive()).optional(),

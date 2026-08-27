@@ -214,6 +214,14 @@ export const adminFindUser = createServerFn({ method: "POST" })
         .eq("tenant_id", data.tenantId).ilike("username", q).limit(1).maybeSingle();
       row = r;
     }
+    if (!row) {
+      // Partial match on username or first name, oldest accounts first.
+      const { data: r } = await supabaseAdmin.from("app_users").select("*")
+        .eq("tenant_id", data.tenantId)
+        .or(`username.ilike.%${q}%,first_name.ilike.%${q}%`)
+        .order("created_at", { ascending: true }).limit(1).maybeSingle();
+      row = r;
+    }
     if (!row) throw new Error("No member found");
 
     const [{ data: referredUsers }, { data: txs }, { data: ips }] = await Promise.all([
@@ -242,14 +250,29 @@ export const adminFindUser = createServerFn({ method: "POST" })
   });
 
 export const adminListMembers = createServerFn({ method: "POST" })
-  .inputValidator((i) => z.object(Auth).parse(i))
+  .inputValidator((i) => z.object({
+    ...Auth,
+    search: z.string().trim().max(60).optional().nullable(),
+    offset: z.number().int().min(0).max(1000000).optional(),
+    limit: z.number().int().min(1).max(200).optional(),
+  }).parse(i))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await gate(data);
-    const { data: rows, error } = await supabaseAdmin.from("app_users")
-      .select("id,telegram_id,username,first_name,balance,usd_balance,referrer_id,has_activity,ads_watched,banned,ban_reason,ban_kind,created_at,last_ip")
-      .eq("tenant_id", data.tenantId)
+    const pageSize = data.limit ?? 50;
+    const from = data.offset ?? 0;
+    const needle = (data.search ?? "").trim().replace(/^@/, "");
+
+    let query = supabaseAdmin.from("app_users")
+      .select("id,telegram_id,username,first_name,balance,usd_balance,referrer_id,has_activity,ads_watched,banned,ban_reason,ban_kind,created_at,last_ip", { count: "exact" })
+      .eq("tenant_id", data.tenantId);
+    if (needle) {
+      const parts = [`username.ilike.%${needle}%`, `first_name.ilike.%${needle}%`];
+      if (/^\d+$/.test(needle)) parts.push(`telegram_id.eq.${needle}`);
+      query = query.or(parts.join(","));
+    }
+    const { data: rows, error, count } = await query
       .order("created_at", { ascending: false })
-      .limit(1000);
+      .range(from, from + pageSize - 1);
     if (error) throw new Error(error.message);
 
     const memberIds = (rows ?? []).map((member) => member.id);
@@ -264,19 +287,28 @@ export const adminListMembers = createServerFn({ method: "POST" })
       ...(globalTaskRows ?? []).map((task) => task.user_id),
     ]);
     const referralCounts = new Map<string, { total: number; active: number }>();
-    for (const member of rows ?? []) {
-      if (!member.referrer_id) continue;
-      const current = referralCounts.get(member.referrer_id) ?? { total: 0, active: 0 };
+
+    // Referral counts for the members on this page (counted across the whole tenant).
+    const { data: refRows } = memberIds.length > 0
+      ? await supabaseAdmin.from("app_users").select("id,referrer_id,ads_watched,has_activity")
+          .eq("tenant_id", data.tenantId).in("referrer_id", memberIds)
+      : { data: [] as any[] };
+    for (const referral of refRows ?? []) {
+      const current = referralCounts.get(referral.referrer_id) ?? { total: 0, active: 0 };
       current.total += 1;
-      if (Number(member.ads_watched) > 0 || taskActiveIds.has(member.id)) current.active += 1;
-      referralCounts.set(member.referrer_id, current);
+      if (Number(referral.ads_watched) > 0 || referral.has_activity || taskActiveIds.has(referral.id)) current.active += 1;
+      referralCounts.set(referral.referrer_id, current);
     }
 
-    return (rows ?? []).map((member) => ({
-      ...member,
-      referrals: referralCounts.get(member.id)?.total ?? 0,
-      active_referrals: referralCounts.get(member.id)?.active ?? 0,
-    }));
+    return {
+      total: count ?? 0,
+      hasMore: from + (rows?.length ?? 0) < (count ?? 0),
+      rows: (rows ?? []).map((member) => ({
+        ...member,
+        referrals: referralCounts.get(member.id)?.total ?? 0,
+        active_referrals: referralCounts.get(member.id)?.active ?? 0,
+      })),
+    };
   });
 
 export const adminSetBan = createServerFn({ method: "POST" })

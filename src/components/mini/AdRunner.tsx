@@ -45,6 +45,17 @@ async function waitForFn(name: string, timeoutMs = 12000): Promise<(...a: any[])
   }
 }
 
+/** Some SDKs expose an object (e.g. window.Adsgram) rather than a function. */
+async function waitForObject(name: string, timeoutMs = 12000): Promise<any> {
+  const started = Date.now();
+  for (;;) {
+    const obj = (window as any)[name];
+    if (obj && typeof obj.init === "function") return obj;
+    if (Date.now() - started > timeoutMs) throw new Error("Ad network did not respond, try again");
+    await new Promise((r) => setTimeout(r, 200));
+  }
+}
+
 /** Accepts a raw zone id or a pasted Monetag snippet and extracts the zone. */
 function monetagZone(c: Record<string, any>): string {
   const direct = String(c.zone_id ?? "").trim();
@@ -86,11 +97,13 @@ export async function runAd(p: AdProvider, mount?: HTMLElement | null): Promise<
       return;
     }
 
-    case "adsgram": {
+    case "adsgram":
+    case "adsgram_task": {
       const blockId = String(c.block_id ?? "").trim();
       if (!blockId) throw new Error("Adsgram block id missing");
       await loadScript(c.script_url || "//sad.adsgram.ai/js/sad.min.js");
-      const AdController = (window as any).Adsgram?.init({ blockId });
+      const Adsgram = await waitForObject("Adsgram");
+      const AdController = Adsgram.init({ blockId });
       if (!AdController) throw new Error("Adsgram not ready, try again");
       const res = await AdController.show();
       if (res && res.done === false) throw new Error("Ad not completed");
@@ -134,8 +147,8 @@ export async function runAd(p: AdProvider, mount?: HTMLElement | null): Promise<
       }
       const fnName = String(c.show_function ?? "").trim();
       if (fnName) {
-        const fn = (window as any)[fnName];
-        if (typeof fn !== "function") throw new Error(`${fnName}() not available`);
+        // SDKs register their global a moment after the snippet runs — poll for it.
+        const fn = await waitForFn(fnName);
         await fn();
       } else {
         await new Promise((r) => setTimeout(r, Number(c.wait_seconds ?? 3) * 1000));
