@@ -147,8 +147,8 @@ export async function runAd(p: AdProvider, mount?: HTMLElement | null): Promise<
       }
       const fnName = String(c.show_function ?? "").trim();
       if (fnName) {
-        const fn = (window as any)[fnName];
-        if (typeof fn !== "function") throw new Error(`${fnName}() not available`);
+        // SDKs register their global a moment after the snippet runs — poll for it.
+        const fn = await waitForFn(fnName);
         await fn();
       } else {
         await new Promise((r) => setTimeout(r, Number(c.wait_seconds ?? 3) * 1000));
