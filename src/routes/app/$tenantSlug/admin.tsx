@@ -95,6 +95,10 @@ function MiniAdmin() {
       withdraw_min_ads: econ.withdraw_min_ads ?? 0,
       withdraw_min_tasks: econ.withdraw_min_tasks ?? 0,
       withdraw_min_refs: econ.withdraw_min_refs ?? 0,
+      withdraw_min_account_days: econ.withdraw_min_account_days ?? 0,
+      withdraw_min_collects: econ.withdraw_min_collects ?? 0,
+      startup_ad_enabled: !!ad.startup_ad?.enabled,
+      startup_ad_block_id: ad.startup_ad?.block_id ?? "",
 
       tab_social: ad.task_tabs?.social !== false,
       tab_partner: ad.task_tabs?.partner !== false,
@@ -139,6 +143,8 @@ function MiniAdmin() {
           withdraw_min_ads: Math.max(0, Math.floor(Number(form.withdraw_min_ads) || 0)),
           withdraw_min_tasks: Math.max(0, Math.floor(Number(form.withdraw_min_tasks) || 0)),
           withdraw_min_refs: Math.max(0, Math.floor(Number(form.withdraw_min_refs) || 0)),
+          withdraw_min_account_days: Math.max(0, Math.floor(Number(form.withdraw_min_account_days) || 0)),
+          withdraw_min_collects: Math.max(0, Math.floor(Number(form.withdraw_min_collects) || 0)),
 
         },
         referral_config: {
@@ -148,6 +154,10 @@ function MiniAdmin() {
         },
         ad_config: {
           daily_watch_limit: Number(form.daily_watch_limit) || 0,
+          startup_ad: {
+            enabled: !!form.startup_ad_enabled,
+            block_id: String(form.startup_ad_block_id || "").trim().slice(0, 60),
+          },
           task_tabs: {
             social: !!form.tab_social,
             partner: !!form.tab_partner,
@@ -267,6 +277,8 @@ function MiniAdmin() {
         <Row><Label>Ads to watch (0 = off)</Label><Input type="number" min={0} value={form.withdraw_min_ads ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_ads: e.target.value })} /></Row>
         <Row><Label>Tasks to complete (watch + social + partner)</Label><Input type="number" min={0} value={form.withdraw_min_tasks ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_tasks: e.target.value })} /></Row>
         <Row><Label>Active invites required</Label><Input type="number" min={0} value={form.withdraw_min_refs ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_refs: e.target.value })} /></Row>
+        <Row><Label>Minimum account age (days)</Label><Input type="number" min={0} value={form.withdraw_min_account_days ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_account_days: e.target.value })} /></Row>
+        <Row><Label>Daily collects/claims required</Label><Input type="number" min={0} value={form.withdraw_min_collects ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_collects: e.target.value })} /></Row>
         <p className="text-xs text-white/50">All set requirements must be met. Users see their progress on the Withdraw screen. Checked server-side.</p>
       </Section>
 
@@ -292,6 +304,12 @@ function MiniAdmin() {
       <Section title="Ads">
         <Row><Label>Daily ad limit</Label><Input type="number" value={form.daily_watch_limit ?? 20} onChange={(e) => setForm({ ...form, daily_watch_limit: e.target.value })} /></Row>
         <p className="text-xs text-white/50">Daily counters reset at 2:00 AM.</p>
+        <label className="flex items-center gap-2 text-sm pt-2">
+          <input type="checkbox" checked={!!form.startup_ad_enabled} onChange={(e) => setForm({ ...form, startup_ad_enabled: e.target.checked })} />
+          Show an ad when the app opens
+        </label>
+        <Row><Label>Adsgram block ID for app-open ad</Label><Input value={form.startup_ad_block_id ?? ""} placeholder="int-1234" onChange={(e) => setForm({ ...form, startup_ad_block_id: e.target.value })} /></Row>
+        <p className="text-xs text-white/50">Off by default. Shown once per session, no reward.</p>
       </Section>
 
       <Section title="Task Hub tabs">
