@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { adminFindUser, adminSetBan, adminAdjustBalance, adminListMembers } from "@/lib/bot-admin.functions";
@@ -41,18 +41,22 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
     onError: (e: any) => toast.error(e.message),
   });
 
-  const { data: members = [], isLoading } = useQuery({
-    queryKey: ["members", tenantId],
-    queryFn: () => listMembers({ data: auth }),
-  });
+  const PAGE = 50;
+  const [page, setPage] = useState(1);
+  const [listQuery, setListQuery] = useState("");
+  useEffect(() => {
+    const id = setTimeout(() => { setListQuery(q.trim()); setPage(1); }, 350);
+    return () => clearTimeout(id);
+  }, [q]);
 
-  const visibleMembers = members.filter((member: any) => {
-    const needle = q.trim().replace(/^@/, "").toLowerCase();
-    if (!needle) return true;
-    return String(member.telegram_id).includes(needle)
-      || String(member.username || "").toLowerCase().includes(needle)
-      || String(member.first_name || "").toLowerCase().includes(needle);
+  const { data: list, isLoading, isFetching } = useQuery({
+    queryKey: ["members", tenantId, listQuery, page],
+    queryFn: () => listMembers({ data: { ...auth, search: listQuery || null, offset: 0, limit: page * PAGE } }) as Promise<any>,
+    placeholderData: (prev: any) => prev,
   });
+  const visibleMembers: any[] = list?.rows ?? [];
+  const totalMembers: number = list?.total ?? 0;
+  const hasMore: boolean = !!list?.hasMore;
 
   const u = res?.user;
 
@@ -108,7 +112,7 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs uppercase tracking-wider text-white/40">
           <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> All members</span>
-          <span>{visibleMembers.length}</span>
+          <span>{visibleMembers.length} / {totalMembers}</span>
         </div>
         {isLoading && <p className="text-xs text-white/40">Loading members…</p>}
         {visibleMembers.map((member: any) => (
@@ -144,6 +148,11 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
           </div>
         ))}
         {!isLoading && visibleMembers.length === 0 && <p className="text-xs text-white/40">No members found.</p>}
+        {hasMore && (
+          <Button variant="secondary" className="w-full" disabled={isFetching} onClick={() => setPage((n) => n + 1)}>
+            {isFetching ? "Loading…" : "Load more members"}
+          </Button>
+        )}
       </div>
     </div>
   );
