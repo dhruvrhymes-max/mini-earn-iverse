@@ -94,9 +94,7 @@ export async function runAd(p: AdProvider, mount?: HTMLElement | null): Promise<
       const Adsgram = await waitForObject("Adsgram");
       const AdController = Adsgram.init({ blockId });
       if (!AdController) throw new Error("Adsgram not ready, try again");
-      const res = p.kind === "adsgram_task"
-        ? await (AdController.addListener ? AdController.show() : AdController.show())
-        : await AdController.show();
+      const res = await AdController.show();
       if (res && res.done === false) throw new Error("Ad not completed");
       return;
     }
