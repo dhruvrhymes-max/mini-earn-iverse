@@ -45,6 +45,17 @@ async function waitForFn(name: string, timeoutMs = 12000): Promise<(...a: any[])
   }
 }
 
+/** Some SDKs expose an object (e.g. window.Adsgram) rather than a function. */
+async function waitForObject(name: string, timeoutMs = 12000): Promise<any> {
+  const started = Date.now();
+  for (;;) {
+    const obj = (window as any)[name];
+    if (obj && typeof obj.init === "function") return obj;
+    if (Date.now() - started > timeoutMs) throw new Error("Ad network did not respond, try again");
+    await new Promise((r) => setTimeout(r, 200));
+  }
+}
+
 /** Accepts a raw zone id or a pasted Monetag snippet and extracts the zone. */
 function monetagZone(c: Record<string, any>): string {
   const direct = String(c.zone_id ?? "").trim();
