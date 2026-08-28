@@ -156,11 +156,46 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
                 <div className="text-xs text-white/40">${Number(member.usd_balance).toFixed(4)} USDT</div>
               </div>
             </div>
+            {ipOpenId === member.id && (
+              <div className="rounded-lg bg-black/30 p-2 space-y-2 text-[11px]">
+                {ipLoading && !ipData[member.id] && <p className="text-white/40">Loading linked accounts…</p>}
+                {ipData[member.id] && (
+                  <>
+                    <div className="text-white/50">
+                      Addresses seen: {(ipData[member.id].keys ?? []).length === 0
+                        ? "none recorded yet"
+                        : ipData[member.id].keys.map(prettyIp).join(", ")}
+                    </div>
+                    {(ipData[member.id].accounts ?? []).length === 0 ? (
+                      <p className="text-white/40">No other accounts from these addresses.</p>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="uppercase tracking-wider text-white/40">Other accounts on same IP/device</div>
+                        {ipData[member.id].accounts.map((a: any) => (
+                          <div key={a.id} className="flex items-center justify-between gap-2 bg-white/5 rounded p-1.5">
+                            <div className="min-w-0">
+                              <div className="truncate">{a.first_name || "Member"} {a.username ? `@${a.username}` : ""}</div>
+                              <div className="text-white/40 truncate">UID {a.id}</div>
+                              <div className="text-white/40 truncate">TG {a.telegram_id} · {prettyIp(a.shared_ip)} · {a.banned ? "Blocked" : "Active"}</div>
+                            </div>
+                            <Button size="sm" variant={a.banned ? "secondary" : "destructive"} className="shrink-0"
+                              onClick={() => ban.mutate({ userId: a.id, banned: !a.banned })} disabled={ban.isPending}>
+                              {a.banned ? "Unblock" : "Block"}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-2 text-center text-xs">
               <MemberStat label="Refs" value={member.referrals} />
               <MemberStat label="Active refs" value={member.active_referrals} />
               <MemberStat label="Ads" value={member.ads_watched ?? 0} />
             </div>
+
             {adjustingId === member.id && (
               <div className="flex gap-2">
                 <Input placeholder={`± ${tokenSymbol}`} type="number" value={delta} onChange={(e) => setDelta(e.target.value)} />
