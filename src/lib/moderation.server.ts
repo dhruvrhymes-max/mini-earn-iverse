@@ -9,17 +9,55 @@
  * so multi-account detection keeps working.
  */
 
-export function clientIpFromHeaders(headers: Headers): string | null {
-  const raw =
-    headers.get("cf-connecting-ip") ||
-    headers.get("x-real-ip") ||
-    headers.get("x-vercel-forwarded-for") ||
-    headers.get("true-client-ip") ||
-    headers.get("x-client-ip") ||
-    headers.get("x-forwarded-for");
-  if (!raw) return null;
-  return raw.split(",")[0]!.trim() || null;
+/** Normalise an address: strip port, ipv4-mapped ipv6 prefix, brackets, casing. */
+function normalizeIp(value: string): string | null {
+  let ip = value.trim().replace(/^"|"$/g, "");
+  if (!ip) return null;
+  if (ip.startsWith("[")) ip = ip.slice(1, ip.indexOf("]") > 0 ? ip.indexOf("]") : undefined);
+  else if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(ip)) ip = ip.split(":")[0]!;
+  if (/^::ffff:/i.test(ip)) ip = ip.slice(7);
+  ip = ip.toLowerCase();
+  if (!ip || ip === "unknown" || ip === "127.0.0.1" || ip === "::1") return null;
+  return ip.slice(0, 64);
 }
+
+export function clientIpFromHeaders(headers: Headers): string | null {
+  const direct = [
+    "cf-connecting-ip",
+    "true-client-ip",
+    "x-real-ip",
+    "fly-client-ip",
+    "x-client-ip",
+    "x-cluster-client-ip",
+    "do-connecting-ip",
+    "fastly-client-ip",
+  ];
+  for (const name of direct) {
+    const v = headers.get(name);
+    const ip = v ? normalizeIp(v.split(",")[0]!) : null;
+    if (ip) return ip;
+  }
+  // Chained proxies: first entry is the original client.
+  for (const name of ["x-vercel-forwarded-for", "x-forwarded-for"]) {
+    const raw = headers.get(name);
+    if (!raw) continue;
+    for (const part of raw.split(",")) {
+      const ip = normalizeIp(part);
+      if (ip) return ip;
+    }
+  }
+  // RFC 7239: Forwarded: for=1.2.3.4;proto=https
+  const fwd = headers.get("forwarded");
+  if (fwd) {
+    const m = /for=("?\[?)([^;,"\]]+)/i.exec(fwd);
+    if (m) {
+      const ip = normalizeIp(m[2]!);
+      if (ip) return ip;
+    }
+  }
+  return null;
+}
+
 
 export async function screenJoin(
   supabaseAdmin: any,
