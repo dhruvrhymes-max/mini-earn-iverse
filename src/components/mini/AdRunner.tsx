@@ -113,8 +113,7 @@ export async function runAd(p: AdProvider, mount?: HTMLElement | null): Promise<
       const id = String(c.zone_id ?? c.spot_id ?? "").trim();
       if (!id) throw new Error("Onclicka zone id missing");
       await loadScript(c.script_url || "//js.onclckmn.com/static/onclicka.js", { "data-admpid": id });
-      const init = (window as any).initCdTma;
-      if (typeof init !== "function") throw new Error("Onclicka not ready, try again");
+      const init = await waitForFn("initCdTma");
       const show = await init({ id });
       await show();
       return;
