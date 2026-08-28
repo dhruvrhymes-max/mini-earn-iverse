@@ -101,7 +101,26 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
           <Kv k="Active refs" v={res.activeReferrals ?? 0} />
           <Kv k="Ads watched" v={u.ads_watched ?? 0} />
           <Kv k="Joined" v={new Date(u.created_at).toLocaleDateString()} />
-          <Kv k="Last address" v={u.last_ip || "—"} />
+          <div className="flex justify-between">
+            <span className="text-white/50">Last address</span>
+            <button className="font-medium text-primary/80 underline underline-offset-2" onClick={() => toggleIp(u.id)}>
+              {prettyIp(u.last_ip)}
+            </button>
+          </div>
+          {ipOpenId === u.id && (
+            <div className="rounded-lg bg-black/30 p-2 space-y-1 text-[11px]">
+              {ipLoading && !ipData[u.id] && <p className="text-white/40">Loading linked accounts…</p>}
+              {ipData[u.id] && ((ipData[u.id].accounts ?? []).length === 0
+                ? <p className="text-white/40">No other accounts from these addresses.</p>
+                : ipData[u.id].accounts.map((a: any) => (
+                  <div key={a.id} className="bg-white/5 rounded p-1.5">
+                    <div className="truncate">{a.first_name || "Member"} {a.username ? `@${a.username}` : ""} · {a.banned ? "Blocked" : "Active"}</div>
+                    <div className="text-white/40 truncate">UID {a.id} · TG {a.telegram_id} · {prettyIp(a.shared_ip)}</div>
+                  </div>
+                )))}
+            </div>
+          )}
+
           <Kv k="Status" v={u.banned ? `Blocked — ${u.ban_reason}` : "Active"} />
 
           <div className="flex gap-2 pt-2">
