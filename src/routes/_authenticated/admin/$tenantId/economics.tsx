@@ -47,6 +47,18 @@ function Economics() {
         <Field label="Adsgram block ID for storage boost"><Input value={form.idle_ad_block_id ?? ""} placeholder="int-1234" onChange={(e) => setForm({ ...form, idle_ad_block_id: e.target.value })} /></Field>
         <p className="text-xs text-muted-foreground">Leave the block ID empty to hide the storage-boost button. Limits are enforced on the server.</p>
 
+        <h2 className="text-lg font-semibold pt-6">Withdrawal criteria</h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={!!form.withdraw_req_enabled} onChange={(e) => setForm({ ...form, withdraw_req_enabled: e.target.checked })} />
+          Require users to qualify before withdrawing
+        </label>
+        <Field label="Ads to watch (0 = off)"><Input type="number" min={0} value={form.withdraw_min_ads ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_ads: Number(e.target.value) })} /></Field>
+        <Field label="Tasks to complete (watch + social + partner)"><Input type="number" min={0} value={form.withdraw_min_tasks ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_tasks: Number(e.target.value) })} /></Field>
+        <Field label="Active invites required"><Input type="number" min={0} value={form.withdraw_min_refs ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_refs: Number(e.target.value) })} /></Field>
+        <Field label="Minimum account age (days)"><Input type="number" min={0} value={form.withdraw_min_account_days ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_account_days: Number(e.target.value) })} /></Field>
+        <Field label="Daily collects/claims required"><Input type="number" min={0} value={form.withdraw_min_collects ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_collects: Number(e.target.value) })} /></Field>
+        <p className="text-xs text-muted-foreground">All set requirements must be met. Users see their progress on the Withdraw screen. Enforced server-side.</p>
+
         <Button onClick={() => m.mutate()} disabled={m.isPending}>Save</Button>
       </div>
     </div>
