@@ -311,7 +311,45 @@ export const adminListMembers = createServerFn({ method: "POST" })
     };
   });
 
+/** Every address/device this member was seen on, plus other accounts sharing them. */
+export const adminIpNeighbors = createServerFn({ method: "POST" })
+  .inputValidator((i) => z.object({ ...Auth, userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await gate(data);
+    const { data: me } = await supabaseAdmin.from("app_users")
+      .select("id,last_ip").eq("id", data.userId).eq("tenant_id", data.tenantId).maybeSingle();
+    if (!me) throw new Error("Member not found");
+
+    const { data: mine } = await supabaseAdmin.from("ip_logs")
+      .select("ip,created_at").eq("tenant_id", data.tenantId).eq("user_id", data.userId)
+      .order("created_at", { ascending: false }).limit(50);
+    const keys = Array.from(new Set([
+      ...(mine ?? []).map((r: any) => r.ip),
+      ...(me.last_ip ? [me.last_ip] : []),
+    ].filter(Boolean)));
+    if (keys.length === 0) return { keys: [], accounts: [] };
+
+    const { data: shared } = await supabaseAdmin.from("ip_logs")
+      .select("ip,user_id,created_at").eq("tenant_id", data.tenantId)
+      .in("ip", keys).neq("user_id", data.userId).limit(500);
+    const ids = Array.from(new Set((shared ?? []).map((r: any) => r.user_id)));
+    if (ids.length === 0) return { keys, accounts: [] };
+
+    const { data: users } = await supabaseAdmin.from("app_users")
+      .select("id,telegram_id,username,first_name,banned,ban_kind,created_at,balance")
+      .in("id", ids).eq("tenant_id", data.tenantId);
+    const ipByUser = new Map<string, string>();
+    for (const row of shared ?? []) if (!ipByUser.has(row.user_id)) ipByUser.set(row.user_id, row.ip);
+    return {
+      keys,
+      accounts: (users ?? [])
+        .map((u: any) => ({ ...u, shared_ip: ipByUser.get(u.id) ?? null }))
+        .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+    };
+  });
+
 export const adminSetBan = createServerFn({ method: "POST" })
+
   .inputValidator((i) =>
     z.object({
       ...Auth,
