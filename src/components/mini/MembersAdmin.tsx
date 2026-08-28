@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { adminFindUser, adminSetBan, adminAdjustBalance, adminListMembers } from "@/lib/bot-admin.functions";
+import { adminFindUser, adminSetBan, adminAdjustBalance, adminListMembers, adminIpNeighbors } from "@/lib/bot-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -9,12 +9,18 @@ import { Search, ShieldOff, ShieldCheck, Users } from "lucide-react";
 
 type Props = { tenantId: string; initData: string | null; previewTgId: number | null; tokenSymbol: string };
 
+function prettyIp(v: string | null | undefined) {
+  if (!v) return "not captured yet";
+  return String(v).startsWith("dev:") ? `device ${String(v).slice(4, 14)}` : String(v);
+}
+
 export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: Props) {
   const auth = { tenantId, initData, previewTgId: initData ? null : previewTgId };
   const find = useServerFn(adminFindUser);
   const setBan = useServerFn(adminSetBan);
   const adjust = useServerFn(adminAdjustBalance);
   const listMembers = useServerFn(adminListMembers);
+  const neighbors = useServerFn(adminIpNeighbors);
   const qc = useQueryClient();
 
   const [q, setQ] = useState("");
@@ -22,6 +28,22 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
   const [reason, setReason] = useState("");
   const [delta, setDelta] = useState("");
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
+  const [ipOpenId, setIpOpenId] = useState<string | null>(null);
+  const [ipData, setIpData] = useState<Record<string, any>>({});
+  const [ipLoading, setIpLoading] = useState(false);
+
+  async function toggleIp(userId: string) {
+    if (ipOpenId === userId) { setIpOpenId(null); return; }
+    setIpOpenId(userId);
+    if (ipData[userId]) return;
+    setIpLoading(true);
+    try {
+      const r: any = await neighbors({ data: { ...auth, userId } });
+      setIpData((prev) => ({ ...prev, [userId]: r }));
+    } catch (e: any) { toast.error(e.message); setIpOpenId(null); }
+    finally { setIpLoading(false); }
+  }
+
 
   const search = useMutation({
     mutationFn: () => find({ data: { ...auth, query: q } }),
