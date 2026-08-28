@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { adminFindUser, adminSetBan, adminAdjustBalance, adminListMembers } from "@/lib/bot-admin.functions";
+import { adminFindUser, adminSetBan, adminAdjustBalance, adminListMembers, adminIpNeighbors } from "@/lib/bot-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -9,12 +9,18 @@ import { Search, ShieldOff, ShieldCheck, Users } from "lucide-react";
 
 type Props = { tenantId: string; initData: string | null; previewTgId: number | null; tokenSymbol: string };
 
+function prettyIp(v: string | null | undefined) {
+  if (!v) return "not captured yet";
+  return String(v).startsWith("dev:") ? `device ${String(v).slice(4, 14)}` : String(v);
+}
+
 export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: Props) {
   const auth = { tenantId, initData, previewTgId: initData ? null : previewTgId };
   const find = useServerFn(adminFindUser);
   const setBan = useServerFn(adminSetBan);
   const adjust = useServerFn(adminAdjustBalance);
   const listMembers = useServerFn(adminListMembers);
+  const neighbors = useServerFn(adminIpNeighbors);
   const qc = useQueryClient();
 
   const [q, setQ] = useState("");
@@ -22,6 +28,22 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
   const [reason, setReason] = useState("");
   const [delta, setDelta] = useState("");
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
+  const [ipOpenId, setIpOpenId] = useState<string | null>(null);
+  const [ipData, setIpData] = useState<Record<string, any>>({});
+  const [ipLoading, setIpLoading] = useState(false);
+
+  async function toggleIp(userId: string) {
+    if (ipOpenId === userId) { setIpOpenId(null); return; }
+    setIpOpenId(userId);
+    if (ipData[userId]) return;
+    setIpLoading(true);
+    try {
+      const r: any = await neighbors({ data: { ...auth, userId } });
+      setIpData((prev) => ({ ...prev, [userId]: r }));
+    } catch (e: any) { toast.error(e.message); setIpOpenId(null); }
+    finally { setIpLoading(false); }
+  }
+
 
   const search = useMutation({
     mutationFn: () => find({ data: { ...auth, query: q } }),
@@ -79,7 +101,26 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
           <Kv k="Active refs" v={res.activeReferrals ?? 0} />
           <Kv k="Ads watched" v={u.ads_watched ?? 0} />
           <Kv k="Joined" v={new Date(u.created_at).toLocaleDateString()} />
-          <Kv k="Last address" v={u.last_ip || "—"} />
+          <div className="flex justify-between">
+            <span className="text-white/50">Last address</span>
+            <button className="font-medium text-primary/80 underline underline-offset-2" onClick={() => toggleIp(u.id)}>
+              {prettyIp(u.last_ip)}
+            </button>
+          </div>
+          {ipOpenId === u.id && (
+            <div className="rounded-lg bg-black/30 p-2 space-y-1 text-[11px]">
+              {ipLoading && !ipData[u.id] && <p className="text-white/40">Loading linked accounts…</p>}
+              {ipData[u.id] && ((ipData[u.id].accounts ?? []).length === 0
+                ? <p className="text-white/40">No other accounts from these addresses.</p>
+                : ipData[u.id].accounts.map((a: any) => (
+                  <div key={a.id} className="bg-white/5 rounded p-1.5">
+                    <div className="truncate">{a.first_name || "Member"} {a.username ? `@${a.username}` : ""} · {a.banned ? "Blocked" : "Active"}</div>
+                    <div className="text-white/40 truncate">UID {a.id} · TG {a.telegram_id} · {prettyIp(a.shared_ip)}</div>
+                  </div>
+                )))}
+            </div>
+          )}
+
           <Kv k="Status" v={u.banned ? `Blocked — ${u.ban_reason}` : "Active"} />
 
           <div className="flex gap-2 pt-2">
@@ -121,18 +162,59 @@ export function MembersAdmin({ tenantId, initData, previewTgId, tokenSymbol }: P
               <div className="min-w-0">
                 <div className="text-sm font-medium truncate">{member.first_name || "Member"} {member.username ? `@${member.username}` : ""}</div>
                 <div className="text-xs text-white/40">ID {member.telegram_id} · {member.banned ? (member.ban_kind === "multi_account" ? "Blocked · multi-account" : "Blocked") : "Active"}</div>
-                <div className="text-[11px] text-white/30 truncate">Address: {member.last_ip ? String(member.last_ip).replace(/^dev:/, "device ") : "not captured yet"}</div>
+                <button
+                  onClick={() => toggleIp(member.id)}
+                  className="text-[11px] text-primary/80 underline underline-offset-2 truncate max-w-full text-left"
+                >
+                  IP: {prettyIp(member.last_ip)} {ipOpenId === member.id ? "▴" : "▾"}
+                </button>
+
               </div>
               <div className="text-right shrink-0">
                 <div className="text-sm font-semibold">{Number(member.balance).toFixed(2)} {tokenSymbol}</div>
                 <div className="text-xs text-white/40">${Number(member.usd_balance).toFixed(4)} USDT</div>
               </div>
             </div>
+            {ipOpenId === member.id && (
+              <div className="rounded-lg bg-black/30 p-2 space-y-2 text-[11px]">
+                {ipLoading && !ipData[member.id] && <p className="text-white/40">Loading linked accounts…</p>}
+                {ipData[member.id] && (
+                  <>
+                    <div className="text-white/50">
+                      Addresses seen: {(ipData[member.id].keys ?? []).length === 0
+                        ? "none recorded yet"
+                        : ipData[member.id].keys.map(prettyIp).join(", ")}
+                    </div>
+                    {(ipData[member.id].accounts ?? []).length === 0 ? (
+                      <p className="text-white/40">No other accounts from these addresses.</p>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="uppercase tracking-wider text-white/40">Other accounts on same IP/device</div>
+                        {ipData[member.id].accounts.map((a: any) => (
+                          <div key={a.id} className="flex items-center justify-between gap-2 bg-white/5 rounded p-1.5">
+                            <div className="min-w-0">
+                              <div className="truncate">{a.first_name || "Member"} {a.username ? `@${a.username}` : ""}</div>
+                              <div className="text-white/40 truncate">UID {a.id}</div>
+                              <div className="text-white/40 truncate">TG {a.telegram_id} · {prettyIp(a.shared_ip)} · {a.banned ? "Blocked" : "Active"}</div>
+                            </div>
+                            <Button size="sm" variant={a.banned ? "secondary" : "destructive"} className="shrink-0"
+                              onClick={() => ban.mutate({ userId: a.id, banned: !a.banned })} disabled={ban.isPending}>
+                              {a.banned ? "Unblock" : "Block"}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-2 text-center text-xs">
               <MemberStat label="Refs" value={member.referrals} />
               <MemberStat label="Active refs" value={member.active_referrals} />
               <MemberStat label="Ads" value={member.ads_watched ?? 0} />
             </div>
+
             {adjustingId === member.id && (
               <div className="flex gap-2">
                 <Input placeholder={`± ${tokenSymbol}`} type="number" value={delta} onChange={(e) => setDelta(e.target.value)} />
