@@ -65,23 +65,36 @@ export async function screenJoin(
   user: any,
   ip: string | null,
   deviceId?: string | null,
+  fingerprint?: string | null,
 ): Promise<{ banned: boolean; reason: string | null; originalUsername: string | null }> {
   if (user?.banned) {
     return { banned: true, reason: user.ban_reason || "Account blocked", originalUsername: null };
   }
   const cfg: any = tenant?.security || {};
-  const keys = [ip, deviceId ? `dev:${String(deviceId).slice(0, 64)}` : null].filter(Boolean) as string[];
+  const clean = (v: any) => (v ? String(v).slice(0, 64) : null);
+  // Device keys identify the phone; IP keys only describe the network and MUST
+  // NOT block on their own (wifi <-> mobile data changes the IP constantly and
+  // carrier NAT puts unrelated members on the same address).
+  const deviceKeys = [
+    deviceId ? `dev:${clean(deviceId)}` : null,
+    fingerprint ? `fp:${clean(fingerprint)}` : null,
+  ].filter(Boolean) as string[];
+  const keys = [ip, ...deviceKeys].filter(Boolean) as string[];
   if (!cfg.ip_tracking || keys.length === 0) return { banned: false, reason: null, originalUsername: null };
 
-  // Any other member of this bot already seen on this address/device?
-  const { data: others } = await supabaseAdmin
-    .from("ip_logs")
-    .select("user_id, created_at")
-    .eq("tenant_id", tenant.id)
-    .in("ip", keys)
-    .neq("user_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1);
+  // Another member of this bot already seen on this exact device?
+  let others: any[] | null = null;
+  if (deviceKeys.length > 0) {
+    const res = await supabaseAdmin
+      .from("ip_logs")
+      .select("user_id, created_at")
+      .eq("tenant_id", tenant.id)
+      .in("ip", deviceKeys)
+      .neq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    others = res.data;
+  }
 
   if (others && others.length > 0) {
     const { data: original } = await supabaseAdmin
@@ -97,6 +110,11 @@ export async function screenJoin(
       last_ip: ip ?? keys[0]!,
     }).eq("id", user.id);
     if (banError) throw new Error(`Could not block duplicate account: ${banError.message}`);
+    // The inviter must not keep rewards earned from a fake/duplicate account.
+    try {
+      const { revokeInviterRewards } = await import("./referral.server");
+      await revokeInviterRewards(supabaseAdmin, { ...user, banned: true });
+    } catch { /* clawback is best-effort, blocking still applies */ }
     return {
       banned: true,
       reason,
@@ -104,7 +122,7 @@ export async function screenJoin(
     };
   }
 
-  // Daily tracking: one log row per key per day.
+  // Daily tracking: one log row per key per day (IP kept for admin visibility).
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const { data: recent } = await supabaseAdmin
     .from("ip_logs")
@@ -128,3 +146,4 @@ export async function screenJoin(
   }
   return { banned: false, reason: null, originalUsername: null };
 }
+

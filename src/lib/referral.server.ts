@@ -155,3 +155,47 @@ export async function maybeReleaseInviteBonus(supabaseAdmin: any, user: any): Pr
   return amount;
 }
 
+
+/**
+ * Claw back every reward an inviter earned from a member that turned out to be
+ * a duplicate/blocked account: signup instant reward, released inviter reward,
+ * milestone bonus and lifetime cuts. The inviter's balance never goes below 0.
+ */
+export async function revokeInviterRewards(supabaseAdmin: any, user: any): Promise<number> {
+  const inviterId = user?.referrer_id;
+  if (!inviterId) return 0;
+
+  const { data: credits } = await supabaseAdmin
+    .from("referral_credits").select("id,amount").eq("invitee_id", user.id);
+  const credited = (credits ?? []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const lifetime = Number(user.lifetime_earned_for_inviter || 0);
+  const cfg = await loadReferralConfig(supabaseAdmin, user.tenant_id);
+  const instant = Number((cfg as any).instant_reward ?? 0);
+  const total = Math.round((credited + lifetime + instant + Number.EPSILON) * 10_000) / 10_000;
+
+  const { data: inv } = await supabaseAdmin
+    .from("app_users").select("balance,referral_count").eq("id", inviterId).maybeSingle();
+  if (!inv) return 0;
+
+  const deduct = Math.min(total, Number(inv.balance || 0));
+  await supabaseAdmin.from("app_users").update({
+    balance: Number(inv.balance || 0) - deduct,
+    referral_count: Math.max(0, Number(inv.referral_count || 0) - 1),
+  }).eq("id", inviterId);
+
+  if (deduct > 0) {
+    await supabaseAdmin.from("transactions").insert({
+      tenant_id: user.tenant_id, user_id: inviterId, type: "referral",
+      amount: -deduct, status: "approved",
+    });
+  }
+
+  // Remove the ledger rows and any queued reward so nothing can be paid later.
+  if ((credits ?? []).length > 0) {
+    await supabaseAdmin.from("referral_credits").delete().eq("invitee_id", user.id);
+  }
+  await supabaseAdmin.from("app_users")
+    .update({ pending_inviter_reward: 0, lifetime_earned_for_inviter: 0 })
+    .eq("id", user.id);
+  return deduct;
+}

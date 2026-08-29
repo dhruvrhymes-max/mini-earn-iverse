@@ -360,6 +360,9 @@ export const adminSetBan = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await gate(data);
+    const { data: target } = await supabaseAdmin.from("app_users")
+      .select("id,tenant_id,referrer_id,lifetime_earned_for_inviter")
+      .eq("id", data.userId).eq("tenant_id", data.tenantId).maybeSingle();
     const { error } = await supabaseAdmin.from("app_users").update({
       banned: data.banned,
       ban_reason: data.banned ? data.reason ?? "Banned by admin" : null,
@@ -367,8 +370,15 @@ export const adminSetBan = createServerFn({ method: "POST" })
       banned_at: data.banned ? new Date().toISOString() : null,
     }).eq("id", data.userId).eq("tenant_id", data.tenantId);
     if (error) throw new Error(error.message);
-    return { ok: true };
+    // Blocking a member also removes the referral rewards their inviter earned.
+    let clawedBack = 0;
+    if (data.banned && target?.referrer_id) {
+      const { revokeInviterRewards } = await import("./referral.server");
+      clawedBack = await revokeInviterRewards(supabaseAdmin, target);
+    }
+    return { ok: true, clawedBack };
   });
+
 
 export const adminAdjustBalance = createServerFn({ method: "POST" })
   .inputValidator((i) =>
