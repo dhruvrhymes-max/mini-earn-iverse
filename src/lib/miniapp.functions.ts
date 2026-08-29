@@ -90,21 +90,45 @@ export function withdrawRequirements(econ: any) {
     days: int(econ?.withdraw_min_account_days),
     /** Minimum number of daily collects/claims the member has completed. */
     collects: int(econ?.withdraw_min_collects),
+    /** Per-criterion "counted daily" toggles (reset at 02:00 IST). */
+    dailyAds: !!econ?.withdraw_daily_ads,
+    dailyTasks: !!econ?.withdraw_daily_tasks,
+    dailyRefs: !!econ?.withdraw_daily_refs,
+    dailyCollects: !!econ?.withdraw_daily_collects,
   };
 }
 
-/** Count lifetime ads, task completions, collects and active referrals for one user. */
+/** Count lifetime (or today's, per toggle) ads, tasks, collects and active referrals. */
 async function withdrawProgress(supabaseAdmin: any, econ: any, userId: string) {
   const req = withdrawRequirements(econ);
+  const { dayStartISO } = await import("./day-window");
+  const since = dayStartISO();
+
+  let adsQ = supabaseAdmin.from("ad_logs").select("id", { count: "exact", head: true }).eq("user_id", userId);
+  if (req.dailyAds) adsQ = adsQ.gte("created_at", since);
+
+  let tasksQ = supabaseAdmin.from("user_tasks").select("count,last_completed_at").eq("user_id", userId);
+  let globalQ = supabaseAdmin.from("user_global_tasks").select("count,last_completed_at").eq("user_id", userId);
+  if (req.dailyTasks) {
+    tasksQ = tasksQ.gte("last_completed_at", since);
+    globalQ = globalQ.gte("last_completed_at", since);
+  }
+
+  let refsQ = supabaseAdmin.from("app_users").select("id,has_activity,created_at").eq("referrer_id", userId);
+  if (req.dailyRefs) refsQ = refsQ.gte("created_at", since);
+
+  let collectQ = supabaseAdmin.from("transactions").select("id", { count: "exact", head: true })
+    .eq("user_id", userId).eq("type", "mine");
+  if (req.dailyCollects) collectQ = collectQ.gte("created_at", since);
+
   const [adsRes, tasksRes, globalRes, refsRes, meRes, collectRes] = await Promise.all([
-    supabaseAdmin.from("ad_logs").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    supabaseAdmin.from("user_tasks").select("count").eq("user_id", userId),
-    supabaseAdmin.from("user_global_tasks").select("count").eq("user_id", userId),
-    supabaseAdmin.from("app_users").select("id,has_activity").eq("referrer_id", userId),
+    adsQ, tasksQ, globalQ, refsQ,
     supabaseAdmin.from("app_users").select("created_at").eq("id", userId).maybeSingle(),
-    supabaseAdmin.from("transactions").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("type", "mine"),
+    collectQ,
   ]);
-  const sum = (rows: any[] | null) => (rows ?? []).reduce((s, r) => s + Math.max(1, Number(r.count) || 1), 0);
+  // Daily mode counts one completion per task row touched today; lifetime mode sums the counters.
+  const sum = (rows: any[] | null) =>
+    (rows ?? []).reduce((s, r) => s + (req.dailyTasks ? 1 : Math.max(1, Number(r.count) || 1)), 0);
   const ads = adsRes.count ?? 0;
   const tasks = sum(tasksRes.data) + sum(globalRes.data);
   const refRows = refsRes.data ?? [];
@@ -117,6 +141,7 @@ async function withdrawProgress(supabaseAdmin: any, econ: any, userId: string) {
       && accountDays >= req.days && collects >= req.collects);
   return { req, ads, tasks, activeRefs, totalRefs: refRows.length, accountDays, collects, eligible };
 }
+
 
 
 /** Public — the mini app shows the user's withdrawal criteria progress. */
@@ -683,6 +708,10 @@ export const miniAdminUpdateTenant = createServerFn({ method: "POST" })
           withdraw_min_refs: z.number().int().min(0).max(1000).optional(),
           withdraw_min_account_days: z.number().int().min(0).max(3650).optional(),
           withdraw_min_collects: z.number().int().min(0).max(10000).optional(),
+          withdraw_daily_ads: z.boolean().optional(),
+          withdraw_daily_tasks: z.boolean().optional(),
+          withdraw_daily_refs: z.boolean().optional(),
+          withdraw_daily_collects: z.boolean().optional(),
         }).partial().optional(),
         referral_config: z.object({
           signup_reward: z.number().min(0).optional(),
