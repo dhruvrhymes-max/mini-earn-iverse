@@ -26,6 +26,44 @@ function getDeviceId(): string | null {
   } catch { return null; }
 }
 
+/**
+ * Device footprint: survives clearing localStorage / using a second account, and
+ * does NOT change when the member switches between wifi and mobile data.
+ */
+function getDeviceFingerprint(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const n: any = navigator;
+    const s = window.screen;
+    const parts = [
+      n.userAgent ?? "",
+      n.platform ?? "",
+      (n.languages ?? [n.language]).join(","),
+      String(n.hardwareConcurrency ?? ""),
+      String(n.deviceMemory ?? ""),
+      String(n.maxTouchPoints ?? ""),
+      `${s?.width}x${s?.height}x${s?.colorDepth}`,
+      String(window.devicePixelRatio ?? ""),
+      Intl.DateTimeFormat().resolvedOptions().timeZone ?? "",
+      String(new Date().getTimezoneOffset()),
+      String((window as any).Telegram?.WebApp?.platform ?? ""),
+    ].join("|");
+    // FNV-1a — stable, short, no crypto/async needed.
+    let h = 0x811c9dc5;
+    for (let i = 0; i < parts.length; i++) {
+      h ^= parts.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    let h2 = 0x243f6a88;
+    for (let i = parts.length - 1; i >= 0; i--) {
+      h2 ^= parts.charCodeAt(i);
+      h2 = Math.imul(h2, 0x85ebca6b) >>> 0;
+    }
+    return `${h.toString(36)}${h2.toString(36)}`;
+  } catch { return null; }
+}
+
+
 
 async function readTelegramInitData(): Promise<string | null> {
   if (typeof window === "undefined") return null;
