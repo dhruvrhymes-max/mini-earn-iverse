@@ -228,6 +228,8 @@ export const bootMiniApp = createServerFn({ method: "POST" })
       previewTgId: z.number().int().positive().nullable().optional(),
       referrerTgId: z.number().int().positive().nullable().optional(),
       deviceId: z.string().max(80).nullable().optional(),
+      fingerprint: z.string().max(80).nullable().optional(),
+
     }).parse(i),
   )
   .handler(async ({ data }) => {
