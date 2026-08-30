@@ -72,3 +72,12 @@ function Economics() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1"><Label>{label}</Label>{children}</div>;
 }
+
+function DailyToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 text-xs text-muted-foreground -mt-2">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      Count daily (resets at 02:00 IST)
+    </label>
+  );
+}
