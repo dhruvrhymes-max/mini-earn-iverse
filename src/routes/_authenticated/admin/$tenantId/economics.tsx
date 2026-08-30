@@ -53,11 +53,15 @@ function Economics() {
           Require users to qualify before withdrawing
         </label>
         <Field label="Ads to watch (0 = off)"><Input type="number" min={0} value={form.withdraw_min_ads ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_ads: Number(e.target.value) })} /></Field>
+        <DailyToggle checked={!!form.withdraw_daily_ads} onChange={(v) => setForm({ ...form, withdraw_daily_ads: v })} />
         <Field label="Tasks to complete (watch + social + partner)"><Input type="number" min={0} value={form.withdraw_min_tasks ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_tasks: Number(e.target.value) })} /></Field>
+        <DailyToggle checked={!!form.withdraw_daily_tasks} onChange={(v) => setForm({ ...form, withdraw_daily_tasks: v })} />
         <Field label="Active invites required"><Input type="number" min={0} value={form.withdraw_min_refs ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_refs: Number(e.target.value) })} /></Field>
+        <DailyToggle checked={!!form.withdraw_daily_refs} onChange={(v) => setForm({ ...form, withdraw_daily_refs: v })} />
         <Field label="Minimum account age (days)"><Input type="number" min={0} value={form.withdraw_min_account_days ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_account_days: Number(e.target.value) })} /></Field>
-        <Field label="Daily collects/claims required"><Input type="number" min={0} value={form.withdraw_min_collects ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_collects: Number(e.target.value) })} /></Field>
-        <p className="text-xs text-muted-foreground">All set requirements must be met. Users see their progress on the Withdraw screen. Enforced server-side.</p>
+        <Field label="Collects/claims required"><Input type="number" min={0} value={form.withdraw_min_collects ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_collects: Number(e.target.value) })} /></Field>
+        <DailyToggle checked={!!form.withdraw_daily_collects} onChange={(v) => setForm({ ...form, withdraw_daily_collects: v })} />
+        <p className="text-xs text-muted-foreground">All set requirements must be met. Requirements marked "Count daily" only count activity since the 02:00 IST daily reset. Enforced server-side.</p>
 
         <Button onClick={() => m.mutate()} disabled={m.isPending}>Save</Button>
       </div>
@@ -67,4 +71,13 @@ function Economics() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1"><Label>{label}</Label>{children}</div>;
+}
+
+function DailyToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 text-xs text-muted-foreground -mt-2">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      Count daily (resets at 02:00 IST)
+    </label>
+  );
 }

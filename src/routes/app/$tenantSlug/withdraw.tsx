@@ -55,11 +55,14 @@ function Withdraw() {
       {elig?.req.enabled && (
         <div className="mt-4 rounded-xl bg-white/5 p-4 space-y-2">
           <p className="text-xs uppercase tracking-wider text-white/50">Withdrawal criteria</p>
-          {elig.req.ads > 0 && <Crit done={elig.ads >= elig.req.ads} label={`Watch ${elig.req.ads} ads`} progress={`${Math.min(elig.ads, elig.req.ads)}/${elig.req.ads}`} />}
-          {elig.req.tasks > 0 && <Crit done={elig.tasks >= elig.req.tasks} label={`Complete ${elig.req.tasks} tasks`} progress={`${Math.min(elig.tasks, elig.req.tasks)}/${elig.req.tasks}`} />}
-          {elig.req.refs > 0 && <Crit done={elig.activeRefs >= elig.req.refs} label={`Get ${elig.req.refs} active invites`} progress={`${Math.min(elig.activeRefs, elig.req.refs)}/${elig.req.refs}`} />}
+          {elig.req.ads > 0 && <Crit done={elig.ads >= elig.req.ads} label={`Watch ${elig.req.ads} ads${(elig.req as any).dailyAds ? " today" : ""}`} progress={`${Math.min(elig.ads, elig.req.ads)}/${elig.req.ads}`} />}
+          {elig.req.tasks > 0 && <Crit done={elig.tasks >= elig.req.tasks} label={`Complete ${elig.req.tasks} tasks${(elig.req as any).dailyTasks ? " today" : ""}`} progress={`${Math.min(elig.tasks, elig.req.tasks)}/${elig.req.tasks}`} />}
+          {elig.req.refs > 0 && <Crit done={elig.activeRefs >= elig.req.refs} label={`Get ${elig.req.refs} active invites${(elig.req as any).dailyRefs ? " today" : ""}`} progress={`${Math.min(elig.activeRefs, elig.req.refs)}/${elig.req.refs}`} />}
           {elig.req.days > 0 && <Crit done={elig.accountDays >= elig.req.days} label={`Account age ${elig.req.days} days`} progress={`${Math.min(elig.accountDays, elig.req.days)}/${elig.req.days}`} />}
-          {elig.req.collects > 0 && <Crit done={elig.collects >= elig.req.collects} label={`Collect rewards ${elig.req.collects} times`} progress={`${Math.min(elig.collects, elig.req.collects)}/${elig.req.collects}`} />}
+          {elig.req.collects > 0 && <Crit done={elig.collects >= elig.req.collects} label={`Collect rewards ${elig.req.collects} times${(elig.req as any).dailyCollects ? " today" : ""}`} progress={`${Math.min(elig.collects, elig.req.collects)}/${elig.req.collects}`} />}
+          {((elig.req as any).dailyAds || (elig.req as any).dailyTasks || (elig.req as any).dailyRefs || (elig.req as any).dailyCollects) && (
+            <p className="text-[11px] text-white/40">Steps marked "today" reset every day at 2 AM.</p>
+          )}
           <p className="text-xs pt-1">
             {elig.eligible ? <span className="text-green-400">You are eligible to withdraw 🎉</span> : <span className="text-white/60">Finish the steps above to unlock withdrawals.</span>}
           </p>

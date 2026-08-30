@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Home, ListChecks, Pickaxe, Users, User, Wallet, ShieldCheck, Send, Check, AlertCircle } from "lucide-react";
 
+import { StartupAd } from "@/components/mini/StartupAd";
 import { installClientErrorReporter, setTenantContext, reportClientError } from "@/lib/client-error-reporter";
 
 type MiniBootState = { tenant: any | null; user: any | null; loading: boolean; error: string | null; blocked?: { reason: string | null; originalUsername: string | null } | null };
@@ -358,7 +359,7 @@ function MiniLayout() {
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       >
-        {needsOnboarding(tenant, user) && <Onboarding tenant={tenant} userId={user.id} refetch={refetch} />}
+        {needsOnboarding(tenant, user) ? <Onboarding tenant={tenant} userId={user.id} refetch={refetch} /> : <StartupAd tenant={tenant} />}
         <div className="relative z-10"><Outlet /></div>
         <BottomNav slug={tenantSlug} verb={tenant.action_verb} primary={theme.primary} tenant={tenant} />
       </div>
