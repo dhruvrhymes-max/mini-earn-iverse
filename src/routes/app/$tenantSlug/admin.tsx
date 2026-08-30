@@ -282,12 +282,28 @@ function MiniAdmin() {
           <input type="checkbox" checked={!!form.withdraw_req_enabled} onChange={(e) => setForm({ ...form, withdraw_req_enabled: e.target.checked })} />
           Require users to qualify before withdrawing
         </label>
-        <Row><Label>Ads to watch (0 = off)</Label><Input type="number" min={0} value={form.withdraw_min_ads ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_ads: e.target.value })} /></Row>
-        <Row><Label>Tasks to complete (watch + social + partner)</Label><Input type="number" min={0} value={form.withdraw_min_tasks ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_tasks: e.target.value })} /></Row>
-        <Row><Label>Active invites required</Label><Input type="number" min={0} value={form.withdraw_min_refs ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_refs: e.target.value })} /></Row>
+        <Row>
+          <Label>Ads to watch (0 = off)</Label>
+          <Input type="number" min={0} value={form.withdraw_min_ads ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_ads: e.target.value })} />
+          <label className="flex items-center gap-2 text-xs text-white/60"><input type="checkbox" checked={!!form.withdraw_daily_ads} onChange={(e) => setForm({ ...form, withdraw_daily_ads: e.target.checked })} /> Count daily (resets 2 AM)</label>
+        </Row>
+        <Row>
+          <Label>Tasks to complete (watch + social + partner)</Label>
+          <Input type="number" min={0} value={form.withdraw_min_tasks ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_tasks: e.target.value })} />
+          <label className="flex items-center gap-2 text-xs text-white/60"><input type="checkbox" checked={!!form.withdraw_daily_tasks} onChange={(e) => setForm({ ...form, withdraw_daily_tasks: e.target.checked })} /> Count daily (resets 2 AM)</label>
+        </Row>
+        <Row>
+          <Label>Active invites required</Label>
+          <Input type="number" min={0} value={form.withdraw_min_refs ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_refs: e.target.value })} />
+          <label className="flex items-center gap-2 text-xs text-white/60"><input type="checkbox" checked={!!form.withdraw_daily_refs} onChange={(e) => setForm({ ...form, withdraw_daily_refs: e.target.checked })} /> Count daily (resets 2 AM)</label>
+        </Row>
         <Row><Label>Minimum account age (days)</Label><Input type="number" min={0} value={form.withdraw_min_account_days ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_account_days: e.target.value })} /></Row>
-        <Row><Label>Daily collects/claims required</Label><Input type="number" min={0} value={form.withdraw_min_collects ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_collects: e.target.value })} /></Row>
-        <p className="text-xs text-white/50">All set requirements must be met. Users see their progress on the Withdraw screen. Checked server-side.</p>
+        <Row>
+          <Label>Collects/claims required</Label>
+          <Input type="number" min={0} value={form.withdraw_min_collects ?? 0} onChange={(e) => setForm({ ...form, withdraw_min_collects: e.target.value })} />
+          <label className="flex items-center gap-2 text-xs text-white/60"><input type="checkbox" checked={!!form.withdraw_daily_collects} onChange={(e) => setForm({ ...form, withdraw_daily_collects: e.target.checked })} /> Count daily (resets 2 AM)</label>
+        </Row>
+        <p className="text-xs text-white/50">All set requirements must be met. Requirements marked "Count daily" only count activity since the 02:00 IST reset. Checked server-side.</p>
       </Section>
 
 
