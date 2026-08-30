@@ -149,6 +149,10 @@ function MiniAdmin() {
           withdraw_min_refs: Math.max(0, Math.floor(Number(form.withdraw_min_refs) || 0)),
           withdraw_min_account_days: Math.max(0, Math.floor(Number(form.withdraw_min_account_days) || 0)),
           withdraw_min_collects: Math.max(0, Math.floor(Number(form.withdraw_min_collects) || 0)),
+          withdraw_daily_ads: !!form.withdraw_daily_ads,
+          withdraw_daily_tasks: !!form.withdraw_daily_tasks,
+          withdraw_daily_refs: !!form.withdraw_daily_refs,
+          withdraw_daily_collects: !!form.withdraw_daily_collects,
 
         },
         referral_config: {
