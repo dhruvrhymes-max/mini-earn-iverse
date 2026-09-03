@@ -15,5 +15,8 @@ export default defineConfig({
     define: {
       __LOVABLE_ENABLED__: false,
     },
+    preview: {
+      allowedHosts: true,
+    },
   },
 });
